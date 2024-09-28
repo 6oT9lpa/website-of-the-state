@@ -1,0 +1,305 @@
+body
+{
+    color: white;
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+
+*::-webkit-scrollbar {
+    width: 10px;  
+}
+
+*::-webkit-scrollbar-track {
+    background: rgba(255, 96, 96, 0); 
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: rgb(0, 0, 0); 
+    border: 2px solid #e81c5a; 
+    border-radius: 3px; 
+}
+
+.background
+{
+    position: absolute;
+	background: url("../img/background.jpg") !important;
+	background-repeat: no-repeat;
+    background-size: cover;
+	width: 110%;
+	height: 110%;
+	transition: all 0.1s ease;
+    z-index: -2;
+    overflow: scroll;
+    animation: abc 5s ease-in-out infinite;
+}
+
+.lightning
+{
+    position: absolute;
+    width: 50%;
+    height: 50px;
+    top: 50%;
+    right: 25%;
+    border-radius: 30px;
+    animation-name: lights, island;
+    animation-duration: 5s;
+    animation-timing-function: ease-in-out, ease;
+    animation-iteration-count: infinite;
+    z-index: -1;
+
+}
+
+@keyframes lights
+{
+    0% {
+        box-shadow: 0 0 3px #e81c5a;
+    }
+
+    50% {
+        box-shadow: 0 0 100px 100px #e81c5a;
+    }
+
+    100% {
+        box-shadow: 0 0 3px #e81c5a;
+    }
+}
+
+@keyframes abc
+{
+    0% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+
+    100% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes island
+{
+    0% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+main
+{
+    position: relative;
+    top: 100px;
+    display: flex;
+    justify-content: center;
+}
+
+.discord
+{
+    display: flex;
+}
+
+.game-info
+{
+    display: flex;
+}
+
+.navbar
+{
+    display: none !important;
+}
+
+.content {
+    display: none;
+    border-radius: 15px;
+    min-height: 30rem;
+    box-shadow: 0px 0px 10px 10px #222222;
+    box-sizing: border-box;
+    opacity: 1;
+    z-index: 999;
+    animation: island 1s ease;
+}
+
+.history {
+    background: linear-gradient(to right, #2c2c2c, #3E3E3E, #333333);
+    width: 400px;
+    max-height: 30rem;
+    background-color: #333;
+    padding: 20px;
+    overflow-y: scroll;
+}
+.history-item {
+    margin-bottom: 10px;
+}
+.history-item p {
+    margin: 0;
+}
+.history-item p:first-of-type {
+    font-weight: bold;
+}
+.history:hover{
+     /*анимация animation: hoverin 0.2s ease;*/
+}
+.form {
+    background: linear-gradient(to left, #2c2c2c, #3E3E3E, #333333);
+    width: 400px;
+    background-color: #333;
+    padding: 20px;
+    border-left: #e81c5a solid 2px;
+}
+
+.form h2
+{
+    display: flex;
+    text-align: center;
+    justify-content: center;
+}
+
+.line
+{
+    background-color: #e81c5a;
+    width: calc(100% + 40px);
+    position: relative;
+    left: -20px;
+    bottom: -45px;
+    height: 2px;
+}
+
+.form-title {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.form-title div {
+    font-weight: bold;
+}
+
+.form-input {
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+    padding: 10px 5px;
+
+}
+
+.form-input label
+{
+    display: flex;
+    justify-content: center;
+}
+
+.rank
+{
+    display: flex;
+    justify-content: center;
+}
+
+.form-button-container
+{
+    display: flex;
+    justify-content: center;
+}
+
+.form-input label {
+    margin-bottom: 5px;
+}
+.form-input input {
+    padding: 8px;
+    border: 1px solid #666;
+    border: #e81c597a solid 2px;
+    border-radius: 10px;
+    background-color: #444;
+    color: #fff;
+}
+
+.form-input input:hover{
+     /*animation: hoverin 0.2s ease;            написать для всех элементов анимацию :)*/
+}
+
+.form-input select {
+    padding: 8px;
+    border: 1px solid #666;
+    border-radius: 5px;
+    background-color: #444;
+    color: #fff;
+}
+.form-button {
+    font-size: 16px;
+    font-weight: 800;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 25px;
+    background-color: #67A438;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in, color 0.2s ease-in 
+}
+
+.form-button:hover {
+    color: #999999;
+    box-shadow: 0 4px 8px rgba(69, 160, 73, 0.5);
+    background-color:#45a049;
+}       
+
+.organ
+{
+    padding: 5px 8px;
+    background-color: #9F4C0F;
+    border-radius: 10px;
+}
+
+.action {
+    background-color: #838383;
+    padding: 5px;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    border-radius: 25px;
+    border: #666 solid 4px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 150px;
+    position: relative;
+    cursor: pointer;
+}
+
+.action::after {
+    content: "\25BC"; /* Unicode for down arrow */
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    transition: transform 0.2s ease;
+}
+
+.action:hover::after {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+
+.nikname
+{
+    font-size: 18px;
+    font-weight: 700;
+    align-content: center;
+    padding: 0 15px;
+}
+
+.personal-date
+{
+    display: flex;
+}

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth-style.css') }}">
+    <title>Login</title>
+</head>
+<body>
+    <div class="circle-1"></div>
+    <div class="circle-2"></div>
+    <div class="circle-4"></div>
+    <div class="circle-3"></div>
+    <div class="container">
+        <span class="close-button" ><a href="{{ url_for('main.index')}}">x</a></span>
+        <h1>ВХОД</h1>
+        <p style="text-align: center; color: white; margin-bottom: 20px;">личный кабинет</p>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }} errorli">{{ message }}</li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+            {% endwith %}
+
+            <div class="form-group">
+                {% if form.static.errors %}
+                    {{ form.static(class="static_gameis-valid")}}
+                    {% for error in form.static.errors %}
+                        <span class="focus-input100 text-danger">{{ error }}</span>
+                    {% endfor %}
+                    {% else %}
+                    {{ form.static(class="static_game")}}
+                    <span class="symbol-input100">
+                        <i class="fa fa-user" aria-hidden="true"></i>
+                    </span>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {% if form.password.errors %}
+                    {{ form.password(class="password is-valid")}}
+                    {% for error in form.static.errors %}
+                        <span class="focus-input100 text-danger">{{ error }}</span>
+                    {% endfor %}
+                    {% else %}
+                    {{ form.password(class="password")}}
+                    <span class="symbol-input100">
+                        <i class="fa fa-user" aria-hidden="true"></i>
+                    </span>
+                {% endif %}
+            </div>
+            <div class="form-button-container">
+                {{ form.submit(class="form-button") }}
+            </div>
+        </form>
+    </div>
+
+    {% block footer %}
+        {% include 'footer/footer.html' %}
+    {% endblock %}
+</body>
+</html>

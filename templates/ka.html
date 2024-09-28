@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ka-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index-style.css') }}">
+    <title>Majestic State</title>
+</head>
+<body>
+    {% block header %}
+        {% include 'header/header-account.html' %}
+    {% endblock %}
+
+    {% block main %}
+        {% include 'main/main-ka.html' %}
+    {% endblock %}
+
+    {% block footer %}
+        {% include 'footer/footer.html' %}
+    {% endblock %}
+    <div class="background"></div>
+    <script>
+        const select = document.querySelector('.action');
+        const list = document.querySelector('.action-list');
+        const isl = document.querySelector(".content");
+
+        select.addEventListener('click', () => {
+            select.classList.toggle('open');
+        });
+
+        let bg = document.querySelector('.background');
+        window.addEventListener('mousemove', function(e) {
+            let x = e.clientX / window.innerWidth;
+            let y = e.clientY / window.innerHeight;  
+            bg.style.transform = 'translate(-' + x * 50 + 'px, -' + y * 50 + 'px)';
+        });
+
+        
+        window.onload = function() {
+            isl.style.display = "flex";
+        };
+
+    </script>
+</body>
+</html>
+
+

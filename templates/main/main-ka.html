@@ -1,0 +1,121 @@
+<main>
+    <div class="content">
+        <div class="history">
+            <h2>История КА</h2>
+            {% for user in action_users %}
+            <div class="history-item">
+                <p>{{ user.timespan }} - на кого</p>
+                <p>Name: {{ userof.nikname }} | Discord Name: {{ userof.discordname }}</p>
+                <p>Static: {{ userof.static }} | DS ID: {{ userof.discordid }}</p>
+                <p>Rank prev: {{  user.prevrankof }} | Rank curr: {{  user.currrankof }}  | Action: {{ user.actionof }}</p>
+                <p>КА написал - {{ user.nikname }} | {{ user.static }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="form">
+            <div class="line"></div>
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                <div class="form-title">
+                    <div class="personal-date">
+                        <div style="background-color:{{ color }} !important;" class="organ">{{ organ }}</div>
+                        <div class="nikname">{{ nikname }}</div>
+                    </div>
+                    {{ form.action(class="action") }}
+                </div>
+                <h2>Кадровый Аудит</h2>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    <ul class=flashes>
+                    {% for category, message in messages %}
+                      <li class="{{ category }} errorli">{{ message }}</li>
+                    {% endfor %}
+                    </ul>
+                  {% endif %}
+                {% endwith %}
+                <div class="discord">
+                    <div class="form-input">
+                        <label for="discord-id">DISCORD ID</label>
+                        {% if form.discordID.errors %}
+                            {{ form.discordID(class="discord-id is-valid")}}
+                            {% for error in form.discordID.errors %}
+                                <span class="focus-input100 text-danger">{{ error }}</span>
+                            {% endfor %}
+                            {% else %}
+                            {{ form.discordID(class="discord-id")}}
+                            <span class="symbol-input100">
+                                <i class="fa fa-user" aria-hidden="true"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="form-input">
+                        <label for="discord-id">DISCORD NAME</label>
+                        {% if form.discordName.errors %}
+                            {{ form.discordName(class="discord-name is-valid")}}
+                            {% for error in form.discordName.errors %}
+                                <span class="focus-input100 text-danger">{{ error }}</span>
+                            {% endfor %}
+                            {% else %}
+                            {{ form.discordName(class="discord-id")}}
+                            <span class="symbol-input100">
+                                <i class="fa fa-user" aria-hidden="true"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="game-info">
+                    <div class="form-input">
+                        <label for="static">STATIC</label>
+                        {% if form.static.errors %}
+                            {{ form.static(class="static is-valid")}}
+                            {% for error in form.discordName.errors %}
+                                <span class="focus-input100 text-danger">{{ error }}</span>
+                            {% endfor %}
+                            {% else %}
+                            {{ form.static(class="static")}}
+                            <span class="symbol-input100">
+                                <i class="fa fa-user" aria-hidden="true"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="form-input">
+                        <label for="nikname">NIKNAME</label>
+                        {% if form.nikname.errors %}
+                            {{ form.nikname(class=" is-valid")}}
+                            {% for error in form.nikname.errors %}
+                                <span class="focus-input100 text-danger">{{ error }}</span>
+                            {% endfor %}
+                            {% else %}
+                            {{ form.nikname(class="")}}
+                            <span class="symbol-input100">
+                                <i class="fa fa-user" aria-hidden="true"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="rank">
+                    <div class="form-input">
+                        <label for="rank">RANK</label>
+                        {% if form.rank.errors %}
+                            {{ form.rank(class=" is-valid")}}
+                            {% for error in form.rank.errors %}
+                                <span class="focus-input100 text-danger">{{ error }}</span>
+                            {% endfor %}
+                            {% else %}
+                            {{ form.rank(class="")}}
+                            <span class="symbol-input100">
+                                <i class="fa fa-user" aria-hidden="true"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            
+                <div class="form-button-container">
+                    {{ form.submit(class="form-button") }}
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="lightning">
+    </div>
+</main>

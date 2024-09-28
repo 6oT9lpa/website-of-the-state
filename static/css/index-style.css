@@ -1,0 +1,117 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom, #1D1D1E, #3E3E3E, #333333); 
+    background-repeat: no-repeat; 
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background: transparent; 
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10rem;
+}
+
+.logo
+{
+    left: 10px
+}
+
+.logo img
+{
+    width: 190px;
+    height: 60px;
+}
+
+nav
+{
+    display: flex;
+    gap: 20px;
+}
+
+nav a {
+    color: white;
+    margin-left: 20px;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 20px;
+}
+
+.navbar {
+    background: #333;
+    display: flex;
+    justify-content: center;
+    padding: 15px 0;
+    z-index: 1;
+}
+
+.nav-button {
+    color: white;
+    text-decoration: none;
+    position: relative;
+    font-weight: 800;
+    font-size: 20px;
+    padding: 0 50px;
+    transition: color 0.3s;
+}
+
+.nav-button:hover {
+    color: #888888;
+}
+
+.sidebar {
+    width: 270px;
+    height: 470px;
+    background: linear-gradient(to bottom left, #2B2B2B, #3E3E3E);
+    border-left: 5px solid #3E3E3E;
+    border-bottom: 5px solid #3E3E3E;
+    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box; 
+    position: absolute;
+    right: 0;
+    border-bottom-left-radius: 40px;
+    z-index: -1;
+  }
+  
+  .sidebar div {
+    padding: 10px 0;
+    border-bottom: 4px solid white;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    padding: 10px 20px;
+    transition: 0.3s;
+  }
+  
+  .sidebar div span {
+    display: block;
+    font-weight: normal;
+  }
+  
+.sidebar div:hover {
+    color: #888888;
+}
+
+footer {
+    color: white;
+    text-align: center;
+    margin-top: auto;
+}
+
+@media (max-width: 600px) {
+    .navbar, .sidebar {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .sidebar {
+        position: relative;
+        width: 100%;
+    }
+}
