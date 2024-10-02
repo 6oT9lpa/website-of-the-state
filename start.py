@@ -1,5 +1,5 @@
 from __init__ import app
-from python.dsbot.run_bot import run_bot
+from python.run_bot import run_bot
 import multiprocessing
 
 if __name__ == "__main__":
@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
         print("Процесс run_bot запущен.")
 
-        app.run(host='26.184.54.209', port=8000, debug=True)
+        app.run(host='26.184.54.209', port=8000, debug=False)
 
     except Exception as e:
         print(f"Произошла ошибка: {e}")

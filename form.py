@@ -3,7 +3,7 @@ from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, SubmitField, SelectField, PasswordField
 from wtforms.validators import DataRequired, Email, length
 
-
+# форма ка
 class FormAuditPush(FlaskForm):
     action = SelectField('Действие',choices=[
             ('Raising', 'повышение'),
@@ -20,6 +20,7 @@ class FormAuditPush(FlaskForm):
     rank = StringField(validators=[DataRequired(), length(min=1, max=3)], render_kw={"placeholder": "Введите rank"})
     submit = SubmitField(label='отправить', validators=[DataRequired()])
 
+# форма логирования
 class FormAuthPush(FlaskForm):
     static = StringField(validators=[DataRequired(), length(min=1, max=6)], render_kw={"placeholder": "Введите static"})
     password = PasswordField(validators=[DataRequired(), length(min=10, max=40)],render_kw={"placeholder": "Введите password"})

@@ -3,10 +3,19 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from form import FormAuditPush, FormAuthPush
 from flask_login import login_user, login_required, logout_user, current_user
 from python.run_bot import bot
-import disnake
-import random
-import string
-import datetime
+import random, string, datetime, redis, json
+
+# подключение redis как обрабочик сообщений
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+def send_to_bot(password, discord_id, static, organ):
+    message = {
+        'password': password,
+        'discord_id': discord_id,
+        'static': static, 
+        'organ': organ
+    }
+    redis_client.publish('bot_channel', json.dumps(message))
 
 # создание блюпринта
 main = Blueprint('main', __name__)
@@ -30,7 +39,6 @@ def auth():
 
       if static:
           if static.action == 'Dismissal':
-              # Отказ в доступе, если действие 'Dismissal'
               logout_user()  # Закрываем сессию логирования
               flash("Отказано в доступе: вы не состоите во фракции.")
               
@@ -63,7 +71,7 @@ def redirect_login(response):
 # Кадровый аудит
 @main.route('/audit', methods=['POST', 'GET'])
 @login_required
-async def audit():
+def audit():
   from __init__ import db, Users, ActionUsers
   form = FormAuditPush()  # Assuming you have a FormAuditPush class defined
   
@@ -119,8 +127,10 @@ async def audit():
             
             # хэшированиие пароля
             hash_password = generate_password_hash(password)
-            await bot.check_updates(password, discord_id)
-
+            
+            # запись сообщение в redis
+            send_to_bot(password, discord_id, static, user.organ)
+            
             # изменение существущей строки
             user.password = hash_password
             user.prevrank = '0'
@@ -154,9 +164,11 @@ async def audit():
               characters = string.ascii_letters + string.digits + string.punctuation
               password = ''.join(random.choice(characters) for i in range(10))
 
-              await bot.check_updates(password, discord_id)
               timespan = datetime.datetime.now()
               hash_password = generate_password_hash(password)
+              
+              # запись сообщение в redis
+              send_to_bot(password, discord_id, static, user.organ)
               
               # получение фракции юзера который пишет ка 
               user_curr = Users.query.filter_by(static=current_user.static).first() 
