@@ -2,10 +2,6 @@ from flask import Flask
 from sqlalchemy import DateTime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, LoginManager
-import random
-import string
-import datetime
-from werkzeug.security import check_password_hash, generate_password_hash
 
 from main import main
 

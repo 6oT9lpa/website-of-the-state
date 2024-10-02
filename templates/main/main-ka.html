@@ -108,6 +108,20 @@
                             </span>
                         {% endif %}
                     </div>
+                    <div class="form-input">
+                        <label for="reason">REASON</label>
+                        {% if form.reason.errors %}
+                            {{ form.reason(class="is-valid")}}
+                            {% for error in form.reason.errors %}
+                                <span class="focus-input100 text-danger">{{ error }}</span>
+                            {% endfor %}
+                            {% else %}
+                            {{ form.reason(class="")}}
+                            <span class="symbol-input100">
+                                <i class="fa fa-user" aria-hidden="true"></i>
+                            </span>
+                        {% endif %}
+                    </div>
                 </div>
             
                 <div class="form-button-container">

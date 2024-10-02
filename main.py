@@ -8,14 +8,36 @@ import random, string, datetime, redis, json
 # подключение redis как обрабочик сообщений
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
-def send_to_bot(password, discord_id, static, organ):
+def send_to_bot_invite(password, discord_id, static, organ):
     message = {
         'password': password,
         'discord_id': discord_id,
         'static': static, 
         'organ': organ
     }
-    redis_client.publish('bot_channel', json.dumps(message))
+    redis_client.publish('invite_channel', json.dumps(message))
+
+def send_to_bot_dismissal(discord_id, static, organ):
+    message = {
+        'discord_id': discord_id,
+        'static': static,
+        'organ': organ
+    }
+    redis_client.publish('dismissal_channel', json.dumps(message))
+
+def send_to_bot_ka(action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason):
+    message = {
+        'action': action,
+        'discord_id_from': discord_id_from,
+        'discord_id_to': discord_id_to,
+        'curr_rank': curr_rank,
+        'prev_rank': prev_rank,
+        'static_to': static_to,
+        'nikname_from': nikname_from,
+        'nikname_to': nikname_to,
+        'reason': reason
+    }
+    redis_client.publish('ka_channel', json.dumps(message))
 
 # создание блюпринта
 main = Blueprint('main', __name__)
@@ -108,6 +130,7 @@ def audit():
     action = form.action.data
     discord_name = form.discordName.data
     discord_id = form.discordID.data
+    reason = form.reason.data
 
     user = Users.query.filter_by(static=static).first()
     user_curr = Users.query.filter_by(static=current_user.static).first()
@@ -129,7 +152,7 @@ def audit():
             hash_password = generate_password_hash(password)
             
             # запись сообщение в redis
-            send_to_bot(password, discord_id, static, user.organ)
+            send_to_bot_invite(password, discord_id, static, user.organ)
             
             # изменение существущей строки
             user.password = hash_password
@@ -145,7 +168,9 @@ def audit():
             
             db.session.add(new_action_curr_user)
             db.session.commit()
-          
+
+            send_to_bot_ka(action, static, user_curr.discordid, discord_id, '1', '0', user_curr.nikname, user.nikname, reason)
+            
             flash('Успешно!', 'success')
             return redirect(url_for('main.audit'))
           
@@ -168,7 +193,7 @@ def audit():
               hash_password = generate_password_hash(password)
               
               # запись сообщение в redis
-              send_to_bot(password, discord_id, static, user.organ)
+              send_to_bot_invite(password, discord_id, static, user.organ)
               
               # получение фракции юзера который пишет ка 
               user_curr = Users.query.filter_by(static=current_user.static).first() 
@@ -183,6 +208,8 @@ def audit():
               db.session.add(new_action_curr_user)
               db.session.add(new_user)
               db.session.commit()
+              
+              send_to_bot_ka(action, static, user_curr.discordid, discord_id, '1', '0', user_curr.nikname, user.nikname, reason)
               
               flash('Успешно!', 'success')
               return redirect(url_for('main.audit'))
@@ -201,23 +228,40 @@ def audit():
         else:
           # увольнение существуещего юзера с фракции
           if action == 'Dismissal':
+            # User found and action is not 'Dismissal'
             timespan = datetime.datetime.now()
-
-            new_action_curr_user = ActionUsers(discordid=current_user.discordid, discordname=current_user.discordname, static=current_user.static, nikname=current_user.nikname, timespan=timespan, staticof=static, actionof=action, currrankof='0', prevrankof=user.rankuser)
-            db.session.add(new_action_curr_user)
             
-            # перезапись существущей строки 
-            prev_rank = user.rankuser
-            user.prevrank = prev_rank
-            user.rankuser = '0'
+            # Record the action in ActionUsers
+            new_action = ActionUsers(
+              discordid=current_user.discordid,
+              discordname=current_user.discordname,
+              static=current_user.static,
+              nikname=current_user.nikname,
+              timespan=timespan,
+              staticof=user.static,
+              actionof=action,
+              currrankof='0',  # Rank becomes 0
+              prevrankof=user.rankuser
+            )
+            db.session.add(new_action)
             
-            user.timespan = timespan
+            # Update the user's status
+            user.prevrank = user.rankuser
+            user.rankuser = '0'  # Set rank to 0 for dismissal
             user.action = 'Dismissal'
+            user.timespan = timespan
+            
+            # Optionally, send a DM for dismissal notification
+            send_to_bot_dismissal(user.discordid, user.static, user.organ)
             
             db.session.commit()
-            flash('Статик успешно уволен', 'success')
+            
+            send_to_bot_ka(action, static, user_curr.discordid, discord_id, '0', '1', user_curr.nikname, user.nikname, reason)
+            
+            flash('Вы успешно уволили', 'success')
             return redirect(url_for('main.audit'))
-          
+        
+            
           # повышение существующего юзера во фракции
           elif action == 'Raising':
             prev_rank = user.rankuser
@@ -235,13 +279,15 @@ def audit():
             timespan = datetime.datetime.now()
             
             # перезапись существущих данных строки 
-            user.prevrank = user.rankuser
+            user.prevrank = prev_rank
             user.action = action
             user.rankuser = new_rank 
             user.timespan = timespan
-            user.action = 'Raising'
             
             db.session.commit() 
+            
+            send_to_bot_ka(action, static, user_curr.discordid, discord_id, user.rankuser, user.prevrank, user_curr.nikname, user.nikname, reason)
+            
             flash('Статик успешно повышен', 'success')
             return redirect(url_for('main.audit'))
           
@@ -260,10 +306,13 @@ def audit():
             
             user.action = action
             user.rankuser = new_rank 
+            user.prevrank = prev_rank
             user.timespan = timespan
-            user.action = 'Demotion'
             
             db.session.commit() 
+            
+            send_to_bot_ka(action, static, user_curr.discordid, discord_id, user.rankuser, user.prevrank, user_curr.nikname, user.nikname, reason)
+            
             flash('Статик успешно понижен', 'success')
             return redirect(url_for('main.audit'))
           

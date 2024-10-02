@@ -1,6 +1,7 @@
-import disnake, json, redis, asyncio
+import disnake, json, redis, asyncio, traceback
 from disnake.ext import commands
 from disnake import ButtonStyle
+from datetime import datetime
 from disnake.ui import View, Button
 
 with open('./python/config.json', 'r') as f:
@@ -15,61 +16,208 @@ class MyBot(commands.Bot):
     def __init__(self, command_prefix, intents):
         super().__init__(command_prefix=command_prefix, intents=intents)
 
-    async def send_dm(self, discord_id, password, static, organ):
+    async def send_dm_invite(self, discord_id, password, static, organ):
         try:
             print(f"Попытка отправить сообщение пользователю с ID: {discord_id}")
             user = await self.fetch_user(discord_id)
 
-            # Создаем embed сообщение
             embed = disnake.Embed(
-                title=f"Вы были приняты во фракцию **{ organ }**",
+                title=f"Вы были приняты во фракцию **{organ}**",
                 description=(
                     f"Ваш логин от аккаунта: **{static}**\n"
                     f"Ваш пароль от аккаунта: **{password}**\n\n"
                     "Вам нужно сменить пароль на свой, чтобы повысить безопасность вашего аккаунта."
                 ),
-                color=disnake.Color.green()  # Вы можете выбрать другой цвет
+                color=disnake.Color.green()
             )
-            embed.set_footer(text="Пожалуйста, измените пароль как можно скорее.")
+            embed.set_footer(text="Если вы считаете, что это ошибочное сообщение, свяжитесь с 6ot9lpa")
 
-            # Создаем кнопку с перенаправлением на сайт
             button = Button(
                 label="Сменить пароль",
-                url="http://26.184.54.209:8000/auth",  # Укажите реальный URL
+                url="http://26.184.54.209:8000/auth",
                 style=ButtonStyle.link
             )
 
-            # Создаем View, чтобы прикрепить кнопку к сообщению
             view = View()
             view.add_item(button)
 
-            # Отправляем сообщение с embed и кнопкой
             await user.send(embed=embed, view=view)
             print(f"Сообщение отправлено пользователю {discord_id}")
         except Exception as e:
             print(f"Не удалось отправить сообщение пользователю {discord_id}: {e}")
+            traceback.print_exc()
+
+    async def send_dm_dismissal(self, discord_id, static, organ):
+        try:
+            print(f"Попытка отправить сообщение пользователю с ID: {discord_id}")
+            user = await self.fetch_user(discord_id)
+
+            embed = disnake.Embed(
+                title=f"Вы были уволены из фракции **{organ}**",
+                description=(
+                    f"Ваш логин от аккаунта: **{static}**\n\n"
+                    "Ваш аккаунт был заморожен, так как вы больше не находитесь в данной фракции."
+                ),
+                color=disnake.Color.red()
+            )
+            embed.set_footer(text="Если вы считаете, что это ошибочное сообщение, свяжитесь с 6ot9lpa")
+
+            await user.send(embed=embed)
+            print(f"Сообщение об увольнении отправлено пользователю {discord_id}")
+        except Exception as e:
+            print(f"Не удалось отправить сообщение пользователю {discord_id}: {e}")
+            traceback.print_exc()
+
+    async def handle_action(self, action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, channel_id, nikname_from, nikname_to, reason):
+        channel = self.get_channel(channel_id)
+        if action == "Invite":
+            embed = disnake.Embed(
+                title="Кадровый аудит • Принятие",
+                color=disnake.Color.green()
+            )
+             
+            embed.add_field(name="Принял", value=f"<@{discord_id_from}> | {nikname_from}", inline=True)
+            embed.add_field(name="Принят", value=f"<@{discord_id_to}> | {nikname_to}", inline=True)
+
+            embed.add_field(name="Номер паспорта", value=static_to, inline=False)
+            embed.add_field(name="Действие", value='Принятие во фракцию', inline=False)
+            embed.add_field(name="Причина", value=reason, inline=False)
+            embed.add_field(name="Ранг", value=f"Предыдущий **{prev_rank}** | Текущий  **{curr_rank}**", inline=True)
+            
+            current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            embed.set_footer(text=f"Дата: {current_datetime}")
+            await channel.send(embed=embed)
+ 
+        elif action == "Dismissal":
+            embed = disnake.Embed(
+                title="Кадровый аудит • Увольнение",
+                color=disnake.Color.red()
+            )
+             
+            embed.add_field(name="Уволил", value=f"<@{discord_id_from}> | {nikname_from}", inline=True)
+            embed.add_field(name="Уволен", value=f"<@{discord_id_to}> | {nikname_to}", inline=True)
+
+            embed.add_field(name="Номер паспорта", value=static_to, inline=False)
+            embed.add_field(name="Действие", value='Увольнение из фракцию', inline=False)
+            embed.add_field(name="Причина", value=reason, inline=False)
+            
+            current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            embed.set_footer(text=f"Дата: {current_datetime}")
+            await channel.send(embed=embed)
+
+        elif action == "Raising":
+            embed = disnake.Embed(
+                title="Кадровый аудит • Повышение",
+                color=disnake.Color.yellow()
+            )
+             
+            embed.add_field(name="Повысил", value=f"<@{discord_id_from}> | {nikname_from}", inline=True)
+            embed.add_field(name="Повышен", value=f"<@{discord_id_to}> | {nikname_to}", inline=True)
+
+            embed.add_field(name="Номер паспорта", value=static_to, inline=False)
+            embed.add_field(name="Действие", value='Повышение в должности', inline=False)
+            embed.add_field(name="Причина", value=reason, inline=False)
+            embed.add_field(name="Ранг", value=f"Предыдущий **{prev_rank}** | Текущий  **{curr_rank}**", inline=True)
+            
+            current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            embed.set_footer(text=f"Дата: {current_datetime}")
+            await channel.send(embed=embed)
+            
+        elif action == "Demotion":
+            embed = disnake.Embed(
+                title="Кадровый аудит • Понижение",
+                color=disnake.Color.yellow()
+            )
+             
+            embed.add_field(name="Понизил", value=f"<@{discord_id_from}> | {nikname_from}", inline=True)
+            embed.add_field(name="Понижен", value=f"<@{discord_id_to}> | {nikname_to}", inline=True)
+
+            embed.add_field(name="Номер паспорта ", value=static_to, inline=False)
+            embed.add_field(name="Действи", value='Понижение в должности', inline=False)
+            embed.add_field(name="Ранг", value=f"Предыдущий **{prev_rank}** | Текущий  **{curr_rank}**", inline=True)
+            embed.add_field(name="Причина", value=reason, inline=False)
+            
+            current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            embed.set_footer(text=f"Дата: {current_datetime}")
+            await channel.send(embed=embed)
 
 bot = MyBot(command_prefix=config['prefix'], intents=intents)
 
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
-async def process_messages():
+async def process_invite_messages():
     pubsub = redis_client.pubsub()
-    pubsub.subscribe('bot_channel')
+    pubsub.subscribe('invite_channel')
 
-    for message in pubsub.listen():
-        if message['type'] == 'message':
-            data = json.loads(message['data'])
-            discord_id = data['discord_id']
-            password = data['password']
-            static = data['static']
-            organ = data['organ']
-            await bot.send_dm(discord_id, password, static, organ)
+    while True:
+        message = pubsub.get_message()
+        if message and message['type'] == 'message':
+            try:
+                print(f"Получено сообщение: {message['data']}")
+                data = json.loads(message['data'])
+                discord_id = data['discord_id']
+                password = data['password']
+                static = data['static']
+                organ = data['organ']
+                await bot.send_dm_invite(discord_id, password, static, organ)
+            except Exception as e:
+                print(f"Ошибка обработки сообщения: {e}")
+                traceback.print_exc()
+        await asyncio.sleep(1)
+
+async def process_dismissal_messages():
+    pubsub = redis_client.pubsub()
+    pubsub.subscribe('dismissal_channel')
+
+    while True:
+        message = pubsub.get_message()
+        if message and message['type'] == 'message':
+            try:
+                print(f"Получено сообщение: {message['data']}")
+                data = json.loads(message['data'])
+                discord_id = data['discord_id']
+                static = data['static']
+                organ = data['organ']
+                await bot.send_dm_dismissal(discord_id, static, organ)
+            except Exception as e:
+                print(f"Ошибка обработки сообщения: {e}")
+                traceback.print_exc()
+        await asyncio.sleep(1)
+
+async def process_ka_messages():
+    pubsub = redis_client.pubsub()
+    pubsub.subscribe('ka_channel')
+
+    while True:
+        message = pubsub.get_message()
+        if message and message['type'] == 'message':
+            try:
+                print(f"Получено сообщение: {message['data']}")
+                data = json.loads(message['data'])
+                action = data['action']
+                discord_id_from = data['discord_id_from']
+                discord_id_to = data['discord_id_to']
+                curr_rank = data['curr_rank']
+                prev_rank = data['prev_rank']
+                static_to = data['static_to']
+                nikname_from = data['nikname_from']
+                nikname_to = data['nikname_to']
+                channel_id = 1286759030257221714
+                reason = data['reason']
+                
+                await bot.handle_action(action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, channel_id, nikname_from, nikname_to, reason)
+            except Exception as e:
+                print(f"Ошибка обработки сообщения: {e}")
+                traceback.print_exc()
+        await asyncio.sleep(1)
+
 
 @bot.event
 async def on_ready():
     print(f"Бот {bot.user} готов к работе!")
-    bot.loop.create_task(process_messages())
+    bot.loop.create_task(process_invite_messages())
+    bot.loop.create_task(process_dismissal_messages())
+    bot.loop.create_task(process_ka_messages())
 
 def run_bot():
     bot.run(config['token'])
