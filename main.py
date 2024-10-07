@@ -3,10 +3,47 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from form import FormAuditPush, FormAuthPush
 from flask_login import login_user, login_required, logout_user, current_user
 from python.run_bot import bot
-import disnake
+import random, string, datetime, redis, json
 import random
 import string
 import datetime
+import asyncio
+import redis
+import json
+
+# подключение redis как обрабочик сообщений
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+def send_to_bot_invite(password, discord_id, static, organ):
+    message = {
+        'password': password,
+        'discord_id': discord_id,
+        'static': static, 
+        'organ': organ
+    }
+    redis_client.publish('invite_channel', json.dumps(message))
+
+def send_to_bot_dismissal(discord_id, static, organ):
+    message = {
+        'discord_id': discord_id,
+        'static': static,
+        'organ': organ
+    }
+    redis_client.publish('dismissal_channel', json.dumps(message))
+
+def send_to_bot_ka(action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason):
+    message = {
+        'action': action,
+        'discord_id_from': discord_id_from,
+        'discord_id_to': discord_id_to,
+        'curr_rank': curr_rank,
+        'prev_rank': prev_rank,
+        'static_to': static_to,
+        'nikname_from': nikname_from,
+        'nikname_to': nikname_to,
+        'reason': reason
+    }
+    redis_client.publish('ka_channel', json.dumps(message))
 
 # создание блюпринта
 main = Blueprint('main', __name__)
@@ -158,6 +195,9 @@ async def audit():
               timespan = datetime.datetime.now()
               hash_password = generate_password_hash(password)
               
+              # запись сообщение в redis
+              send_to_bot_invite(password, discord_id, static, user_curr.organ)
+              
               # получение фракции юзера который пишет ка 
               user_curr = Users.query.filter_by(static=current_user.static).first() 
               if user_curr:
@@ -260,6 +300,10 @@ async def audit():
   return render_template('ka.html', form=form, organ=organ, color=color, nikname=nikname, action_users=action_users,  userof=userof)
 
 # выход с профиля 
+@main.route('/adminmenu')
+def leadernews():
+  return render_template('index.html')
+
 @main.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():

@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SECRET_KEY'] = '9QKKakkd0.api1ii2kkalofmqlo31miqmmfkTBo9lMaTbIIIJluxa'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:arnetik1@localhost:3306/site'
 app.register_blueprint(main)
 
 db = SQLAlchemy(app)
@@ -26,6 +26,8 @@ class Users(db.Model, UserMixin):
     prevrank = db.Column(db.String(3), nullable=False)
     rankuser = db.Column(db.String(3), nullable=False)
     organ = db.Column(db.String(10), nullable=False)
+    YW = db.Column(db.String(10), default='0')
+    SW = db.Column(db.String(10), default='0')
     timespan = db.Column(DateTime, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     
