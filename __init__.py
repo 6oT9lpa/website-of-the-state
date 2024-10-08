@@ -20,7 +20,7 @@ login_manager = LoginManager(app)
 # создание бд Users
 class Users(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    discordid = db.Column(db.String(18), nullable=False)
+    discordid = db.Column(db.String(20), nullable=False)
     discordname = db.Column(db.String(45), nullable=False)
     static = db.Column(db.String(6), nullable=False, unique=True)
     nikname = db.Column(db.String(45), nullable=False)

@@ -5,12 +5,13 @@
         </a>
     </div>
     <nav>
-        <a href="#">DOCUMENTATION</a>
-        <a href="">ACCOUNT</a>
+        <a href="{{ url_for('main.doc') }}">DOCUMENTATION</a>
+        <a class="button-account" href="{{ url_for('main.profile') }}">ACCOUNT</a>
+        <a class="button-home" href="{{ url_for('main.index') }}">HOME</a>
     </nav>
 </header>
 <div class="navbar">
-<a href="#" class="nav-button">Me Audit</a>
+<a href="#" class="nav-button">Messanger</a>
 <a href="{{ url_for('main.audit')}}" class="nav-button">Create Audit</a>
 <a href="#" class="nav-button">-</a>
 </div>

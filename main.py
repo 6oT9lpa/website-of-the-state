@@ -5,6 +5,22 @@ from flask_login import login_user, login_required, logout_user, current_user
 from python.run_bot import bot
 import random, string, datetime, redis, json
 
+def color_organ(organ):
+  if organ == 'LSPD':
+    color = '#142c77'  # Синий
+  elif organ == 'LSCSD':
+    color = '#9F4C0F'  # Коричневый
+  elif organ == 'SANG':
+    color = '#166c0e'  # Зеленый
+  elif organ == 'FIB':
+    color = '#008000' # черный
+  elif organ == 'EMS':
+    color = '#a21726' # красный
+  elif organ == 'GOV':
+    color = '#CCAC00' # желтый
+    
+    return color
+
 # подключение redis как обрабочик сообщений
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
@@ -111,18 +127,8 @@ def audit():
     organ = user_curr.organ
     nikname = user_curr.nikname
     
-    if organ == 'LSPD':
-      color = '#142c77'  # Синий
-    elif organ == 'LSCSD':
-      color = '#9F4C0F'  # Коричневый
-    elif organ == 'SANG':
-      color = '#166c0e'  # Зеленый
-    elif organ == 'FIB':
-      color = '#008000' # черный
-    elif organ == 'EMS':
-      color = '#a21726' # красный
-    elif organ == 'GOV':
-      color = '#dbbb0b' #
+    color = color_organ(organ)
+    
 
   # проверка валидации формы
   if form.validate_on_submit():
@@ -192,9 +198,6 @@ def audit():
               timespan = datetime.datetime.now()
               hash_password = generate_password_hash(password)
               
-              # запись сообщение в redis
-              send_to_bot_invite(password, discord_id, static, user.organ)
-              
               # получение фракции юзера который пишет ка 
               user_curr = Users.query.filter_by(static=current_user.static).first() 
               if user_curr:
@@ -208,8 +211,10 @@ def audit():
               db.session.add(new_action_curr_user)
               db.session.add(new_user)
               db.session.commit()
+              # запись сообщение в redis
+              send_to_bot_invite(password, discord_id, static, user_curr.organ)
               
-              send_to_bot_ka(action, static, user_curr.discordid, discord_id, '1', '0', user_curr.nikname, user.nikname, reason)
+              send_to_bot_ka(action, static, user_curr.discordid, discord_id, '1', '0', user_curr.nikname, form.nikname.data, reason)
               
               flash('Успешно!', 'success')
               return redirect(url_for('main.audit'))
@@ -331,4 +336,22 @@ def logout():
 @main.route('/profile')
 @login_required
 def profile():
-  return render_template('profile.html')
+  nickname = current_user.nikname
+  organ = current_user.organ
+  rank = current_user.rankuser
+      
+  return render_template('profile.html', nickname=nickname, organ=organ, rank=rank)
+
+@main.route('/doc')
+def doc():
+  from __init__ import Users
+  from form import FormCreateDoc
+  
+  form = FormCreateDoc()
+  
+  if current_user.is_authenticated:
+    nickname = current_user.nikname
+    organ = current_user.organ
+    color = color_organ(organ)
+
+  return render_template('doc.html', form=form, nickname=nickname, organ=organ, color=color)

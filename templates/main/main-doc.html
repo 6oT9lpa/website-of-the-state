@@ -1,0 +1,152 @@
+<main>
+    <div class="modal" data-modal="create-doc">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="personal-date underline">
+                <div style="background-color:{{ color }} !important;" class="organ">{{ organ }}</div>
+                <div class="nikname">{{ nickname }}</div>
+            </div>
+
+            <div>
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                      {% if messages %}
+                        <ul class=flashes>
+                        {% for category, message in messages %}
+                          <li class="{{ category }} errorli">{{ message }}</li>
+                        {% endfor %}
+                        </ul>
+                      {% endif %}
+                    {% endwith %}
+                    <div class="game-info">
+                        <div class="form-input">
+                            <label for="static">STATIC</label>
+                            {% if form.static.errors %}
+                                {{ form.static(class="static is-valid")}}
+                                {% for error in form.discordName.errors %}
+                                    <span class="focus-input100 text-danger">{{ error }}</span>
+                                {% endfor %}
+                                {% else %}
+                                {{ form.static(class="static")}}
+                                <span class="symbol-input100">
+                                    <i class="fa fa-user" aria-hidden="true"></i>
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="form-input">
+                            <label for="nickname">NICKNAME</label>
+                            {% if form.nickname.errors %}
+                                {{ form.nickname(class=" is-valid")}}
+                                {% for error in form.nickname.errors %}
+                                    <span class="focus-input100 text-danger">{{ error }}</span>
+                                {% endfor %}
+                                {% else %}
+                                {{ form.nickname(class="")}}
+                                <span class="symbol-input100">
+                                    <i class="fa fa-user" aria-hidden="true"></i>
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <div id="select-box">
+                            <label name="doctype_" >TYPE DOC</label>
+                            <div id="select-button" class="select-button" onclick="toggleOptions()">
+                                <div id="selected-value">
+                                    <span>Выберите тип документа</span>
+                                </div>
+                                <div id="chevrons">
+                                    <i class="fas fa-chevron-up"></i>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                    
+                            <div id="options" class="hidden">
+                                {% for value, label in form.type_doc.choices %}
+                                <div class="option">
+                                    <input type="radio" name="type_doc" value="{{ value }}" id="{{ value }}" class="radio-input" onclick="selectOption('{{ label }}')">
+                                    <label for="{{ value }}" class="radio-label">{{ label }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="wrapper-selector">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="param1_checkbox" class="hidden-checkbox" name="param1"> 
+                            <label for="param1_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ form.param1.label }}</span>
+
+                            <div class="form-input-wrapp">
+                                {% if form.case.errors %}
+                                    {{ form.case(class="input-field hidden", id="case_number")}}
+                                    {% for error in form.case.errors %}
+                                        <span class="focus-input100 text-danger">{{ error }}</span>
+                                    {% endfor %}
+                                    {% else %}
+                                    {{ form.case(class="input-field hidden", id="case_number")}}
+                                    <span class="symbol-input100">
+                                        <i class="fa fa-user" aria-hidden="true"></i>
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                                            
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="param2_checkbox" class="hidden-checkbox" name="param2">
+                            <label for="param2_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ form.param2.label }}</span>
+                            <input type="text" id="arrest_time" placeholder="Год/День/Час/Минута" class="input-field hidden" 
+                                    name="{{ form.arrest_time.name }}" value="{{ form.arrest_time.value }}">
+                            {% if form.arrest_time.errors %}
+                                <div class="error">{{ form.arrest_time.errors[0] }}</div>
+                            {% endif %}
+                            <div id="arrest_time_error" class="error hidden">Пожалуйста, введите время задержания.</div>
+                        </div>
+                    
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="param3_checkbox" class="hidden-checkbox" name="param3">
+                            <label for="param3_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ form.param3.label }}</span>
+                        </div>
+                    
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="param4_checkbox" class="hidden-checkbox" name="param4">
+                            <label for="param4_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ form.param4.label }}</span>
+                        </div>
+                    
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="param5_checkbox" class="hidden-checkbox" name="param5">
+                            <label for="param5_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ form.param5.label }}</span>
+                        </div>
+                    
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="param6_checkbox" class="hidden-checkbox" name="param6">
+                            <label for="param6_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ form.param6.label }}</span>
+                        </div>  
+                    </div>
+
+                    <div class="form-button-container">
+                        {{ form.submit(class="form-button") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="overlay"></div>
+</main>

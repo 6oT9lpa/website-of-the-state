@@ -1,0 +1,314 @@
+* {
+    user-select: none;
+}
+
+*:focus {
+    outline: none;
+}
+
+body{
+    margin: 0;
+}
+
+body.no-scroll {
+    overflow: hidden; /* Отключает прокрутку */
+}
+
+main{
+    display: flex;
+    justify-content: center;
+}
+
+.modal {
+    position: fixed; 
+    z-index: 1; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    overflow: auto; 
+    opacity: 0;
+    transition: opacity 0.3s ease, visibility 0.3s ease; /* Плавный переход для opacity и visibility */
+    visibility: hidden; /* Скрыто по умолчанию */
+}
+   
+.modal-content {
+    background-color: #7171714f;
+    margin: 15% auto; 
+    padding: 20px;
+    width: calc(100% - 50vw);
+    min-height: 200px;
+
+    color: white;
+    box-shadow: 0 0 20px 10px #262626c2;
+    border-radius: 10px;
+}
+
+.modal-close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.modal-close:hover,
+.modal-close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+}
+
+.modal.active {
+    opacity: 1; /* Полная видимость при активном состоянии */
+    visibility: visible; /* Делаем элемент видимым */
+}
+
+.overlay {
+    position: fixed; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%; 
+    background-color: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease, visibility 0.3s ease; /* Плавный переход для opacity и visibility */
+    visibility: hidden; /* Скрыто по умолчанию */
+}
+.overlay.active {
+    opacity: 1; /* Полная видимость при активном состоянии */
+    visibility: visible; /* Делаем элемент видимым */
+}
+
+.nikname
+{
+    font-size: 18px;
+    font-weight: 700;
+    align-content: center;
+    padding: 0 15px;
+}
+
+.personal-date
+{
+    display: flex;
+    border-bottom: #aaa solid 4px;
+    width: 30%;
+    padding: 10px;
+}
+
+.organ
+{
+    padding: 5px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+
+.navbar
+{
+    display: flex !important;
+}
+
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Расстояние между кнопкой и текстом */
+    margin-bottom: 10px; /* Отступ между элементами */
+}
+
+.hidden-checkbox {
+    display: none;
+}
+
+.checkbox-label {
+    position: relative;
+    display: block;
+    width: 25px;
+    height: 25px;
+    background-color: #f72414;
+    border-radius: 50%;
+    box-shadow: 0 0 5px 2px #ffbeb8;
+    cursor: pointer;
+    transition: 0.2s ease transform, 0.2s ease background-color, 0.2s ease box-shadow;
+    overflow: hidden;
+    border: 2px solid rgba(0, 0, 0, 0.44);
+}
+
+.checkbox-label:before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 15px;
+    height: 15px;
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: inset 0 3px 10px #ffbeb8;
+    transition: 0.2s ease width, 0.2s ease height;
+}
+
+.checkbox-label:hover:before {
+    width: 25px;
+    height: 25px;
+    box-shadow: inset 0 7px 10px #ff9d96;
+}
+
+.checkbox-label:active {
+    transform: scale(0.9);
+}
+
+#tick_mark {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%) rotateZ(-40deg);
+    width: 15px;
+    height: 10px;
+}
+
+#tick_mark:before,
+#tick_mark:after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    border-radius: 2px;
+    opacity: 0;
+    transition: 0.2s ease transform, 0.2s ease opacity;
+}
+
+#tick_mark:before {
+    left: 0;
+    bottom: 0;
+    width: 5px;
+    height: 8px;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.23);
+    transform: translateY(-68px);
+}
+
+#tick_mark:after {
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 5px;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.23);
+    transform: translateX(78px);
+}
+
+.hidden-checkbox:checked + .checkbox-label {
+    background-color: #07d410;
+    box-shadow: 0 7px 10px #92ff97;
+}
+
+.hidden-checkbox:checked + .checkbox-label:before {
+    width: 0;
+    height: 0;
+}
+
+.hidden-checkbox:checked + .checkbox-label #tick_mark:before,
+.hidden-checkbox:checked + .checkbox-label #tick_mark:after {
+    transform: translate(0);
+    opacity: 1;
+}
+
+.checkbox-text {
+    font-size: 16px;
+    color: white;
+    font-weight: 700;
+}
+
+#select-box {
+    padding: 10px;
+    position: relative;
+    min-width: 180px;
+}
+
+#select-box label
+{
+    display: flex;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.select-label {
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #666;
+}
+
+.select-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 15px;
+    border: #e81c597a solid 2px;
+    border-radius: 10px;
+    background-color: #444;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+    margin-top: 3px;
+    font-size: 12px;
+}
+
+.select-button:hover {
+    border-color: #888;
+}
+
+#selected-value {
+    font-size: 14px;
+    color: white;
+}
+
+#chevrons {
+    font-size: 14px;
+    color: #999;
+}
+
+#options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: none; /* Скрываем изначально */
+    opacity: 0; /* Начальная непрозрачность для анимации */
+    transition: opacity 0.5s ease; /* Плавная анимация */
+}
+
+.option {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.option:hover {
+    background-color: #f0f0f0;
+}
+
+.radio-input {
+    display: none; /* Скрываем стандартные радиокнопки */
+}
+
+.radio-label {
+    display: block;
+    color: #555;
+}
+
+.radio-input:checked + .radio-label {
+    font-weight: bold; /* Подсветка выбранной опции */
+    color: #007BFF; /* Цвет текста для выбранной опции */
+}
+
+.hidden {
+    display: none;
+}
+
+
+.wrapper-selector
+{
+    padding: 25px 10px;
+} 
