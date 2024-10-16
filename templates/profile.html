@@ -8,7 +8,6 @@
     <title>Majestic State</title>
 </head>
 <body>
-    
     {% block header %}
         {% include 'header/header-account.html' %}
     {% endblock %}
@@ -23,6 +22,21 @@
     
     <div class="background"></div>
     <script>
+        let ClsBtn = document.querySelector('.modal-close');
+        let MessangerWindow = document.querySelector('#messanger');
+        let ClicksBtn = 0;
+
+        MessangerWindow.onclick = function () {
+            ClicksBtn++
+            alert('hello');
+            if(ClicksBtn > 1 & ClicksBtn < 3) {
+                alert('2 or more')
+            }
+            if(ClicksBtn > 2) {
+                ClicksBtn = 0;
+            }
+        }
+
         let bg = document.querySelector('.background');
         window.addEventListener('mousemove', function(e) {
             let x = e.clientX / window.innerWidth;

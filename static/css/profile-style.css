@@ -6,6 +6,68 @@ main {
   {
     padding: 60px;
   }
+
+  .MessangerHeader{
+    display: flex;
+    align-items: center;
+  }
+
+  .organ{
+    display: inline-block;
+    padding: 10px 45px;
+    margin: 20px 25px;
+    border-radius: 50px;
+    font-size: 20px;
+    color: #fff;
+    font-weight: bold;
+  }
+
+  .MessageUser{
+    font-size: 20px;
+    color: #fff;
+    font-weight: bold;
+  }
+
+  .MessangerContent{
+    display: flex;
+  }
+
+  .ChatUsers{
+    display: flex;
+    flex-direction: column;
+  }
+
+  .User{
+    display: inline-block;
+    padding: 10px 45px;
+    margin: 20px 25px;
+    border-radius: 50px;
+    font-size: 20px;
+    color: #fff;
+    background-color: #555;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .MessangerChatWindow{
+    display: flex;
+    flex-direction: column;
+    width: 800px;
+  }
+
+  .ChatSection{
+    margin-left: auto;
+    max-width: 400px;
+  }
+
+  .CloseBtn{
+    margin-left: auto;
+    margin-right: 15px;
+    padding: 10px;
+    border-radius: 30%;
+    color: #fff;
+    background-color: #9B9B9B;
+  }
   
   .profile-card {
     display: flex;
@@ -206,6 +268,19 @@ main {
   
   .profile-audit:hover{
     color: rgb(132, 132, 132);
+  }
+
+  .MessangerWindow{
+    position: absolute;
+    display: none;
+    width: 70%;
+    height: 80%;
+    background-color: #393939;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    z-index: 999;
+    border-radius: 20px;
   }
 
   @keyframes fadeIn {
