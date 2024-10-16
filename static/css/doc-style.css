@@ -1,3 +1,8 @@
+:root {
+    --success-color: #0cb854;
+    --error-color: #ee1f09;
+  }
+
 * {
     user-select: none;
 }
@@ -33,11 +38,11 @@ main{
    
 .modal-content {
     background-color: #7171714f;
-    margin: 15% auto; 
+    margin: 15% auto;
+    margin-top: 10rem;
     padding: 20px;
     width: calc(100% - 50vw);
     min-height: 200px;
-
     color: white;
     box-shadow: 0 0 20px 10px #262626c2;
     border-radius: 10px;
@@ -109,9 +114,10 @@ main{
 
 .checkbox-wrapper {
     display: flex;
-    align-items: center;
+    width: 80%;
     gap: 10px; /* Расстояние между кнопкой и текстом */
     margin-bottom: 10px; /* Отступ между элементами */
+    flex-direction: column;
 }
 
 .hidden-checkbox {
@@ -209,10 +215,18 @@ main{
     opacity: 1;
 }
 
+.checkbox
+{
+    display: flex;
+}
+
 .checkbox-text {
     font-size: 16px;
     color: white;
     font-weight: 700;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
 }
 
 #select-box {
@@ -307,8 +321,67 @@ main{
     display: none;
 }
 
+.wrapper-selector {
+    transition: height 0.3s ease-in-out, opacity 0.3s ease;
+    padding: 25px 5px;
+    opacity: 0;
+    overflow: hidden;
+    display: none; 
+  }
 
-.wrapper-selector
+.wrapper-selector.hidden-wrapper {
+    opacity: 1;
+}
+
+#order-wrapper
 {
-    padding: 25px 10px;
-} 
+    display: flex;
+    flex-direction: column;
+    width: 40%;
+}
+
+#agenda-wrapper
+{
+    display: flex;
+    flex-direction: column;
+    width: 40%;
+}
+
+.contanier-wrapper
+{
+    display: none;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.text-danger
+{
+    text-align: center;
+    color: var(--error-color);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.form-input
+{
+    padding: 5px 0px !important;
+}
+
+.form-input.error input
+{
+    background-color: #632525 !important;  
+}
+
+.wrapper-input {
+    opacity: 0;
+    max-height: 0;
+    transition: opacity 0.3s ease, max-height 0.3s ease;
+    overflow: hidden;
+    display: none; 
+}
+
+.visible-input {
+    opacity: 1;
+    max-height: 100px; 
+    display: block; 
+}

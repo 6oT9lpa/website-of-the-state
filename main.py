@@ -1,9 +1,15 @@
-from flask import render_template, redirect, url_for, request, flash, Blueprint
+from flask import render_template, redirect, url_for, request, flash, Blueprint, session, send_file
 from werkzeug.security import check_password_hash, generate_password_hash
 from form import FormAuditPush, FormAuthPush
 from flask_login import login_user, login_required, logout_user, current_user
-from python.run_bot import bot
-import random, string, datetime, redis, json
+from datetime import datetime
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from io import BytesIO
+import random, string, redis, json, os
 
 def color_organ(organ):
   if organ == 'LSPD':
@@ -19,10 +25,35 @@ def color_organ(organ):
   elif organ == 'GOV':
     color = '#CCAC00' # желтый
     
-    return color
+  return color
+
+def read_ranks(filename):
+  with open(filename, 'r', encoding='utf-8') as f:
+    data = json.load(f)
+  return data
+
+def get_rank_info(ranks, organization, rank_level):
+  rank_info = None
+  if organization in ranks:
+    for rank_data in ranks[organization]:
+      for level, name in rank_data.items():
+        if level.strip("[]") == rank_level:
+          rank_info = name.strip()
+          break
+  return rank_info
 
 # подключение redis как обрабочик сообщений
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+def send_to_bot_new_resolution(uid, nickname, static, discrodid):
+  message = {
+      'uid': uid,
+      'nickname': nickname, 
+      'static': static, 
+      'discrodid': discrodid
+  }
+  redis_client.publish('new_resolution', json.dumps(message))
+  print("Подписка на канал 'new_resolution' выполнена.")
 
 def send_to_bot_invite(password, discord_id, static, organ):
     message = {
@@ -143,7 +174,7 @@ def audit():
     # проверка action invite на существование статика, если есть то ошибка
     if action == 'Invite':
         if user and user.action == 'Dismissal':
-            timespan = datetime.datetime.now()
+            timespan = datetime.now()
              
             # получение фракции от юзера который пишет ка
             if user_curr:
@@ -195,7 +226,7 @@ def audit():
               characters = string.ascii_letters + string.digits + string.punctuation
               password = ''.join(random.choice(characters) for i in range(10))
 
-              timespan = datetime.datetime.now()
+              timespan = datetime.now()
               hash_password = generate_password_hash(password)
               
               # получение фракции юзера который пишет ка 
@@ -234,7 +265,7 @@ def audit():
           # увольнение существуещего юзера с фракции
           if action == 'Dismissal':
             # User found and action is not 'Dismissal'
-            timespan = datetime.datetime.now()
+            timespan = datetime.now()
             
             # Record the action in ActionUsers
             new_action = ActionUsers(
@@ -277,11 +308,9 @@ def audit():
               flash('При повышении, новый ранг не может быть меньше старого')
               return redirect(url_for('main.audit'))
 
-            timespan = datetime.datetime.now()
+            timespan = datetime.now()
             new_action_curr_user = ActionUsers(discordid=current_user.discordid, discordname=current_user.discordname, static=current_user.static, nikname=current_user.nikname, timespan=timespan, staticof=static, actionof=action, currrankof=form.rank.data, prevrankof=user.rankuser)
             db.session.add(new_action_curr_user)
-
-            timespan = datetime.datetime.now()
             
             # перезапись существущих данных строки 
             user.prevrank = prev_rank
@@ -305,7 +334,7 @@ def audit():
               flash('При понижении, новый ранг не может быть больше старого')
               return redirect(url_for('main.audit'))
             
-            timespan = datetime.datetime.now()
+            timespan = datetime.now()
             new_action_curr_user = ActionUsers(discordid=current_user.discordid, discordname=current_user.discordname, static=current_user.static, nikname=current_user.nikname, timespan=timespan, staticof=static, actionof=action, currrankof=form.rank.data, prevrankof=user.rankuser)
             db.session.add(new_action_curr_user)
             
@@ -339,19 +368,259 @@ def profile():
   nickname = current_user.nikname
   organ = current_user.organ
   rank = current_user.rankuser
+  color = color_organ(organ)
+
+  filename = "./python/name-ranks.json"
+  ranks = read_ranks(filename)
+  rank_name = get_rank_info(ranks, organ, rank)
       
-  return render_template('profile.html', nickname=nickname, organ=organ, rank=rank)
+  return render_template('profile.html', nickname=nickname, organ=organ, rank=rank, rank_name=rank_name, color=color)
 
 @main.route('/doc')
 def doc():
   from __init__ import Users
-  from form import FormCreateDoc
-  
+  from form import FormCreateDoc, FormCreateResolution, FormCreateOrder, FormCreateAgenda
   form = FormCreateDoc()
+  formResolution = FormCreateResolution()
+  formOrder = FormCreateOrder()
+  formAgenda = FormCreateAgenda()
   
   if current_user.is_authenticated:
     nickname = current_user.nikname
     organ = current_user.organ
     color = color_organ(organ)
 
-  return render_template('doc.html', form=form, nickname=nickname, organ=organ, color=color)
+  return render_template('doc.html', form=form, formResolution=formResolution, formOrder=formOrder, formAgenda=formAgenda, nickname=nickname, organ=organ, color=color)
+
+@main.route('/create_doc',  methods=['POST', 'GET'])
+def create_doc():
+  from __init__ import Users, PDFDocument, db
+  from form import FormCreateDoc, FormCreateResolution, FormCreateOrder, FormCreateAgenda
+  form = FormCreateDoc()
+  formResolution = FormCreateResolution()
+  formOrder = FormCreateOrder()
+  formAgenda = FormCreateAgenda()
+  
+  if form.validate_on_submit():
+    typeDoc = form.type_doc.data
+    
+    if typeDoc == 'Order':
+      pass
+    elif typeDoc == 'Resolution':
+      uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
+      session['uid'] = uid
+
+      nickname = form.nickname.data
+      static = form.static.data
+      user = Users.query.filter_by(static=static).first()
+      param1 = formResolution.param1.data
+      param2 = formResolution.param2.data
+      param3 = formResolution.param3.data
+      param4 = formResolution.param4.data
+      param5 = formResolution.param5.data
+      param6 = formResolution.param6.data
+      case_number = formResolution.case.data
+      arrest_time = formResolution.arrest_time.data
+
+      buffer = BytesIO()
+      pdf = canvas.Canvas(buffer, pagesize=A4)
+      pdf.setTitle("Постановление")
+
+      # Путь к шрифту
+      font_path = os.path.join('static', 'fonts', 'times.ttf')
+      pdfmetrics.registerFont(TTFont('TimesNewRoman', font_path))  # Убедитесь, что файл находится в static/fonts
+      pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))  # Полужирный шрифт
+
+      # Использование шрифта
+      pdf.setFont("TimesNewRoman", 12)
+      
+      # загрузка картинки
+      image_path = os.path.join('static', 'img', 'DepOfJustice.png')
+      pdf.drawImage(image_path, 50 * mm, 245 * mm, width=100 * mm, height=50 * mm)
+      
+      # Рисуем заголовок и основную информацию
+      pdf.setFont("TimesNewRoman-Bold", 14)
+      pdf.drawString(50 * mm, 235 * mm, "UNITED STATES DEPARTMENT OF JUSTICE")
+      pdf.drawString(70 * mm, 230 * mm, "прокуратура штата Сан-Андреас")
+      pdf.setFont("TimesNewRoman", 12)
+      pdf.drawString(60 * mm, 225 * mm, "90001, г. Лос-Сантос, Рокфорд-Хиллз, Карцер-Вей")
+      
+      # загрузка картинки
+      image_path = os.path.join('static', 'img', 'text separator.png')
+      pdf.drawImage(image_path, 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
+      
+      pdf.drawString(150 * mm, 200 * mm, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
+      pdf.drawString(30 * mm, 200 * mm, f"Doc. No: {case_number}")
+
+      pdf.setFont("TimesNewRoman-Bold", 14)
+     # pdf.drawString(15 * mm, 220 * mm, "ПОСТАНОВЛЕНИЕ")
+      pdf.setFont("TimesNewRoman", 12)
+
+      # Рисуем текст постановления
+      pdf.drawString(15 * mm, 190 * mm, f"Я, {current_user.nikname}, являюсь Прокурором штата San Andreas пользуясь своими правами, ")
+      pdf.drawString(15 * mm, 185 * mm, "данными мне Конституцией и законодательством штата San Andreas.")
+      pdf.setFont("TimesNewRoman-Bold", 14)
+      pdf.drawString(80 * mm, 175 * mm, "ПОСТАНОВЛЯЮ:")
+      pdf.setFont("TimesNewRoman", 12)
+
+      num = 1
+      y = 170  # Начальная координата по Y для списка
+      if param1:
+          pdf.drawString(15 * mm, y * mm, f"{num}. Возбудить уголовное дело в отношении сотрудника {user.organ} {nickname} с номером")
+          y -= 5
+          pdf.drawString(15 * mm, y * mm, f"идентификационного знака {static}, присвоить делу идентификатор {case_number}. Принять дело к")
+          y -= 5
+          pdf.drawString(15 * mm, y * mm, "собственному производству.")
+          y -= 10
+          num += 1
+          
+      if param2:
+          pdf.drawString(15 * mm, y * mm, f"{num}. Сотруднику {user.organ} {nickname} с номером идентификационного знака {static}, в течении")
+          y -= 5
+          pdf.drawString(15 * mm, y * mm, f"24-ёх часов надлежит предоставить на почту Прокурора {current_user.nikname} {current_user.discordname}@gov.sa")
+          y -= 5
+          pdf.drawString(15 * mm, y * mm, "видеофиксацию проведения процессуальных и следственных действий в отношение гражданина")
+          y -= 5
+          pdf.drawString(15 * mm, y * mm, f"c {arrest_time}, а также иных следственных действий, явившихся предпосылкой произведенного ")
+          y -= 5
+          pdf.drawString(15 * mm, y * mm, "задержания, включая момент фиксации предполагаемого нарушения.")
+          y -= 10
+          num += 1
+          
+      if param3:
+          pdf.drawString(15 * mm, y * mm, f"{num}. Предоставить личное дело сотрудника {user.organ} {nickname} с номером")
+          y -= 5
+          pdf.drawString(15 * mm, y * mm, f"идентификационного знак {static}, включающее в себя: паспортные данные, должность в государственной")
+          y -= 5
+          pdf.drawString(15 * mm, y * mm, "структуре. Информация должна быть предоставлена в течение 24-х")
+          y -= 10
+          num += 1
+          
+      if param4:
+          pdf.drawString(15 * mm, y * mm, f"{num}. Запрет на смену персональных данных сотруднику {user.organ} {nickname}")
+          y -= 10
+          num += 1
+      if param5:
+          pdf.drawString(15 * mm, y * mm, f"{num}. Сотруднику {user.organ} {nickname} с номером идентификационного знака 58630 запретить")
+          y -= 5
+          pdf.drawString(15 * mm, y * mm, f"увольнение с государственной организации {user.organ}  и перевод в другие государственные")
+          y -= 5
+          pdf.drawString(15 * mm, y * mm, f"фракции на момент расследования по делопроизводству с идентификатором {case_number}")
+          y -= 10
+          num += 1
+      if param6:
+          pdf.drawString(15 * mm, y * mm, f"{num}. Запрет на ведение службы на время расследования по дулопроизводству с индификаинным")
+          y -= 5
+          pdf.drawString(15 * mm, y * mm, f"{case_number} сотруднику {user.organ} {nickname} c номером ОПЗ {static}")
+          y -= 10
+          num += 1
+
+      # Завершаем документ
+      pdf.drawString(15 * mm, y * mm, "Настоящее постановление вступает в законную силу с момента его подписания и публикации")
+      y -= 5
+      pdf.drawString(15 * mm, y * mm, "на портале штата San Andreas.")
+      
+      # загрузка картинки
+      y -= 40
+      image_path = os.path.join('static', 'img', 'print.png')
+      pdf.drawImage(image_path, 20 * mm, y * mm, width=30 * mm, height=30 * mm)
+      
+      pdf.showPage()
+      pdf.save()
+      buffer.seek(0)
+      
+      curr_user = Users.query.filter_by(static=current_user.static).first()
+
+      # Проверяем, что пользователь найден
+      if user:
+        global file_path
+        file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
+        with open(file_path, 'wb') as f:
+            f.write(buffer.getvalue())
+        
+        pdf_document = PDFDocument(
+            user_static=curr_user.static,
+            user_discordid=curr_user.discordid,
+            uid=uid,
+            content=file_path,
+            created_at=datetime.now()
+        )
+        db.session.add(pdf_document)
+        db.session.commit()
+      else:
+          flash('Пользователь не найден.')
+          return redirect(url_for('main.create_doc'))
+        
+      send_to_bot_new_resolution(uid=uid, nickname=curr_user.nikname, static=curr_user.static, discrodid=curr_user.discordid)
+      
+    elif typeDoc == 'Agenda':
+      pass
+    
+  return redirect(url_for('main.doc'))
+
+
+@main.route('/resolution')
+def temporary_page():
+    from __init__ import PDFDocument
+    uid = request.args.get('uid')
+
+    if not uid:
+        return "No UID provided", 400 
+
+    pdf_doc = PDFDocument.query.filter_by(uid=uid).first()
+    if pdf_doc:
+        # Проверьте, существует ли файл по пути
+        if not os.path.exists(pdf_doc.content):
+            return "PDF file not found on server", 404
+          
+        return render_template('temporary_page.html', pdf_path=pdf_doc.content)
+    else:
+        return "PDF not found or invalid UID", 404
+
+
+@main.route('/edit_doc', methods=['GET', 'POST'])
+def edit_doc():
+  from __init__ import PDFDocument, db
+  uid = request.args.get('uid')
+  if not uid:
+      return "No UID provided", 400
+
+  pdf_doc = PDFDocument.query.filter_by(uid=uid).first()
+  if not pdf_doc:
+      return "PDF not found", 404
+
+  if request.method == 'POST':
+      # Получить отредактированные данные из формы
+      new_param1 = request.form.get('param1')
+      new_param2 = request.form.get('param2')
+      # и так далее для всех параметров
+
+      # Создаем новый PDF с обновленными данными
+      buffer = BytesIO()
+      pdf = canvas.Canvas(buffer, pagesize=A4)
+      pdf.setFont("Helvetica", 12)
+
+      # Используем обновленные параметры для создания нового PDF
+      pdf.drawString(100, 750, f"Updated param1: {new_param1}")
+      pdf.drawString(100, 730, f"Updated param2: {new_param2}")
+
+      # Добавьте сюда код для отображения других параметров
+
+      pdf.showPage()
+      pdf.save()
+      buffer.seek(0)
+
+      # Сохраняем новый PDF
+      new_file_path = os.path.join('uploads', f'{uid}_updated.pdf')
+      with open(new_file_path, 'wb') as f:
+          f.write(buffer.getvalue())
+
+      # Обновляем запись в базе данных с новым файлом
+      pdf_doc.content = new_file_path
+      db.session.commit()
+
+      flash('PDF успешно обновлен')
+      return redirect(url_for('main.temporary_page', uid=uid))
+
+  # Если метод GET, отобразить форму с текущими данными для редактирования
+  return render_template('edit_form.html', document=pdf_doc)

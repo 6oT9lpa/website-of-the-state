@@ -29,15 +29,15 @@ body
 @keyframes abc
 {
     0% {
-        opacity: 0.5;
+        opacity: 0.7;
     }
 
     50% {
-        opacity: 0.3;
+        opacity: 0.5;
     }
 
     100% {
-        opacity: 0.5;
+        opacity: 0.7;
     }
 }
 
