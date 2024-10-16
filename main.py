@@ -1,4 +1,5 @@
 from flask import render_template, redirect, url_for, request, flash, Blueprint, session, send_file
+from functools import wraps
 from werkzeug.security import check_password_hash, generate_password_hash
 from form import FormAuditPush, FormAuthPush
 from flask_login import login_user, login_required, logout_user, current_user
@@ -89,6 +90,15 @@ def send_to_bot_ka(action, static_to, discord_id_from, discord_id_to, curr_rank,
 # создание блюпринта
 main = Blueprint('main', __name__)
 
+def check_user_action(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.is_authenticated and current_user.action == 'Dismissal':
+            logout_user()
+            return redirect(url_for('main.index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # главная страница
 @main.route('/')
 def index():
@@ -110,7 +120,7 @@ def auth():
           if static.action == 'Dismissal':
               logout_user()  # Закрываем сессию логирования
               flash("Отказано в доступе: вы не состоите во фракции.")
-              
+              return redirect(url_for('main.auth'))
           
           # Проверяем пароль, если действие не 'Dismissal'
           if check_password_hash(static.password, form.password.data):
@@ -139,6 +149,7 @@ def redirect_login(response):
 
 # Кадровый аудит
 @main.route('/audit', methods=['POST', 'GET'])
+@check_user_action
 @login_required
 def audit():
   from __init__ import db, Users, ActionUsers
@@ -358,11 +369,15 @@ def audit():
 @main.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
-    logout_user()
-    return redirect(url_for('main.index'))
+  logout_user()
+  return redirect(url_for('main.index'))
+  
+def logout_user(user):
+  logout_user(user)
 
 # профиль
 @main.route('/profile')
+@check_user_action
 @login_required
 def profile():
   nickname = current_user.nikname
@@ -539,7 +554,7 @@ def create_doc():
             f.write(buffer.getvalue())
         
         pdf_document = PDFDocument(
-            user_static=curr_user.static,
+            user_static=curr_user.static, 
             user_discordid=curr_user.discordid,
             uid=uid,
             content=file_path,
@@ -569,7 +584,6 @@ def temporary_page():
 
     pdf_doc = PDFDocument.query.filter_by(uid=uid).first()
     if pdf_doc:
-        # Проверьте, существует ли файл по пути
         if not os.path.exists(pdf_doc.content):
             return "PDF file not found on server", 404
           
