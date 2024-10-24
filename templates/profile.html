@@ -19,6 +19,16 @@
     {% block footer %}
         {% include 'footer/footer.html' %}
     {% endblock %}
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <script>
+                setTimeout(function() {
+                    alert("{{ messages[0] }}");
+                }, 800);
+            </script>
+        {% endif %}
+    {% endwith %}
     
     <div class="background"></div>
     <script>
@@ -43,6 +53,7 @@
             let y = e.clientY / window.innerHeight;  
             bg.style.transform = 'translate(-' + x * 50 + 'px, -' + y * 50 + 'px)';
         });
+
     </script>
 </body>
 </html>

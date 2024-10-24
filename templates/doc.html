@@ -13,9 +13,30 @@
         {% include 'header/header-doc.html' %}
     {% endblock %}
 
-    {% block main %}
-        {% include 'main/main-doc.html' %}
-    {% endblock %}
+    <main>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <script>
+                    setTimeout(function() {
+                        alert("{{ messages[0] }}");
+                    }, 800);
+                </script>
+            {% endif %}
+        {% endwith %}
+
+        <div id="attorney-content">
+            {% if is_visibily_attoney %}
+                {% block attorney %}
+                    {% include 'main/main-doc-attomey.html' %}
+                {% endblock %}
+            {% endif %}
+        </div>
+
+        {% block modal %}
+            {% include 'main/main-doc.html' %}
+        {% endblock %}
+        
+    </main>
 
     {% block footer %}
         {% include 'footer/footer.html' %}

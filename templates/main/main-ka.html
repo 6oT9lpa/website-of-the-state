@@ -14,7 +14,7 @@
         </div>
         <div class="form">
             <div class="line"></div>
-            <form method="POST">
+            <form method="POST" id="formKA">
                 {{ form.hidden_tag() }}
                 <div class="form-title">
                     <div class="personal-date">
@@ -125,7 +125,7 @@
                 </div>
             
                 <div class="form-button-container">
-                    {{ form.submit(class="form-button") }}
+                    {{ form.submit(class="form-button", href="{{ url_for('main.create_audit')}}") }}
                 </div>
             </form>
         </div>

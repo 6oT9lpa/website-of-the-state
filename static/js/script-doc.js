@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const checkbox2 = document.getElementById('param2_checkbox');
     const input_checkbox1 = document.getElementById('input_checkbox1');
     const input_checkbox2 = document.getElementById('input_checkbox2');
-    
+
     if (checkbox1 && input_checkbox1) {
         checkbox1.addEventListener('change', function() {
             if (this.checked) {
@@ -51,7 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
 
     // загрузка модального окна
     modalButtons.forEach(button => {
@@ -159,7 +158,7 @@ function ValidFormResolutionArrestTime(input) {
     if (input.offsetParent === null) {
         return true; 
     }
-    const datePattern = /^(?:\d{4}-\d{2}-\d{2}|\d{4}.\d{2}.\d{2}|\d{4}\/\d{2}\/\d{2}|\d{4}\s\d{2}\s\d{2})$/;
+    const datePattern = /^(?:\d{4}[-./\\\s]{1,}\d{2}[-./\\\s]{1,}\d{2})$/;
     const timePattern = /^\d{2}:\d{2}$/;
 
     if (input.value === '') {
@@ -410,4 +409,30 @@ formBtn.addEventListener('click', function(event) {
 
     if (wrapperAgenda.classList.contains('hidden-wrapper')) {
     }
+});
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('load-prosecution-office').addEventListener('click', function(event) {
+        event.preventDefault();
+
+        fetch('/get_prosecution_office_content')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сети');
+                }
+                return response.text();
+            })
+            .then(data => {
+                const attorneyContent = document.getElementById('attorney-content');
+                if (attorneyContent) {
+                    attorneyContent.innerHTML = data;
+                    attorneyContent.classList.add('fade-in');
+                    document.getElementById('load-prosecution-office').classList.add('active-button');
+                } else {
+                    console.error('Элемент с id "attorney-content" не найден.');
+                }
+            })
+            .catch(error => console.error('Ошибка загрузки контента:', error));
+    });
 });

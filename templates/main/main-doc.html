@@ -1,257 +1,252 @@
-<main>
-    <div class="modal" data-modal="create-doc">
-        <div class="modal-content">
-            <span class="modal-close">&times;</span>
-            <div class="personal-date underline">
-                <div style="background-color:{{ color }} !important;" class="organ">{{ organ }}</div>
-                <div class="nikname">{{ nickname }}</div>
-            </div>
+<div class="modal" data-modal="create-doc">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <div class="personal-date underline">
+            <div style="background-color:{{ color }} !important;" class="organ">{{ organ }}</div>
+            <div class="nikname">{{ nickname }}</div>
+        </div>
 
-            <div>
-                <form method="post" action="/create_doc">
-                    {{ form.hidden_tag() }}
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                      {% if messages %}
-                        <ul class=flashes>
-                        {% for category, message in messages %}
-                          <li class="{{ category }} errorli">{{ message }}</li>
-                        {% endfor %}
-                        </ul>
-                      {% endif %}
-                    {% endwith %}
-                    <div class="game-info">
-                        <div class="form-input">
-                            <label for="static">STATIC</label>
-                            {% if form.static.errors %}
-                                {{ form.static(class="static is-valid")}}
-                                {% for error in form.discordName.errors %}
-                                    <span class="focus-input100 text-danger">{{ error }}</span>
-                                {% endfor %}
-                                {% else %}
-                                {{ form.static(class="static")}}
-                                <span class="symbol-input100">
-                                    <i class="fa fa-user" aria-hidden="true"></i>
-                                </span>
-                            {% endif %}
-                        </div>
-                        <div class="form-input">
-                            <label for="nickname">NICKNAME</label>
-                            {% if form.nickname.errors %}
-                                {{ form.nickname(class=" is-valid")}}
-                                {% for error in form.nickname.errors %}
-                                    <span class="focus-input100 text-danger">{{ error }}</span>
-                                {% endfor %}
-                                {% else %}
-                                {{ form.nickname(class="")}}
-                                <span class="symbol-input100">
-                                    <i class="fa fa-user" aria-hidden="true"></i>
-                                </span>
-                            {% endif %}
-                        </div>
+        <div>
+            <form method="post" action="/create_doc">
+                {{ form.hidden_tag() }}
+                <div class="game-info">
+                    <div class="form-input">
+                        <label for="static">STATIC</label>
+                        {% if form.static.errors %}
+                            {{ form.static(class="static is-valid")}}
+                            {% for error in form.discordName.errors %}
+                                <span class="focus-input100 text-danger">{{ error }}</span>
+                            {% endfor %}
+                            {% else %}
+                            {{ form.static(class="static")}}
+                            <span class="symbol-input100">
+                                <i class="fa fa-user" aria-hidden="true"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="form-input">
+                        <label for="nickname">NICKNAME</label>
+                        {% if form.nickname.errors %}
+                            {{ form.nickname(class=" is-valid")}}
+                            {% for error in form.nickname.errors %}
+                                <span class="focus-input100 text-danger">{{ error }}</span>
+                            {% endfor %}
+                            {% else %}
+                            {{ form.nickname(class="")}}
+                            <span class="symbol-input100">
+                                <i class="fa fa-user" aria-hidden="true"></i>
+                            </span>
+                        {% endif %}
+                    </div>
 
-                        <div id="select-box">
-                            <label name="doctype_" >TYPE DOC</label>
-                            <div id="select-button" class="select-button" onclick="toggleOptions()">
-                                <div id="selected-value">
-                                    <span>Выберите тип документа</span>
-                                </div>
-                                <div id="chevrons">
-                                    <i class="fas fa-chevron-up"></i>
-                                    <i class="fas fa-chevron-down"></i>
-                                </div>
+                    <div id="select-box">
+                        <label name="doctype_" >TYPE DOC</label>
+                        <div id="select-button" class="select-button" onclick="toggleOptions()">
+                            <div id="selected-value">
+                                <span>Выберите тип документа</span>
                             </div>
-                    
-                            <div id="options" class="hidden">
-                                {% for value, label in form.type_doc.choices %}
-                                <div class="option">
-                                    <input type="radio" name="type_doc" value="{{ value }}" id="{{ value }}" class="radio-input" onclick="selectOption('{{ label }}')">
-                                    <label for="{{ value }}" class="radio-label">{{ label }}</label>
-                                </div>
-                                {% endfor %}
+                            <div id="chevrons">
+                                <i class="fas fa-chevron-up"></i>
+                                <i class="fas fa-chevron-down"></i>
                             </div>
+                        </div>
+                
+                        <div id="options" class="hidden">
+                            {% for value, label in form.type_doc.choices %}
+                            <div class="option">
+                                <input type="radio" name="type_doc" value="{{ value }}" id="{{ value }}" class="radio-input" onclick="selectOption('{{ label }}')">
+                                <label for="{{ value }}" class="radio-label">{{ label }}</label>
+                            </div>
+                            {% endfor %}
                         </div>
                     </div>
-                    <div class="contanier-wrapper" id="contanier-wrapper_res">
-                        <div class="wrapper-selector" id="resolution-wrapper">
-                            <div class="checkbox-wrapper">
-                                <div class="checkbox">
-                                    <input type="checkbox" id="param1_checkbox" class="hidden-checkbox" name="param1"> 
-                                    <label for="param1_checkbox" class="checkbox-label">
-                                        <div id="tick_mark"></div>
-                                    </label>
-                                    <span class="checkbox-text">{{ formResolution.param1.label }}</span>
-                                </div>
+                </div>
+                <div class="contanier-wrapper" id="contanier-wrapper_res">
+                    <div class="wrapper-selector" id="resolution-wrapper">
+                        <div class="checkbox-wrapper">
+                            <div class="checkbox">
+                                <input type="checkbox" id="param1_checkbox" class="hidden-checkbox" name="param1"> 
+                                <label for="param1_checkbox" class="checkbox-label">
+                                    <div id="tick_mark"></div>
+                                </label>
+                                <span class="checkbox-text">{{ formResolution.param1.label }}</span>
+                            </div>
 
-                                <div class="form-input wrapper-input" style="width: 60%;" id="input_checkbox1">
-                                    {{ formResolution.case(class="input-field", id="case")}}
-                                    <span class="text-danger" id="is-unvalid"></span>
-                                </div>
-                            </div>
-                                                
-                            <div class="checkbox-wrapper">
-                                <div class="checkbox">
-                                    <input type="checkbox" id="param2_checkbox" class="hidden-checkbox" name="param2">
-                                    <label for="param2_checkbox" class="checkbox-label">
-                                        <div id="tick_mark"></div>
-                                    </label>
-                                    <span class="checkbox-text">{{ formResolution.param2.label }}</span>
-                                </div>
-
-                                <div class="form-input wrapper-input" style="width: 60%;" id="input_checkbox2">
-                                    {{ formResolution.arrest_time(class="input-field", id="arrest_time")}}
-                                    <span class="text-danger" id="is-unvalid"></span>
-                                </div>
-                            </div>
-                        
-                            <div class="checkbox-wrapper">
-                                <div class="checkbox">
-                                    <input type="checkbox" id="param3_checkbox" class="hidden-checkbox" name="param3">
-                                    <label for="param3_checkbox" class="checkbox-label">
-                                        <div id="tick_mark"></div>
-                                    </label>
-                                    <span class="checkbox-text">{{ formResolution.param3.label }}</span>
-                                </div>
-                            </div>
-                        
-                            <div class="checkbox-wrapper">
-                                <div class="checkbox">
-                                    <input type="checkbox" id="param4_checkbox" class="hidden-checkbox" name="param4">
-                                    <label for="param4_checkbox" class="checkbox-label">
-                                        <div id="tick_mark"></div>
-                                    </label>
-                                    <span class="checkbox-text">{{ formResolution.param4.label }}</span>
-                                </div>
-                            </div>
-                        
-                            <div class="checkbox-wrapper">
-                                <div class="checkbox">
-                                    <input type="checkbox" id="param5_checkbox" class="hidden-checkbox" name="param5">
-                                    <label for="param5_checkbox" class="checkbox-label">
-                                        <div id="tick_mark"></div>
-                                    </label>
-                                    <span class="checkbox-text">{{ formResolution.param5.label }}</span>
-                                </div> 
-                            </div>
-                        
-                            <div class="checkbox-wrapper">
-                                <div class="checkbox">
-                                    <input type="checkbox" id="param6_checkbox" class="hidden-checkbox" name="param6">
-                                    <label for="param6_checkbox" class="checkbox-label">
-                                        <div id="tick_mark"></div>
-                                    </label>
-                                    <span class="checkbox-text">{{ formResolution.param6.label }}</span>
-                                </div>
-                            </div>  
-                        </div>
-                    </div>
-                    
-                    <div class="contanier-wrapper" id="contanier-wrapper_order">
-                        <div class="wrapper-selector" id="order-wrapper">
-                            <div class="form-input">
-                                <label for="param">Статьи Обвинения.</label>
-                                {% if formOrder.param1.errors %}
-                                    {{ formOrder.param1(class="") }} 
-                                    {% for error in formOrder.param1.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                {% else %}
-                                    {{ formOrder.param1(class="is-valid") }} 
-                                {% endif %}
-
+                            <div class="form-input wrapper-input" style="width: 60%;" id="input_checkbox1">
+                                {{ formResolution.case(class="input-field", id="case")}}
                                 <span class="text-danger" id="is-unvalid"></span>
+                            </div>
+                        </div>
+                                            
+                        <div class="checkbox-wrapper">
+                            <div class="checkbox">
+                                <input type="checkbox" id="param2_checkbox" class="hidden-checkbox" name="param2">
+                                <label for="param2_checkbox" class="checkbox-label">
+                                    <div id="tick_mark"></div>
+                                </label>
+                                <span class="checkbox-text">{{ formResolution.param2.label }}</span>
+                            </div>
+
+                            <div class="form-input wrapper-input" style="width: 60%;" id="input_checkbox2">
+                                <div class="input-wrapper">
+                                    {{ formResolution.arrest_time(class="input-field", id="arrest_time")}} 
+                                    <span class="text-danger" id="is-unvalid"></span>
+                                </div>
+                                <div class="input-wrapper">
+                                    {{ formResolution.param2_nickname(class="input-field", id="param2_nickname")}}
+                                    <span class="text-danger" id="is-unvalid"></span>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <div class="checkbox-wrapper">
+                            <div class="checkbox">
+                                <input type="checkbox" id="param3_checkbox" class="hidden-checkbox" name="param3">
+                                <label for="param3_checkbox" class="checkbox-label">
+                                    <div id="tick_mark"></div>
+                                </label>
+                                <span class="checkbox-text">{{ formResolution.param3.label }}</span>
+                            </div>
+                        </div>
+                    
+                        <div class="checkbox-wrapper">
+                            <div class="checkbox">
+                                <input type="checkbox" id="param4_checkbox" class="hidden-checkbox" name="param4">
+                                <label for="param4_checkbox" class="checkbox-label">
+                                    <div id="tick_mark"></div>
+                                </label>
+                                <span class="checkbox-text">{{ formResolution.param4.label }}</span>
+                            </div>
+                        </div>
+                    
+                        <div class="checkbox-wrapper">
+                            <div class="checkbox">
+                                <input type="checkbox" id="param5_checkbox" class="hidden-checkbox" name="param5">
+                                <label for="param5_checkbox" class="checkbox-label">
+                                    <div id="tick_mark"></div>
+                                </label>
+                                <span class="checkbox-text">{{ formResolution.param5.label }}</span>
                             </div> 
-                            <div class="form-input">
-                                <label for="param">Срок заключения.</label>
-                                {% if formOrder.param2.errors %}
-                                    {{ formOrder.param2(class="is-valid")}}
-                                    {% for error in formOrder.param2.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formOrder.param2(class="")}}
-                                {% endif %}
-
-                                <span class="text-danger" id="is-unvalid"></span>
+                        </div>
+                    
+                        <div class="checkbox-wrapper">
+                            <div class="checkbox">
+                                <input type="checkbox" id="param6_checkbox" class="hidden-checkbox" name="param6">
+                                <label for="param6_checkbox" class="checkbox-label">
+                                    <div id="tick_mark"></div>
+                                </label>
+                                <span class="checkbox-text">{{ formResolution.param6.label }}</span>
                             </div>
-                            <div class="form-input">
-                                <label for="param">Срок исполения.</label>
-                                {% if formOrder.param3.errors %}
-                                    {{ formOrder.param3(class="is-valid")}}
-                                    {% for error in formOrder.param3.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formOrder.param3(class="")}}
-                                {% endif %}
+                        </div>  
+                    </div>
+                </div>
+                
+                <div class="contanier-wrapper" id="contanier-wrapper_order">
+                    <div class="wrapper-selector" id="order-wrapper">
+                        <div class="form-input">
+                            <label for="param">Статьи Обвинения.</label>
+                            {% if formOrder.param1.errors %}
+                                {{ formOrder.param1(class="") }} 
+                                {% for error in formOrder.param1.errors %}
+                                    <span class="focus-input100 text-danger">{{ error }}</span>
+                                {% endfor %}
+                            {% else %}
+                                {{ formOrder.param1(class="is-valid") }} 
+                            {% endif %}
 
-                                <span class="text-danger" id="is-unvalid"></span>
-                            </div>
-                            <div class="form-input">
-                                <label for="param">Номер дела.</label>
-                                {% if formOrder.param4.errors %}
-                                    {{ formOrder.param4(class="")}}
-                                    {% for error in formOrder.param4.errors %}
-                                        <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formOrder.param4(class="")}}
-                                {% endif %}
+                            <span class="text-danger" id="is-unvalid"></span>
+                        </div> 
+                        <div class="form-input">
+                            <label for="param">Срок заключения.</label>
+                            {% if formOrder.param2.errors %}
+                                {{ formOrder.param2(class="is-valid")}}
+                                {% for error in formOrder.param2.errors %}
+                                    <span class="focus-input100 text-danger">{{ error }}</span>
+                                {% endfor %}
+                                {% else %}
+                                {{ formOrder.param2(class="")}}
+                            {% endif %}
 
-                                <span class="text-danger" id="is-unvalid"></span>
-                            </div>
+                            <span class="text-danger" id="is-unvalid"></span>
+                        </div>
+                        <div class="form-input">
+                            <label for="param">Срок исполения.</label>
+                            {% if formOrder.param3.errors %}
+                                {{ formOrder.param3(class="is-valid")}}
+                                {% for error in formOrder.param3.errors %}
+                                    <span class="focus-input100 text-danger">{{ error }}</span>
+                                {% endfor %}
+                                {% else %}
+                                {{ formOrder.param3(class="")}}
+                            {% endif %}
+
+                            <span class="text-danger" id="is-unvalid"></span>
+                        </div>
+                        <div class="form-input">
+                            <label for="param">Номер дела.</label>
+                            {% if formOrder.param4.errors %}
+                                {{ formOrder.param4(class="")}}
+                                {% for error in formOrder.param4.errors %}
+                                    <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
+                                {% endfor %}
+                                {% else %}
+                                {{ formOrder.param4(class="")}}
+                            {% endif %}
+
+                            <span class="text-danger" id="is-unvalid"></span>
                         </div>
                     </div>
-                    <div class="contanier-wrapper" id="contanier-wrapper_agenda">
-                        <div class="wrapper-selector" id="agenda-wrapper">
-                            <div class="form-input">
-                                <label for="param">Куда явится по повестке.</label>
-                                {% if formAgenda.param5.errors %}
-                                    {{ formAgenda.param5(class="")}}
-                                    {% for error in formAgenda.param5.errors %}
-                                        <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formAgenda.param5(class="")}}
-                                {% endif %}
+                </div>
+                <div class="contanier-wrapper" id="contanier-wrapper_agenda">
+                    <div class="wrapper-selector" id="agenda-wrapper">
+                        <div class="form-input">
+                            <label for="param">Куда явится по повестке.</label>
+                            {% if formAgenda.param5.errors %}
+                                {{ formAgenda.param5(class="")}}
+                                {% for error in formAgenda.param5.errors %}
+                                    <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
+                                {% endfor %}
+                                {% else %}
+                                {{ formAgenda.param5(class="")}}
+                            {% endif %}
 
-                                <span class="text-danger" id="is-unvalid"></span>
-                            </div>
+                            <span class="text-danger" id="is-unvalid"></span>
+                        </div>
 
-                            <div class="form-input">
-                                <label for="param">В какой время явится.</label>
-                                {% if formAgenda.param6.errors %}
-                                    {{ formAgenda.param6(class="")}}
-                                    {% for error in formAgenda.param6.errors %}
-                                        <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formAgenda.param6(class="")}}
-                                {% endif %}
+                        <div class="form-input">
+                            <label for="param">В какой время явится.</label>
+                            {% if formAgenda.param6.errors %}
+                                {{ formAgenda.param6(class="")}}
+                                {% for error in formAgenda.param6.errors %}
+                                    <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
+                                {% endfor %}
+                                {% else %}
+                                {{ formAgenda.param6(class="")}}
+                            {% endif %}
 
-                                <span class="text-danger" id="is-unvalid"></span>
-                            </div>
+                            <span class="text-danger" id="is-unvalid"></span>
+                        </div>
 
-                            <div class="form-input">
-                                <label for="param">С какой целью.</label>
-                                {% if formAgenda.param7.errors %}
-                                    {{ formAgenda.param7(class="")}}
-                                    {% for error in formAgenda.param7.errors %}
-                                        <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formAgenda.param7(class="")}}
-                                {% endif %}
+                        <div class="form-input">
+                            <label for="param">С какой целью.</label>
+                            {% if formAgenda.param7.errors %}
+                                {{ formAgenda.param7(class="")}}
+                                {% for error in formAgenda.param7.errors %}
+                                    <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
+                                {% endfor %}
+                                {% else %}
+                                {{ formAgenda.param7(class="")}}
+                            {% endif %}
 
-                                <span class="text-danger" id="is-unvalid"></span>
-                            </div>
+                            <span class="text-danger" id="is-unvalid"></span>
                         </div>
                     </div>
-                    <div class="form-button-container">
-                        {{ form.submit(class="form-button", id="btn") }}
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="form-button-container">
+                    {{ form.submit(class="form-button", id="btn") }}
+                </div>
+            </form>
         </div>
     </div>
-    <div class="overlay"></div>
-</main>
+</div>
+<div class="overlay"></div>

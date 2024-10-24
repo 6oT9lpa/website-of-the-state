@@ -29,8 +29,8 @@ class FormAuthPush(FlaskForm):
     
 # форма для ОГП создание документа  
 class FormCreateDoc(FlaskForm):
-    nickname = StringField(validators=[DataRequired(), length(min=3, max=45)], render_kw={"placeholder": "Введите ник"})
-    static = StringField(validators=[DataRequired(), length(min=1, max=6)], render_kw={"placeholder": "Введите статик"})
+    nickname = StringField(validators=[DataRequired(), length(min=3, max=45)], render_kw={"placeholder": "Ник обвиняемого"})
+    static = StringField(validators=[DataRequired(), length(min=1, max=6)], render_kw={"placeholder": "Статик обвиняемого"})
     type_doc = RadioField('Тип документа', choices=[
         ('Order', 'Ордер'),
         ('Resolution', 'Постановление'),
@@ -46,8 +46,10 @@ class FormCreateResolution(FormCreateDoc):
     param4 = BooleanField("Запрет на смену перснональных данных.")
     param5 = BooleanField("Запрет на увольнение, перевод в другую фракцию.")
     param6 = BooleanField("Запрет на ведении службы на время расследования.")  
-    case = StringField(render_kw={"placeholder": "Введите номер дела"})
-    arrest_time = StringField(render_kw={"placeholder": "Год.Месяц.День Час:Минута"})
+    
+    case = StringField(render_kw={"placeholder": "Введите номер дела."})
+    arrest_time = StringField(render_kw={"placeholder": "Время ареста."})
+    param2_nickname = StringField(render_kw={"placeholder": "Ник потерпевшего."})
     
     
 class FormCreateOrder(FormCreateDoc):
@@ -64,3 +66,15 @@ class FormCreateAgenda(FormCreateDoc):
     param6 = StringField("В какой время явится.", render_kw={"placeholder": "Введите время", "id": "param6"})
     param7 = StringField("С какой целью.", render_kw={"placeholder": "Введите цель", "id": "param7"})
 
+class FormModerationResolution(FlaskForm):
+    success = SubmitField("Одобренно", render_kw={'id': 'success'})
+    rejected = SubmitField("Отклоненно", render_kw={'id': 'rejected'})
+    reason = StringField("Укажите причину.", render_kw={"placeholder": "Введите причину", "id": "reason"})
+    
+class FormEditResolution(FlaskForm):
+    param1 = StringField(render_kw={"placeholder": "Ник потерпевшего."})
+    param2 = StringField(render_kw={"placeholder": "Ник обвиняемого."})
+    param3 = StringField(render_kw={"placeholder": "Статик обвиняемого."})
+    param4 = StringField(render_kw={"placeholder": "Время ареста."})
+    param5 = StringField(render_kw={"placeholder": "Убрать пункт"})
+    submit = SubmitField("Сохранить")

@@ -12,6 +12,7 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SECRET_KEY'] = '9QKKakkd0.api1ii2kkalofmqlo31miqmmfkTBo9lMaTbIIIJluxa'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 app.config['JSON_AS_ASCII'] = False
+app.config['WTF_CSRF_ENABLED'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
 app.register_blueprint(main)
 
@@ -65,13 +66,38 @@ class PDFDocument(db.Model, UserMixin):
     user_discordid = db.Column(db.String(32), db.ForeignKey('users.discordid'), nullable=False)
     uid = db.Column(db.String(26), unique=True, nullable=False)
     content = db.Column(db.String(256), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now())
     user = db.relationship('Users', back_populates='create_document', foreign_keys=[user_static])
+    
+class PublicDocumentAndNotifications(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    uid = db.Column(db.String(26), unique=True, nullable=False)
+    
+    nickname_attorney = db.Column(db.String(52), nullable=False)
+    static_attorney = db.Column(db.String(7), nullable=False)
+    discord_attorney = db.Column(db.String(20),  nullable=False)
+    
+    nickname_accused = db.Column(db.String(52), default='Гражданин')
+    static_accused = db.Column(db.String(7))
+    discord_accused = db.Column(db.String(20))
+
+    param_limit1 = db.Column(db.Boolean, default=False)
+    param_limit2 = db.Column(db.Boolean, default=False)
+    param_limit3 = db.Column(db.Boolean, default=False)
+    param_limit4 = db.Column(db.Boolean, default=False)
+    param_limit5 = db.Column(db.Boolean, default=False)
+    param_limit6 = db.Column(db.Boolean, default=False)
+    
+    param_limit2_nickmane = db.Column(db.String(52))
+    param_limit2_time = db.Column(db.String(52))
+    
+    is_modertation = db.Column(db.Boolean, default=False)
+    
     
 # создание бдешек
 with app.app_context():
     db.create_all()
-
+    
 # получение user_id залогированного пользователя    
 @login_manager.user_loader
 def load_user(user_id):

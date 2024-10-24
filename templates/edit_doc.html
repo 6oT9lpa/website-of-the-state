@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/edit-style.css') }}">
+    <title>Просмотр Постановления</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.min.js"></script>
+         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf_viewer.css">
+
+</head>
+<body>
+    <div class="container">
+        <button class="button" id="editButton" onclick="toggleSidebar()">Редактировать</button>
+    </div>
+
+    <div id="sidebar" class="sidebar">
+        <form method='post' id="myForm">
+            <h2>Редактирование</h2>
+            <div class="container-input">
+                <div class="form-input">
+                    <label>Ник потерпевшего</label>
+                    {{ form.param1(class="input-field", id="param1") }}
+                    <span class="text-danger" id="is-unvalid"></span>
+                </div>
+                <div class="form-input">
+                    <label>Ник обвиняемого</label>
+                    {{ form.param2(class="input-field", id="param2") }}
+                    <span class="text-danger" id="is-unvalid"></span>
+                </div>
+                <div class="form-input">
+                    <label>Статик обвиняемого</label>
+                    {{ form.param3(class="input-field", id="param3") }}
+                    <span class="text-danger" id="is-unvalid"></span>
+                </div>
+                <div class="form-input">
+                    <label>Время ареста</label>
+                    {{ form.param4(class="input-field", id="param4") }}
+                    <span class="text-danger" id="is-unvalid"></span>
+                </div>       
+                <div class="form-input">
+                    <label>Убрать пункт</label>
+                    {{ form.param5(class="input-field", id="param5") }}
+                    <span class="text-danger" id="is-unvalid"></span>
+                </div>  
+            </div>
+            <div class="button-form">     
+                {{ form.submit(class="submit", id="submit")}}
+            </div>
+        </form>
+    </div>
+    <iframe src="{{ pdf_path }}#toolbar=0&navpanes=0&scrollbar=0&view=FitW&zoom=70" type="application/pdf" width="80%" height="600px" frameborder="0"></iframe>
+
+    <script>
+        let clickCount = 0;
+        let clickTimer;
+        
+        function toggleSidebar() {
+            clearTimeout(clickTimer);
+        
+            clickCount++;
+            const sidebar = document.getElementById('sidebar');
+            const button = document.getElementById('editButton');
+        
+            if (sidebar.classList.contains('visible')) {
+                sidebar.classList.remove('visible');
+            } else {
+                sidebar.style.display = 'block';
+                requestAnimationFrame(() => {
+                    sidebar.classList.add('visible');
+                });
+            }
+    
+            if (clickCount === 10) {
+                button.textContent = "OMG!!!!"; 
+                button.classList.add('active'); 
+        
+                clickCount = 0; 
+            }
+            clickTimer = setTimeout(() => {
+                clickCount = 0; 
+                button.classList.remove('active'); 
+                button.textContent = "Редактировать"; 
+            }, 500);
+        }
+
+        function ValidFormResolutionArrestTime(input) {
+            const datePattern = /^(?:\d{4}[-./\\\s]{1,}\d{2}[-./\\\s]{1,}\d{2})$/;
+            const timePattern = /^\d{2}:\d{2}$/;
+            
+            const [datePart, timePart] = input.value.split(' ');
+        
+            if (!(datePattern.test(datePart) && timePattern.test(timePart))) {
+                showError(input, 'Неверный формат. Должен быть год месяц день час:минута');
+                return false;
+            } else {
+                clearError(input);
+                return true;
+            }
+        }
+
+        document.getElementById('myForm').addEventListener('submit', function(event) {
+            const isValid = ValidFormResolutionArrestTime(document.getElementById('param4'));
+            
+            if (!isValid) {
+                event.preventDefault(); 
+                return; 
+            }
+            
+        });
+        
+        function ValidFormResolutionArrestTime(input) {
+            const datePattern = /^(?:\d{4}[-./\\\s]{1,}\d{2}[-./\\\s]{1,}\d{2})$/;
+            const timePattern = /^\d{2}:\d{2}$/;
+        
+            if (input.value === '') {
+                return true;
+            } 
+            
+            const [datePart, timePart] = input.value.split(' ');
+        
+            if (!(datePattern.test(datePart) && timePattern.test(timePart))) {
+                showError(input, 'Неверный формат. Должен быть год месяц день час:минута');
+                return false;
+            } else {
+                clearError(input);
+                return true;
+            }
+        }
+
+        const formControl = document.getElementById('myForm')
+        function showError(input, message) {
+            const formControl = input.parentElement;
+            formControl.className = 'form-input error';
+            const errorSpan = formControl.querySelector('#is-unvalid');
+            errorSpan.innerText = message;
+        }
+        
+        function clearError(input) {
+            const formControl = input.parentElement;
+            formControl.className = 'form-input'; 
+            const errorSpan = formControl.querySelector('#is-unvalid');
+            if (errorSpan) {
+                errorSpan.innerText = '';
+            }
+        }
+
+        function checkValidity(inputId) {
+            const input = document.getElementById(inputId);
+        
+            if (inputId === 'param4') {
+                const isValid = ValidFormResolutionArrestTime(input);
+                if (isValid) {
+                    input.classList.add('valid');
+                    input.classList.remove('invalid');
+                } else {
+                    input.classList.remove('valid');
+                    input.classList.add('invalid');
+                }
+            } else {
+                if (input.value.trim() !== "") {
+                    input.classList.add('valid');
+                    input.classList.remove('invalid');
+                } else {
+                    input.classList.remove('valid');
+                    input.classList.add('invalid');
+                }
+            }
+        }
+
+        document.getElementById('param1').addEventListener('input', () => checkValidity('param1'));
+        document.getElementById('param2').addEventListener('input', () => checkValidity('param2'));
+        document.getElementById('param3').addEventListener('input', () => checkValidity('param3'));
+        document.getElementById('param4').addEventListener('input', () => checkValidity('param4'));
+        document.getElementById('param5').addEventListener('input', () => checkValidity('param5'));
+    </script>
+</body>
+</html>

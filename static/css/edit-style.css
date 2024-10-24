@@ -1,0 +1,167 @@
+:root {
+    --success-color: #0cb854;
+    --error-color: #ee1f09;
+}
+
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    background: #f7f7f7;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: -300px; 
+    width: 400px;
+    height: 100%;
+    background-color: #f4f4f4;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    transition: right 0.4s ease; 
+    opacity: 0;
+    transition: right 0.4s ease, opacity 0.4s ease; 
+}
+
+
+.sidebar.visible {
+    right: 0; 
+    opacity: 1; 
+}
+
+.button {
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #d1d1d1;
+    border: none;
+    border-radius: 5px;
+    margin: 20px;
+    font-size: 14px;
+    font-weight: 550;
+    color: #525252;
+    box-shadow: 2px 2px 6px 3px #ccc;
+    transition: all 0.5s;
+}
+
+.button:hover{
+    background-color: #373737;
+    color: white;
+    box-shadow:0px -8px 0 rgb(166, 166, 166) inset;
+}
+
+.button.active
+{
+    color: red;
+    transition: transform 0.3s ease;
+    transform: scale(1.1); 
+}
+
+.submit
+{
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #51b238!important;
+    border: none;
+    border-radius: 5px;
+    margin: 20px;
+    font-size: 14px;
+    font-weight: 550;
+    color: #ffffff;
+    width: 60% !important;
+    transition: all 0.5s;
+}
+
+.submit:hover{
+    background-color: #337b21!important;
+}
+
+.sidebar h2 {
+    margin-top: 0;
+}
+
+.sidebar input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: #f294b07a solid 2px;
+    border-radius: 4px;
+    background-color: #dfdfdf;
+    transition: all 0.5s;
+}
+.sidebar input:active
+{
+    border: white solid 2px;
+}
+
+.sidebar .button {
+    width: 60%;
+    background-color: #008CBA;
+}
+
+.form-input {
+    width: 95%;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    transition: all 0.5s;
+}
+
+.form-input label{
+    font-size: 16px;
+    font-weight: 700;
+    color:#6a6a6a;
+}
+
+.input-field {
+    position: relative;
+    padding-right: 30px; /* Отступ для галочки */
+}
+
+.input-field.valid {
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="green" width="24px" height="24px"%3E%3Cpath d="M0 0h24v24H0z" fill="none"/%3E%3Cpath d="M9 16.17l-3.88-3.88L4.29 13.29 9 18l12-12-1.41-1.41L9 16.17z"/%3E%3C/svg%3E');
+    background-position: right 10px center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+}
+
+.input-field.invalid {
+    background-image: none;
+}
+
+.text-danger
+{
+    text-align: center;
+    color: var(--error-color);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.form-input.error input
+{
+    background-color: #632525 !important;  
+    color: white;
+}
+
+.button-form
+{
+    display: flex;
+    justify-content: center;
+}

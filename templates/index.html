@@ -16,6 +16,17 @@
     {% endblock %}
 
     <div class="background"></div>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <script>
+                setTimeout(function() {
+                    alert("{{ messages[0] }}");
+                }, 800);
+            </script>
+        {% endif %}
+    {% endwith %}moderation
+
     <script>
         let bg = document.querySelector('.background');
         window.addEventListener('mousemove', function(e) {

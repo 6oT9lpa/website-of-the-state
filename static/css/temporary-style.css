@@ -4,22 +4,114 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    padding: 10px;
 }
 iframe {
     width: 100%;
-    height: 90%;
+    height: 100%;
     border: none;
 }
-.edit-button {
-    margin-top: 10px;
+
+.container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    background: #f7f7f7;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+.button {
     padding: 10px 20px;
-    background-color: #007BFF;
-    color: white;
+    margin: 10px;
     border: none;
     border-radius: 5px;
+    font-size: 16px;
     cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
-.edit-button:hover {
-    background-color: #0056b3;
+.button-approve {
+    background-color: #4caf50;
+    color: white;
+}
+.button-approve:hover {
+    background-color: #45a049;
+}
+.button-reject {
+    background-color: #f44336;
+    color: white;
+}
+.button-reject:hover {
+    background-color: #e53935;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.reject-reason input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+input.obl1{
+    background:#c4c3c3;
+    color:rgb(28, 28, 28);
+    text-decoration:none;
+    display:block;
+    width:125px;
+    text-align:center;
+    margin: 20px 0;
+    padding:10px 20px;
+    transition:all 0.6s;
+    box-shadow: 2px 2px 6px 3px #ccc;
+    }
+
+input.obl2{
+    background:#c4c3c3;
+    color:rgb(28, 28, 28);
+    text-decoration:none;
+    display:block;
+    width:125px;
+    text-align:center;
+    margin: 20px 0;
+    padding: 10px 20px;
+    transition:all 0.6s;
+    box-shadow: 2px 2px 6px 3px #ccc;
+    }
+
+input.obl1:hover{
+    box-shadow:0px -5px 0 #088 inset;
+    color: white;
+    font-size: 16px !important;
+}
+input.obl2:hover{
+    box-shadow:0px -5px 0 rgb(118, 1, 48) inset;
+    color: white;
+    font-size: 16px !important; 
+}
+
+.button-form
+{
+    padding: 0 10px;
+}
+
+.reject-reason {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease, width 0.5s ease;
+    margin-top: 20px;
+    padding: 0 10px;
+    width: 0px;
+    overflow: hidden;
+    height: 0px;
+}
+
+.visible-input {
+    opacity: 1;
+    width: 200px !important;
+    display: flex;
+    flex-direction: row;
+    height: 40px !important;
 }

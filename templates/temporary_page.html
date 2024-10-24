@@ -5,9 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/temporary-style.css') }}">
     <title>Просмотр Постановления</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.min.js"></script>
+         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf_viewer.css">
+
 </head>
 <body>
-    <iframe src="{{ pdf_path }}" type="application/pdf"></iframe>
-    <button class="edit-button" onclick="window.location.href='{{ url_for('main.edit_doc', uid=request.args.get('uid')) }}'">Редактировать</button>
+    <div class="container">
+        <form class='form-container' id='form-container' method='POST' style='display: flex;'>
+            {{ form.hidden_tag() }}
+            <div class="button-form">
+                {{ form.success(class="button button-approve obl1") }}
+            </div>
+            <div class="button-form">
+                {{ form.rejected(class="button button-reject obl2", id='rejectedButton') }}
+            </div>
+        
+            <div class="reject-reason" id="rejectReason">
+                {{ form.reason(class="input-field") }}
+                <span class="text-danger" id="is-unvalid"></span>
+            </div>
+        </form>
+    </div>
+    
+    <iframe src="{{ pdf_path }}#toolbar=0&navpanes=0&scrollbar=0&view=FitW&zoom=70" type="application/pdf" width="80%" height="600px" frameborder="0"></iframe>
+    
+    <script src="{{ url_for('static', filename='js/script-remporary.js') }}"></script>
 </body>
 </html>
