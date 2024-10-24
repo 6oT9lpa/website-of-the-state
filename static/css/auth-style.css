@@ -192,7 +192,26 @@ input[type="password"] {
     width: 30px;
     height: 30px;
 }
-
+#formfp {
+    display: none;
+}
+#formfp2 {
+    display: none;
+}
+.auth-zp {
+    display: flex;
+    text-decoration: none;
+    padding: 15px 0;
+    color: white;
+    font-weight: 800;
+    position: absolute;
+    bottom: 30%;
+    right: 8%;
+    justify-content: end;
+    margin-top: 60px;
+    font-size: 15px;
+    transition: all ease-in-out 0.5s;
+}
 .flashes{
     animation:flash 0.35s ease-in ;
 }

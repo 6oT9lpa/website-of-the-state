@@ -1,7 +1,7 @@
-from flask import render_template, redirect, url_for, request, flash, Blueprint, session, send_file, jsonify, abort
+from flask import render_template, redirect, url_for, request, flash, Blueprint, session, send_file, make_response, jsonify, abort
 from functools import wraps
 from werkzeug.security import check_password_hash, generate_password_hash
-from form import FormAuditPush, FormAuthPush
+from form import FormAuditPush, FormAuthPush, Formchangepassword, Formforgetpassword1, Formforgetpassword2
 from flask_login import login_user, login_required, logout_user, current_user
 from datetime import datetime
 from reportlab.pdfgen import canvas
@@ -20,7 +20,7 @@ def color_organ(organ):
   elif organ == 'SANG':
     color = '#166c0e'  # Зеленый
   elif organ == 'FIB':
-    color = '#008000' # черный
+    color = '#000000' # черный
   elif organ == 'EMS':
     color = '#a21726' # красный
   elif organ == 'GOV':
@@ -77,6 +77,13 @@ def send_to_bot_invite(password, discord_id, static, organ):
         'organ': organ
     }
     redis_client.publish('invite_channel', json.dumps(message))
+
+def send_to_bot_changepass(code, discord_id):
+    message = {
+        'code': code,
+        'discord_id': discord_id
+    }
+    redis_client.publish('changepass_channel', json.dumps(message))
 
 def send_to_bot_dismissal(discord_id, static, organ):
     message = {
@@ -147,10 +154,12 @@ def index():
 def auth():
   from __init__ import db, Users
   form = FormAuthPush()
+  formfp = Formforgetpassword1()
+  formfp2 = Formforgetpassword2()
 
   if current_user.is_authenticated:
       return redirect(url_for('main.profile'))
-
+  #Вход крч
   if form.validate_on_submit():
     static = Users.query.filter_by(static=form.static.data).first()
 
@@ -168,13 +177,44 @@ def auth():
             if next_url:
                 return redirect(next_url)
             else:
-                return redirect(url_for('main.profile'))
+                  return redirect(url_for('main.profile'))
         else:
-            flash("Неверный static или password!")
+              flash("Неверный static или password!")
     else:
-        flash("Пользователь не найден!")
+          flash("Пользователь не найден!")
+    #Забыл пароль(Введите статик)
+  if 'staticfp' in request.form:
+    def generate_non_repeating_8_digit_number():
+      number = [random.randint(1, 9)]
+      for _ in range(5):
+          number.append(random.choice([d for d in range(10) if d != number[-1]]))
+      return int(''.join(map(str, number)))
+    from flask import jsonify
+    code = generate_non_repeating_8_digit_number()
+    staticfp = formfp.staticfp.data
+    userfp = Users.query.filter_by(static=staticfp).first()
+    if userfp:
+      session['codefp'] = code
+      session['staticfp'] = staticfp
+      send_to_bot_changepass(code, userfp.discordid)
+    else:
+      return jsonify(message='Пользователь не найден!'), 400
+    #Забыл пароль(Введите код)
+  if 'codefp' in request.form and 'new_password' in request.form:
+    codefp2 = int(formfp2.codefp.data)
+    new_password = generate_password_hash(formfp2.new_password.data)
+    codefp = session.get('codefp')
+    staticfp = session.get('staticfp')
+    from flask import jsonify
+    if codefp2 == codefp:
+      db.session.query(Users).filter_by(static=staticfp).update({
+         "password": new_password
+      })
+      return jsonify(message='Пароль изменен!'), 200
+    else:
+      return jsonify(redirect_url=url_for('main.index')), 400
 
-  return render_template('auth.html', form=form)
+  return render_template('auth.html', form=form, formfp=formfp, formfp2=formfp2)
 
 # перенаправление на страницу
 @main.after_request
@@ -432,22 +472,43 @@ def logout():
   return redirect(url_for('main.index'))
 
 # профиль
-@main.route('/profile')
+@main.route('/profile', methods=['GET', 'POST'])
 @check_user_action
 @login_required
 def profile():
+  from __init__ import Users, db
+  from flask import jsonify
   nickname = current_user.nikname
   organ = current_user.organ
   rank = current_user.rankuser
   color = color_organ(organ)
-
+  form = Formchangepassword()
+  if 'oldpass' in request.form and 'newpass' in request.form:
+    usercp = db.session.query(Users).filter_by(nikname=nickname, organ=organ).first()
+    old_password = form.oldpass.data
+    new_password = form.newpass.data
+    if old_password == new_password:
+      return jsonify(message='Новый пароль не может быть старым!'), 400
+    stored_password_hash = usercp.password
+    if check_password_hash(stored_password_hash, old_password):
+      new_password_hash = generate_password_hash(new_password)
+      db.session.query(Users).filter_by(nikname=nickname, organ=organ).update({
+          "password": new_password_hash
+        })
+      db.session.commit()
+      #send_to_bot_changepass(new_password, usercp.discordid, usercp.static)
+      return jsonify(message='Пароль успешно изменен!'), 200
+    else:
+       return jsonify(message='Вы ввели неверный старый пароль!'), 400
+  pass
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
   rank_name = get_rank_info(ranks, organ, rank)
+  YW = current_user.YW
+  SW = current_user.SW
       
-  return render_template('profile.html', nickname=nickname, organ=organ, rank=rank, rank_name=rank_name, color=color)
-
-@main.route('/doc')
+  return render_template('profile.html', nickname=nickname, organ=organ, rank=rank, rank_name=rank_name, color=color, YW=YW, SW=SW, form=form)
+@main.route('/doc', methods=['GET', 'POST'])
 def doc():
   from __init__ import Users
   from form import FormCreateDoc, FormCreateResolution, FormCreateOrder, FormCreateAgenda

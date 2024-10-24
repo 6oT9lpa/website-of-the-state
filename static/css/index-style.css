@@ -132,9 +132,11 @@ nav a {
 }
 
 footer {
-    color: white;
-    text-align: center;
-    margin-top: auto;
+    position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
 }
 
 @media (max-width: 600px) {

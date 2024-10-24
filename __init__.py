@@ -13,7 +13,7 @@ app.config['SECRET_KEY'] = '9QKKakkd0.api1ii2kkalofmqlo31miqmmfkTBo9lMaTbIIIJlux
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 app.config['JSON_AS_ASCII'] = False
 app.config['WTF_CSRF_ENABLED'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:arnetik1@localhost:3306/site'
 app.register_blueprint(main)
 
 # получение достпука к бд через SQLAlchemy, также создание login manager
@@ -31,6 +31,8 @@ class Users(db.Model, UserMixin):
     prevrank = db.Column(db.String(3), nullable=False)
     rankuser = db.Column(db.String(3), nullable=False)
     organ = db.Column(db.String(10), nullable=False)
+    YW = db.Column(db.Integer, nullable=False, default=0)
+    SW = db.Column(db.Integer, nullable=False, default=0)
     timespan = db.Column(DateTime, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     create_document = db.relationship('PDFDocument', back_populates='user', foreign_keys='PDFDocument.user_static')
