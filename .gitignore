@@ -2,3 +2,6 @@
 start.py
 /__pycache__
 /python/__pycache__
+/myvenv
+/python/config.json
+/static/uploads
