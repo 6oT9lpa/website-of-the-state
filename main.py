@@ -60,12 +60,12 @@ def send_to_bot_permission_none(is_permission):
     message = {'permission_none': is_permission}
     redis_client.publish('user_permission', json.dumps(message))
 
-def send_to_bot_new_resolution(uid, nickname, static, discrodid):
+def send_to_bot_new_resolution(uid, nickname, static, discordid):
   message = {
       'uid': uid,
       'nickname': nickname, 
       'static': static, 
-      'discrodid': discrodid
+      'discordid': discordid
   }
   redis_client.publish('new_resolution', json.dumps(message))
 
@@ -701,7 +701,7 @@ def create_doc():
       db.session.add(pdf_document)
       db.session.commit()
         
-      send_to_bot_new_resolution(uid=uid, nickname=curr_user.nikname, static=curr_user.static, discrodid=curr_user.discordid)
+      send_to_bot_new_resolution(uid=uid, nickname=curr_user.nikname, static=curr_user.static, discordid=curr_user.discordid)
       
       if not user:
         new_resolution = PublicDocumentAndNotifications(

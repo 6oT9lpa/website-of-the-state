@@ -5,3 +5,4 @@ start.py
 /myvenv
 /python/config.json
 /static/uploads
+/python/cogs/__pycache__
