@@ -9,21 +9,12 @@
     <title>Majestic State</title>
 </head>
 <body>
+
     {% block header %}
         {% include 'header/header-doc.html' %}
     {% endblock %}
 
     <main>
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <script>
-                    setTimeout(function() {
-                        alert("{{ messages[0] }}");
-                    }, 800);
-                </script>
-            {% endif %}
-        {% endwith %}
-
         <div id="attorney-content">
             {% if is_visibily_attoney %}
                 {% block attorney %}
@@ -32,18 +23,35 @@
             {% endif %}
         </div>
 
-        {% block modal %}
-            {% include 'main/main-doc.html' %}
-        {% endblock %}
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %} 
+            <div id="access-message" class='access-message'>
+                <span class="modal-close-error">&times;</span>
+                <p><strong>Внимание!</strong> {{ messages[0] }}<p>
+                {% if not current_user.is_authenticated %} 
+                    <br>
+                    <a class='alert-button' href="{{ url_for('main.auth') }}">Войти в аккаунт</a>
+                {% endif %}
+            </div> <script src="{{ url_for('static', filename='js/script-error.js') }}" ></script>
+            {% endif %}
+        {% endwith %}
         
+        {% if current_user.is_authenticated and is_permission %} 
+            {% block modal %}
+                {% include 'main/main-doc.html' %}
+            {% endblock %}
+        {% endif %}
     </main>
 
     {% block footer %}
         {% include 'footer/footer.html' %}
     {% endblock %}
     <div class="background"></div>
+    <script>
+        var isAuthenticated = {{ is_authenticated | tojson }};
+        var isPermission = {{ is_permission  | tojson }};
+    </script>
     <script src="{{ url_for('static', filename='js/script-doc.js') }}"></script>
 </body>
 </html>
-
-

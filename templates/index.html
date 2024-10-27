@@ -18,14 +18,17 @@
     <div class="background"></div>
 
     {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <script>
-                setTimeout(function() {
-                    alert("{{ messages[0] }}");
-                }, 800);
-            </script>
+        {% if messages %} 
+            <div id="access-message" class='access-message'>
+                <span class="modal-close-error">&times;</span>
+                <p><strong>Внимание!</strong> {{ messages[0] }}<p>
+                {% if not current_user.is_authenticated %} 
+                    <br>
+                    <a class='alert-button' href="{{ url_for('main.auth') }}">Войти в аккаунт</a>
+                {% endif %}
+            </div> <script src="{{ url_for('static', filename='js/script-error.js') }}" ></script>
         {% endif %}
-    {% endwith %}moderation
+    {% endwith %}
 
     <script>
         let bg = document.querySelector('.background');

@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeButton = document.querySelector('.modal-close');
     const overlay = document.querySelector('.overlay');
     const body = document.body; 
-
     const checkbox1 = document.getElementById('param1_checkbox');
     const checkbox2 = document.getElementById('param2_checkbox');
     const input_checkbox1 = document.getElementById('input_checkbox1');
@@ -51,39 +50,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
-    // загрузка модального окна
     modalButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             e.preventDefault();
             const modalId = button.getAttribute('data-modal');
             const modalElem = document.querySelector(`.modal[data-modal="${modalId}"]`);
-
-            modalElem.classList.add('active');
-            overlay.classList.add('active');
-            body.style.position = 'fixed'; // Устанавливаем фиксированное позиционирование
-            body.style.width = '100%'; // Убираем полосу прокрутки
+    
+            if (isAuthenticated && isPermission) { 
+                modalElem.classList.add('active');
+                overlay.classList.add('active');
+                body.style.position = 'fixed'; 
+                body.style.width = '100%'; 
+            }
         });
     });
-
-    closeButton.addEventListener('click', closeModal);
-    overlay.addEventListener('click', closeModal);
     
-    // Обработчик нажатия клавиши Escape
+    if (isAuthenticated && isPermission) {
+        closeButton.addEventListener('click', closeModal);
+        overlay.addEventListener('click', closeModal);
+    } 
+
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeModal();
         }
     });
 
-    // обработка кнопки закрытии модального окна
     function closeModal() {
         const activeModal = document.querySelector('.modal.active');
         if (activeModal) {
             activeModal.classList.remove('active');
             overlay.classList.remove('active');
-            body.style.position = ''; // Возвращаем исходное позиционирование
-            body.style.width = ''; // Возвращаем ширину
+            body.style.position = ''; 
+            body.style.width = '';
         }
     }
 }); 
@@ -141,12 +140,12 @@ function ValidFormResolutionCaseInput(input) {
     if (input.offsetParent === null) {
         return true; 
     }
-    const regex = /^(?:№|номер)\s+(.+)$/;
+    const regex = /^JD-+(.+)$/;
     if (input.value === '') {
         showError(input, 'Поле не может быть пустым');
         return false;
     } else if (!regex.test(input.value)) {
-        showError(input, 'Неверный формат. Должен быть № дела');
+        showError(input, 'Неверный формат. Должен быть JD-номер');
         return false;
     } else {
         clearError(input);
@@ -379,38 +378,38 @@ function enableFields(fields) {
     });
 }
 
-
-formBtn.addEventListener('click', function(event) {
-    if (wrapperOrder.classList.contains('hidden-wrapper') && 
-        (!ValidFormOrgan_param1(param1) || !ValidFormOrgan_param2(param2) || 
-         !ValidFormOrgan_param3(param3) || !ValidFormOrgan_param4(param4))) {
-        event.preventDefault();
-        return;
-    }
-
-    if (wrapperResolution.classList.contains('hidden-wrapper')) {
-        if (case_input.offsetParent === null) {
-            case_input.removeAttribute('required');
-        } else {
-            case_input.setAttribute('required', 'true');
-        }
-        
-        if (arrest_time.offsetParent === null) {
-            arrest_time.removeAttribute('required');
-        } else {
-            arrest_time.setAttribute('required', 'true');
-        }
-        
-        if(!ValidFormResolutionCaseInput(case_input) || !ValidFormResolutionArrestTime(arrest_time)) {
+if (isAuthenticated && isPermission) {
+    formBtn.addEventListener('click', function(event) {
+        if (wrapperOrder.classList.contains('hidden-wrapper') && 
+            (!ValidFormOrgan_param1(param1) || !ValidFormOrgan_param2(param2) || 
+            !ValidFormOrgan_param3(param3) || !ValidFormOrgan_param4(param4))) {
             event.preventDefault();
             return;
         }
-    }
 
-    if (wrapperAgenda.classList.contains('hidden-wrapper')) {
-    }
-});
+        if (wrapperResolution.classList.contains('hidden-wrapper')) {
+            if (case_input.offsetParent === null) {
+                case_input.removeAttribute('required');
+            } else {
+                case_input.setAttribute('required', 'true');
+            }
+            
+            if (arrest_time.offsetParent === null) {
+                arrest_time.removeAttribute('required');
+            } else {
+                arrest_time.setAttribute('required', 'true');
+            }
+            
+            if(!ValidFormResolutionCaseInput(case_input) || !ValidFormResolutionArrestTime(arrest_time)) {
+                event.preventDefault();
+                return;
+            }
+        }
 
+        if (wrapperAgenda.classList.contains('hidden-wrapper')) {
+        }
+    });
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('load-prosecution-office').addEventListener('click', function(event) {

@@ -77,4 +77,4 @@ class FormEditResolution(FlaskForm):
     param3 = StringField(render_kw={"placeholder": "Статик обвиняемого."})
     param4 = StringField(render_kw={"placeholder": "Время ареста."})
     param5 = StringField(render_kw={"placeholder": "Убрать пункт"})
-    submit = SubmitField("Сохранить")
+    submit = SubmitField(label="Сохранить", validators=[DataRequired()])

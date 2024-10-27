@@ -4,6 +4,7 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
+    background: #f7f7f7;
 }
 iframe {
     width: 100%;
@@ -114,4 +115,9 @@ input.obl2:hover{
     display: flex;
     flex-direction: row;
     height: 40px !important;
+}
+
+.container-ol {
+    min-height: 50px;
+    background: #f7f7f7;
 }
