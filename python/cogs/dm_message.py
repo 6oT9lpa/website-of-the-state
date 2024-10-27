@@ -67,7 +67,7 @@ class SendDmMessage(commands.Cog):
                 title=f"Вы были приняты во фракцию **{organ}**",
                 description=(
                     f"Ваш логин от аккаунта: **{static}**\n"
-                    f"Ваш пароль от аккаунта: **{password}**\n\n"
+                    f"Ваш пароль от аккаунта: {password}\n\n"
                     "Вам нужно сменить пароль на свой, чтобы повысить безопасность вашего аккаунта."
                 ),
                 color=disnake.Color.green()
@@ -160,7 +160,7 @@ class SendDmMessage(commands.Cog):
                 
                 button = Button(
                     label="Исправить постановление",
-                    url="http://26.184.54.209:8000/edit_doc?uid=01860222690775097111881819",
+                    url=f"http://26.184.54.209:8000/auth?next=http://26.184.54.209:8000/edit_doc?uid={uid}",
                     style=ButtonStyle.link
                 )
 

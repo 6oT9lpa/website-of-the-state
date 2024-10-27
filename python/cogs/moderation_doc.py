@@ -79,7 +79,7 @@ class ModerationDoc(commands.Cog):
                 return
 
             # Если права есть, обновляем URL, помечаем кнопку как активную и сохраняем данные
-            self.messages[message_id]["button_url"] = f"http://26.184.54.209:8000/resolution?uid={uid}"
+            self.messages[message_id]["button_url"] = f"http://26.184.54.209:8000/resolution?uid={uid}/moderation"
             self.messages[message_id]["is_active"] = True
             self.save_message_data()
 
@@ -88,7 +88,7 @@ class ModerationDoc(commands.Cog):
                 ephemeral=True
             )    
             # Проверка прав
-            permission_none = await self.process_permission_messages()
+            permission_none = await process_permission_messages()
             if permission_none:
                 try:
                     # Отправляем сообщение об ошибке в личные сообщения пользователю
@@ -180,7 +180,7 @@ class ModerationDoc(commands.Cog):
         for message_id, message_data in self.messages.items():
             await self.update_message_view(message_id)
     
-    async def send_dm_resolution(self, uid, nickname, static, discordid):
+    async def send_dm_resolution(self, uid, nickname, static, discordid, status, number_resolution):
         try:
             # Подготавливаем данные сообщения
             self.message_data = {
@@ -197,17 +197,30 @@ class ModerationDoc(commands.Cog):
             if not channel:
                 print(f"Канал с ID {self.channel_id} не найден после нескольких попыток")
                 return
-
-            # Создаем сообщение с встраиванием
-            embed = disnake.Embed(
-                title=f"Пришло новое постановление от **{nickname} {static}** ||<@{discordid}>||",
-                description=(
-                    "Требуется модерация постановления!\n"
-                    "Чтобы начать модерацию, нажмите на кнопку ниже\n\n"
-                ),
-                color=disnake.Color.blue()
-            )
-            embed.set_footer(text="Если вы считаете, что это ошибочное сообщение, свяжитесь с 6ot9lpa")
+            
+            if status == 'moder':
+                global embed
+                # Создаем сообщение с встраиванием
+                embed = disnake.Embed(
+                    title=f"Пришло новое постановление **{number_resolution}** от **{nickname} {static}** || <@{discordid}> ||",
+                    description=(
+                        "Требуется модерация постановления!\n"
+                        "Чтобы начать модерацию, нажмите на кнопку ниже\n\n"
+                    ),
+                    color=disnake.Color.blue()
+                )
+                embed.set_footer(text="Если вы считаете, что это ошибочное сообщение, свяжитесь с 6ot9lpa")
+            
+            elif status == 'edit':
+                embed = disnake.Embed(
+                    title=f"Пришло измененное постановление **{number_resolution}** от **{nickname} {static}** || <@{discordid}> ||",
+                    description=(
+                        "Требуется модерация постановления!\n"
+                        "Чтобы начать модерацию, нажмите на кнопку ниже\n\n"
+                    ),
+                    color=disnake.Color.blue()
+                )
+                embed.set_footer(text="Если вы считаете, что это ошибочное сообщение, свяжитесь с 6ot9lpa")
 
             # Отправляем сообщение в канал
             message = await channel.send(embed=embed)
@@ -226,6 +239,7 @@ class ModerationDoc(commands.Cog):
 
         except Exception as e:
             print(f"Ошибка при отправке сообщения в канал {self.channel_id}: {e}")
+        
 
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 async def process_new_resolution_message(moderation_doc):
@@ -242,14 +256,43 @@ async def process_new_resolution_message(moderation_doc):
                 nickname = data['nickname']
                 static = data['static']
                 discordid = data['discordid']
+                status = data['status']
+                number_resolution = data['number_resolution']
                 
-                await moderation_doc.send_dm_resolution(uid, nickname, static, discordid)
+                await moderation_doc.send_dm_resolution(uid, nickname, static, discordid, status, number_resolution)
             except Exception as e:
                 print(f"Ошибка обработки сообщения: {e}")
                 traceback.print_exc()
         await asyncio.sleep(1)
 
+async def process_permission_messages():
+    pubsub = redis_client.pubsub()
+    pubsub.subscribe('user_permission')
+    
+    while True:
+        message = pubsub.get_message()
+        if message and message['type'] == 'message':
+            try:
+                print(f"Получено сообщение: {message['data']}")
+                data = json.loads(message['data'])
+                
+                permission_none = data['permission_none']
+                print(f"Значение none_permission обновлено: {permission_none}")
+                
+                return permission_none
+                
+            except Exception as e:
+                print(f"Ошибка обработки сообщения: {e}")
+                traceback.print_exc()
+        await asyncio.sleep(1)
+
+
 def setup(bot):
     moderation_doc = ModerationDoc(bot)
     bot.loop.create_task(process_new_resolution_message(moderation_doc))
     bot.add_cog(ModerationDoc(bot))
+    
+     
+    time.sleep(5)
+    moderation_doc.load_message_data()
+    bot.loop.create_task(moderation_doc.update_buttons())

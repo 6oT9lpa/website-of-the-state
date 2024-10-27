@@ -16,8 +16,9 @@
     </div>
 
     <div id="sidebar" class="sidebar">
-        <form method='post' id="myForm">
+        <form id="myForm" method='post' action="/edit_resolution?uid={{ uid }}">
             <h2>Редактирование</h2>
+            {{ form.hidden_tag() }}
             <div class="container-input">
                 <div class="form-input">
                     <label>Ник потерпевшего</label>
@@ -85,25 +86,10 @@
             }, 500);
         }
 
-        function ValidFormResolutionArrestTime(input) {
-            const datePattern = /^(?:\d{4}[-./\\\s]{1,}\d{2}[-./\\\s]{1,}\d{2})$/;
-            const timePattern = /^\d{2}:\d{2}$/;
-            
-            const [datePart, timePart] = input.value.split(' ');
-        
-            if (!(datePattern.test(datePart) && timePattern.test(timePart))) {
-                showError(input, 'Неверный формат. Должен быть год месяц день час:минута');
-                return false;
-            } else {
-                clearError(input);
-                return true;
-            }
-        }
-
         document.getElementById('myForm').addEventListener('submit', function(event) {
-            const isValid = ValidFormResolutionArrestTime(document.getElementById('param4'));
-            
-            if (!isValid) {
+            const isValid_param4 = ValidFormResolutionArrestTime(document.getElementById('param4'));
+
+            if (!isValid_param4) {
                 event.preventDefault(); 
                 return; 
             }
@@ -158,7 +144,9 @@
                     input.classList.remove('valid');
                     input.classList.add('invalid');
                 }
-            } else {
+                
+            } 
+            else {
                 if (input.value.trim() !== "") {
                     input.classList.add('valid');
                     input.classList.remove('invalid');

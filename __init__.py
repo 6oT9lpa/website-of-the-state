@@ -90,8 +90,10 @@ class PublicDocumentAndNotifications(db.Model):
     param_limit5 = db.Column(db.Boolean, default=False)
     param_limit6 = db.Column(db.Boolean, default=False)
     
+    param_limit1_case = db.Column(db.String(20))
     param_limit2_nickmane = db.Column(db.String(52))
     param_limit2_time = db.Column(db.String(52))
+    number_resolution = db.Column(db.String(4), default='0001')
     
     is_modertation = db.Column(db.Boolean, default=False)
 
@@ -102,7 +104,6 @@ class news(db.Model):
     created_by = db.Column(db.String(45), db.ForeignKey('users.nikname'), nullable=False)
     headernews = db.Column(db.String(100), nullable=False)
     textnews = db.Column(db.Text, nullable=False)
-    
     
 # создание бдешек
 with app.app_context():

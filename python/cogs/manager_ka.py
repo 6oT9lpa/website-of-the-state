@@ -114,3 +114,4 @@ def setup(bot):
     manager_audit =  ManagerAuditMessage(bot)
     bot.loop.create_task(process_ka_messages(manager_audit))
     bot.add_cog(ManagerAuditMessage(bot))
+   
