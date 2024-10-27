@@ -6,3 +6,4 @@ start.py
 /python/config.json
 /static/uploads
 /python/cogs/__pycache__
+message_data.json
