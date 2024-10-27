@@ -94,6 +94,14 @@ class PublicDocumentAndNotifications(db.Model):
     param_limit2_time = db.Column(db.String(52))
     
     is_modertation = db.Column(db.Boolean, default=False)
+
+class news(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    typenews = db.Column(db.String(10), nullable=False)
+
+    created_by = db.Column(db.String(45), db.ForeignKey('users.nikname'), nullable=False)
+    headernews = db.Column(db.String(100), nullable=False)
+    textnews = db.Column(db.Text, nullable=False)
     
     
 # создание бдешек

@@ -11,6 +11,9 @@
     {% block header %}
         {% include 'header/header.html' %}
     {% endblock %}
+    {% block main %}
+        {% include 'main/main.html' %}
+    {% endblock %}
     {% block footer %}
         {% include 'footer/footer.html' %}
     {% endblock %}
@@ -25,7 +28,7 @@
                 }, 800);
             </script>
         {% endif %}
-    {% endwith %}moderation
+    {% endwith %}
 
     <script>
         let bg = document.querySelector('.background');
@@ -34,6 +37,97 @@
             let y = e.clientY / window.innerHeight;  
             bg.style.transform = 'translate(-' + x * 50 + 'px, -' + y * 50 + 'px)';
         });
+        document.getElementById("cityhallnewsbutton").addEventListener("click", function(event) {
+    event.preventDefault();
+    toggleNewsSection(this, ".city_hallnews");
+});
+
+document.getElementById("leadernewsbutton").addEventListener("click", function(event) {
+    event.preventDefault();
+    toggleNewsSection(this, ".leadernewsy");
+});
+
+document.getElementById("weazelnewsbutton").addEventListener("click", function(event) {
+    event.preventDefault();
+    toggleNewsSection(this, ".weazelnewsy");
+});
+
+function toggleNewsSection(button, sectionClass) {
+
+            // Сбрасываем активное состояние для кнопок и скрываем все секции
+            var buttons = document.querySelectorAll("#cityhallnewsbutton, #leadernewsbutton, #weazelnewsbutton");
+            var sections = document.querySelectorAll(".city_hallnews, .leadernewsy, .weazelnewsy");
+
+            buttons.forEach(btn => btn.classList.remove("active"));
+            sections.forEach(section => section.style.display = "none");
+
+            // Показываем выбранную секцию и активируем кнопку
+            var newsDiv = document.querySelector(sectionClass);
+            if (newsDiv) {
+                newsDiv.style.display = "grid";
+                button.classList.add("active");
+                newsDiv.classList.add('fadeIn');
+            } else {
+                console.log("Section not found:", sectionClass);
+            }
+        }
+        function openModal(id, name, description, newstype) {
+            document.getElementById("modalID").textContent = id;
+            document.getElementById("modalName").textContent = name;
+            document.getElementById("modalDescription").textContent = description;
+            document.getElementById("modalNewsType").textContent = newstype;
+            document.getElementById("myModal").style.display = "flex";
+        }
+
+        // Функция для закрытия модального окна
+        function closeModal() {
+            document.getElementById("myModal").style.display = "none";
+        }
+
+        // Закрытие окна при клике вне модального контента
+        window.onclick = function(event) {
+            if (event.target === document.getElementById("myModal")) {
+                closeModal();
+            }
+        }
+        //var link = document.getElementById('crnewbutton');
+        //link.onclick = function() {
+        //    document.getElementById("Modalcn").style.display = 'block';
+        //}
+        //var span = document.getElementsByClassName('close-btn')[0];
+        // Закрываем модальное окно при клике на крестик
+        //span.onclick = function() {
+        //    document.getElementById("Modalcn").style.display = 'none';
+        //}
+        function openModalcn() {
+            document.getElementById("Modalcn").style.display = "flex";
+        }
+        function closeModalcn() {
+            document.getElementById("Modalcn").style.display = "none";
+        }
+        document.getElementById('newscForm').addEventListener('submit', function(event) {
+        event.preventDefault();  // Предотвращаем стандартное поведение формы
+
+        console.log('Submitting form...');  // Выводим сообщение в консоль для отладки
+
+        fetch(this.action, {
+            method: 'POST',
+            body: new FormData(this)
+        }).then(response => {
+        console.log('Response status:', response.status);  // Выводим статус ответа
+        return response.json().then(data => ({ status: response.status, body: data }));
+        }).then(obj => {
+            console.log('Response body:', obj.body);  // Выводим тело ответа
+            const responseMessage = document.getElementById('responseMessage');
+            if (obj.status === 200) {
+                responseMessage.textContent = 'Новость опубликована!';
+                responseMessage.style.color = 'green';
+            } else {
+                responseMessage.textContent = obj.body.message;
+                responseMessage.style.color = 'red';
+            }
+        })
+        })
     </script>
 </body>
 </html>

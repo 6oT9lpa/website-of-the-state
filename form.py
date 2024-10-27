@@ -92,3 +92,14 @@ class FormEditResolution(FlaskForm):
     param4 = StringField(render_kw={"placeholder": "Время ареста."})
     param5 = StringField(render_kw={"placeholder": "Убрать пункт"})
     submit = SubmitField("Сохранить")
+
+class Formnews(FlaskForm):
+    zagolovok = StringField("Заголовок", validators=[DataRequired(), length(min=5, max=50)], render_kw={"placeholder": "Введите заголовок"})
+    desc = StringField("Новость", render_kw={"placeholder": "Введите новость"})
+    type_news = RadioField('Тип новости', choices=[
+        ('cityhall', 'Правительство'),
+        ('weazel', 'Weazel News'),
+        ('leaders', 'Лидер'),
+    ], validators=[DataRequired()]
+    )
+    submit = SubmitField(label='отправить', validators=[DataRequired()], render_kw={'id': 'FormBtn'})

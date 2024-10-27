@@ -145,9 +145,38 @@ def user_permission(f):
     return decorated_function
 
 # главная страница
-@main.route('/')
+@main.route('/', methods=['POST', 'GET'])
 def index():
-  return render_template('index.html')
+  from __init__ import news, PermissionUsers, Users, db
+  from form import Formnews
+  form = Formnews()
+  city_hallnews = news.query.filter_by(typenews="cityhall").all()
+  leadernews = news.query.filter_by(typenews="leaders").all()
+  weazelnewsn = news.query.filter_by(typenews="weazel").all()
+  has_access = False
+  if current_user.is_authenticated:
+    cancrnews = PermissionUsers.query.filter_by(user_static=current_user.static, high_staff=True).first()
+    if cancrnews:
+       has_access = cancrnews is not None
+  if 'zagolovok' in request.form:
+    name = form.zagolovok.data
+    desc = form.desc.data
+    news_type = form.type_news.data
+    userperm = PermissionUsers.query.filter_by(user_static=current_user.static).first()
+    user = Users.query.filter_by(static=current_user.static).first()
+    print(name, desc, news_type)
+    if news_type == "leaders" and not userperm.admin:
+      return jsonify(message='Вы не администратор!'), 400
+      
+    if news_type == "weazel" and user.organ != "WN":
+      return jsonify(message='Вы не сотрудник WN!'), 400
+    new_new = news(typenews=news_type, created_by=user.nikname, headernews=name, textnews=desc)
+    print(new_new)
+    db.session.add(new_new)
+    db.session.commit()
+    return jsonify(message='Успешно!'), 200
+    
+  return render_template('index.html', city_hallnews=city_hallnews, leadernews=leadernews, weazelnewsn=weazelnewsn, has_access=has_access, form=form)
 
 # Логирование
 @main.route('/auth', methods=['POST', 'GET'])

@@ -52,7 +52,11 @@
     var link = document.getElementById('changePasswordLink');
     var span = document.getElementsByClassName('close')[0];
     var form = modal.querySelector('form');
-
+    window.onload = function() {
+            if (window.location.hash === '#changepassword') {
+                modal.style.display = 'block';
+        }
+    };
     // Открываем модальное окно при клике на ссылку
     link.onclick = function() {
         modal.style.display = 'block';

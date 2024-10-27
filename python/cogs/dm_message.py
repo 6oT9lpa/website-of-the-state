@@ -76,7 +76,7 @@ class SendDmMessage(commands.Cog):
 
             button = Button(
                 label="Сменить пароль",
-                url="http://26.184.54.209:8000/auth",
+                url="http://26.45.155.104:8000/auth?next=http://26.45.155.104:8000/profile#changepassword",
                 style=ButtonStyle.link
             )
 
