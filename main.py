@@ -31,6 +31,8 @@ def color_organ(organ):
     color = '#000000' # черный
   elif organ == 'EMS':
     color = '#a21726' # красный
+  elif organ == 'WN':
+    color = '#a21726' # красный
   elif organ == 'GOV':
     color = '#CCAC00' # желтый
     
@@ -63,6 +65,13 @@ def send_to_bot_information_resolution(discord_to, discord_from, moderation, rea
       'uid': uid
   }
   redis_client.publish('information_resolution', json.dumps(message))
+
+def send_to_bot_log_dump(header, text):
+  message = {
+      'header': header,
+      'text': text
+  }
+  redis_client.publish('log_dump', json.dumps(message))
 
 def send_to_bot_permission_none(is_permission):
     message = {'permission_none': is_permission}
@@ -134,39 +143,110 @@ def check_user_action(f):
       return f(*args, **kwargs)
     return decorated_function
   
+def user_permission_moderation(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        from __init__ import Users
+        if not current_user.is_authenticated:
+            flash('Необходимо войти для доступа к этой странице.')
+            return redirect(url_for('main.auth'))
+
+        user = Users.query.get(current_user.id)
+        uid = request.args.get('uid')
+        rankuser_value = int(user.rankuser) if user.rankuser.isdigit() else 0
+
+        if user.organ == 'GOV' and rankuser_value >= 11 and rankuser_value != 12:
+            send_to_bot_permission_none(False)
+            return f(*args, **kwargs)
+
+        send_to_bot_permission_none(True)
+        flash('У вас нет доступа к модерации постановлений!')
+        return redirect(url_for('main.index'))
+
+    return decorated_function
+CLIENT_ID = '63202ab8a29f3f1'
+def upload_image_to_imgur(image):
+    import requests
+    headers = {
+        'Authorization': f'Client-ID {CLIENT_ID}'
+    }
+    api_url = 'https://api.imgur.com/3/upload'
+    
+    response = requests.post(api_url, headers=headers, files={'image': image})
+    
+    if response.status_code == 200:
+        data = response.json()
+        return data['data']['link']
+    else:
+        return None
 # главная страница
 @main.route('/', methods=['POST', 'GET'])
 def index():
   from __init__ import news, PermissionUsers, Users, db
   from form import Formnews
+  import time
   form = Formnews()
   city_hallnews = news.query.filter_by(typenews="cityhall").all()
   leadernews = news.query.filter_by(typenews="leaders").all()
   weazelnewsn = news.query.filter_by(typenews="weazel").all()
   has_access = False
   if current_user.is_authenticated:
-    cancrnews = PermissionUsers.query.filter_by(user_static=current_user.static, high_staff=True).first()
+    cancrnews = PermissionUsers.query.filter_by(user_static=current_user.static, create_news=True).first()
     if cancrnews:
        has_access = cancrnews is not None
   if 'zagolovok' in request.form:
+    last_request_time = session.get('last_request_time', 0)
+    current_time = time.time()
+    if current_time - last_request_time < 60:
+      return jsonify(message=f'Подождите некоторое время до отправки следующей новости!'), 400
+    session['last_request_time'] = current_time
     name = form.zagolovok.data
     desc = form.desc.data
     news_type = form.type_news.data
     userperm = PermissionUsers.query.filter_by(user_static=current_user.static).first()
     user = Users.query.filter_by(static=current_user.static).first()
-    print(name, desc, news_type)
+    if userperm.create_news != True:
+      return jsonify(message='Отказано в доступе!'), 403
     if news_type == "leaders" and not userperm.admin:
       return jsonify(message='Вы не администратор!'), 400
-      
+        
     if news_type == "weazel" and user.organ != "WN":
       return jsonify(message='Вы не сотрудник WN!'), 400
-    new_new = news(typenews=news_type, created_by=user.nikname, headernews=name, textnews=desc)
-    print(new_new)
+    file = form.img.data
+    if file:
+      imgur_link = upload_image_to_imgur(file)
+      new_new = news(typenews=news_type, created_by=user.nikname, headernews=name, textnews=desc, picture=imgur_link)
+    else:
+      new_new = news(typenews=news_type, created_by=user.nikname, headernews=name, textnews=desc)
     db.session.add(new_new)
     db.session.commit()
     return jsonify(message='Успешно!'), 200
+  if request.method == 'POST':
+    data = request.get_json()
+    news_id = data.get('id')
+    if news_id:
+      userperm = PermissionUsers.query.filter_by(user_static=current_user.static).first()
+      if userperm.create_news != True:
+        return jsonify(message='Отказано в доступе!'), 403
+      news_item = db.session.query(news).filter_by(id=news_id).first()
+      db.session.delete(news_item)
+      db.session.commit()
+      send_to_bot_log_dump(f'Новость {news_item.typenews} с ID {news_id} удалена', f"Заголовок {news_item.headernews}\nНовость {news_item.textnews}\nКартинка {news_item.picture}\nСоздано {news_item.created_by}\nУдалил {current_user.static}")
+      return jsonify(redirect_url=url_for('main.index')), 200
     
   return render_template('index.html', city_hallnews=city_hallnews, leadernews=leadernews, weazelnewsn=weazelnewsn, has_access=has_access, form=form)
+
+@main.route('/get_news/<int:news_id>', methods=['GET'])
+def get_news(news_id):
+    from __init__ import news
+    news_item = news.query.get_or_404(news_id)
+    return jsonify({
+        'id': news_item.id,
+        'headernews': news_item.headernews,
+        'textnews': news_item.textnews,
+        'typenews': news_item.typenews,
+        'picture': news_item.picture
+    })
 
 # Логирование
 @main.route('/auth', methods=['POST', 'GET'])
@@ -525,9 +605,10 @@ def profile():
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
   rank_name = get_rank_info(ranks, organ, rank)
-
+  YW = current_user.YW
+  SW = current_user.SW
       
-  return render_template('profile.html', nickname=nickname, organ=organ, rank=rank, rank_name=rank_name, color=color, form=form)
+  return render_template('profile.html', nickname=nickname, organ=organ, rank=rank, rank_name=rank_name, color=color, YW=YW, SW=SW, form=form)
 
 @main.route('/doc')
 def doc():

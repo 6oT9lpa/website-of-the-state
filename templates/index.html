@@ -88,11 +88,13 @@ function toggleNewsSection(button, sectionClass) {
                 console.log("Section not found:", sectionClass);
             }
         }
-        function openModal(id, name, description, newstype) {
+        function openModal(id, name, description, newstype, picture) {
             document.getElementById("modalID").textContent = id;
+            if (picture) {
+            document.getElementById('modalpicture').src =  picture;
+            }
             document.getElementById("modalName").textContent = name;
             document.getElementById("modalDescription").textContent = description;
-            document.getElementById("modalNewsType").textContent = newstype;
             document.getElementById("myModal").style.display = "flex";
         }
 
@@ -100,6 +102,50 @@ function toggleNewsSection(button, sectionClass) {
         function closeModal() {
             document.getElementById("myModal").style.display = "none";
         }
+
+        function deletenews(id) {
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: id })
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error(`Ошибка HTTP: ${response.status}`);
+            }
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json().then(data => ({ status: response.status, body: data }));
+            } else {
+                throw new Error('Ожидался JSON, но получен HTML');
+            }
+        })
+        .then(obj => {
+            if (obj.status != 200) {
+                alert('Не удалось удалить новость!')
+            }
+            else {
+                window.location.href = `${window.location.protocol}//${window.location.host}/`;
+            }
+        })
+        .catch(error => {
+            console.error('Проблема с удалением новости:', error);
+        });
+        }
+
+        const input = document.getElementById('dynamic-input');
+        input.addEventListener('input', function() {
+            const maxheight = window.innerHeight * 0.34;
+
+            if (this.scrollHeight <= maxheight) {
+                this.style.height = 'auto'; 
+                this.style.height = this.scrollHeight + 'px';
+            }
+    
+            this.style.width = 'auto';
+            this.style.width = this.scrollWidth + 'px';
+        });
 
         // Закрытие окна при клике вне модального контента
         window.onclick = function(event) {
@@ -124,6 +170,10 @@ function toggleNewsSection(button, sectionClass) {
         }
         document.getElementById('newscForm').addEventListener('submit', function(event) {
         event.preventDefault();  // Предотвращаем стандартное поведение формы
+        const responseMessage = document.getElementById('responseMessage');
+        document.getElementById('subbtn').disabled = true;
+        responseMessage.textContent = 'Обработка';
+        responseMessage.style.color = 'yellow';
 
         console.log('Submitting form...');  // Выводим сообщение в консоль для отладки
 
@@ -131,20 +181,55 @@ function toggleNewsSection(button, sectionClass) {
             method: 'POST',
             body: new FormData(this)
         }).then(response => {
-        console.log('Response status:', response.status);  // Выводим статус ответа
         return response.json().then(data => ({ status: response.status, body: data }));
         }).then(obj => {
-            console.log('Response body:', obj.body);  // Выводим тело ответа
-            const responseMessage = document.getElementById('responseMessage');
             if (obj.status === 200) {
                 responseMessage.textContent = 'Новость опубликована!';
                 responseMessage.style.color = 'green';
             } else {
                 responseMessage.textContent = obj.body.message;
                 responseMessage.style.color = 'red';
+                console.error("Ошибка при публикации новости:" + obj.body.message)
             }
+            document.getElementById('subbtn').disabled = false;
         })
         })
+        function showNewsByHash() {
+        const hash = window.location.hash.substring(1); // Убираем символ #
+        if (hash.startsWith('news')) {
+          const newsId = hash.replace('news', '');
+          fetch(`/get_news/${newsId}`)
+            .then(response => response.json())
+            .then(data => {
+              openModal(data.id, data.headernews, data.textnews, data.typenews, data.picture);
+            })
+            .catch(error => {
+              console.error('Проблема с новостью:', error);
+            });
+        }
+      }
+      function sharenews() {
+        const id = document.getElementById('modalID').textContent;
+        const url = `${window.location.origin}#news${id}`;
+        const tempInput = document.createElement('textarea');
+        tempInput.value = url;
+        document.body.appendChild(tempInput);
+        
+        // Выделяем и копируем текст
+        tempInput.select();
+        document.execCommand('copy');
+        
+        // Удаляем временный элемент
+        document.body.removeChild(tempInput);
+        
+        alert('Link copied to clipboard!');
+      }
+
+      window.addEventListener('hashchange', showNewsByHash);
+      window.addEventListener('load', showNewsByHash);
+      function errorimgfix(image) {
+            image.classList.add('error');
+        }
     </script>
 </body>
 </html>

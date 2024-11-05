@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, SubmitField, SelectField, PasswordField, BooleanField, RadioField
+from wtforms import StringField, SubmitField, SelectField, PasswordField, BooleanField, RadioField, TextAreaField
 from wtforms.validators import DataRequired, length,  Regexp, ValidationError
 
 # форма ка
@@ -103,11 +103,14 @@ class FormEditResolution(FlaskForm):
 
 class Formnews(FlaskForm):
     zagolovok = StringField("Заголовок", validators=[DataRequired(), length(min=5, max=50)], render_kw={"placeholder": "Введите заголовок"})
-    desc = StringField("Новость", render_kw={"placeholder": "Введите новость"})
-    type_news = RadioField('Тип новости', choices=[
+    desc = TextAreaField("Новость", render_kw={"placeholder": "Введите новость"})
+    type_news = SelectField('Тип новости', choices=[
         ('cityhall', 'Правительство'),
         ('weazel', 'Weazel News'),
         ('leaders', 'Лидер'),
     ], validators=[DataRequired()]
     )
+    img = FileField('Изображение', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only!')
+    ])
     submit = SubmitField(label='отправить', validators=[DataRequired()], render_kw={'id': 'FormBtn'})

@@ -25,37 +25,73 @@
                         <div class="profile-info-label"><p>ORGAN</p></div>
                         <div class="profile-info-value"><p>{{ organ }}</p></div>
                     </div>
+                    <div class="profile-info-row">
+                        <div class="profile-info-label"><p>WARNS</p></div>
+                        <div class="profile-info-value"><p><SW>{{ SW }}/3</SW> <YW>{{ YW }}/2</YW></p></div>
+                    </div>
                     <a class="profile-audit" href="#">me audit</a>
                 </div>
             </div>
         </div>
     </div>
-    <div id="passwordModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <form id="passwordForm" method="POST" action="{{ url_for('main.profile') }}">
-                {{ form.hidden_tag() }}
-                {{ form.oldpass.label }} {{ form.oldpass }}<br><br>
-                {{ form.newpass.label }} {{ form.newpass }}<br><br>
-                {{ form.submit }}
-            </form>
-            <div id="responseMessage"></div>
+    <div class="MessangerWindow">
+        <div class="MessangerHeader">
+            <div style="background-color:{{ color }} !important;" class="organ">
+                {{ organ }}
+            </div>
+            <div class="MessageUser">
+                {{ nickname }}
+            </div>
+
+            <div class="CloseBtn">
+                <span class="modal-close">&times;</span>
+            </div>
+            
         </div>
+        <div class="MessangerContent" style="display: none;">
+
+            <div class="MessangerAside">
+                <div class="ChatUsers">
+                    <div class="User">Naum Goodman</div>
+                </div>
+            </div>
+
+            <div class="MessangerChatWindow">
+                <div class="ChatSection">
+                </div>
+            </div>
+        </div>
+        
     </div>
+
+    <div class="notifications">
+        <div class="notification warning">Вы вызваны в суд</div>
+        <div class="notification danger">У вас запрет на увольнение</div>
+        <div class="notification danger">У вас судебный штраф</div>
+        <button class="more-btn">see more</button>
+    </div>
+</div>
+<div id="passwordModal" class="modalcp">
+    <div class="modalcp-content">
+        <span class="close">&times;</span>
+        <form id="passwordForm" method="POST" action="{{ url_for('main.profile') }}">
+            {{ form.hidden_tag() }}
+            <div id="inputformcn">{{ form.oldpass.label }} {{ form.oldpass }}</div><br><br>
+            <div id="inputformcn">{{ form.newpass.label }} {{ form.newpass }}</div><br><br>
+            {{ form.submit(class="subbtn") }}
+        </form>
+        <div id="responseMessage"></div>
+    </div>
+</div>
 <script>
     var modal = document.getElementById('passwordModal');
-    var link = document.getElementById('changePasswordLink');
     var span = document.getElementsByClassName('close')[0];
     var form = modal.querySelector('form');
     window.onload = function() {
             if (window.location.hash === '#changepassword') {
-                modal.style.display = 'block';
+                modal.style.display = 'flex';
         }
     };
-    // Открываем модальное окно при клике на ссылку
-    link.onclick = function() {
-        modal.style.display = 'block';
-    }
 
         // Закрываем модальное окно при клике на крестик
     span.onclick = function() {
@@ -97,40 +133,3 @@
         }
     }
 </script>
-    <div class="MessangerWindow">
-        <div class="MessangerHeader">
-            <div style="background-color:{{ color }} !important;" class="organ">
-                {{ organ }}
-            </div>
-            <div class="MessageUser">
-                {{ nickname }}
-            </div>
-
-            <div class="CloseBtn">
-                <span class="modal-close">&times;</span>
-            </div>
-            
-        </div>
-        <div class="MessangerContent" style="display: none;">
-
-            <div class="MessangerAside">
-                <div class="ChatUsers">
-                    <div class="User">Naum Goodman</div>
-                </div>
-            </div>
-
-            <div class="MessangerChatWindow">
-                <div class="ChatSection">
-                </div>
-            </div>
-        </div>
-        
-    </div>
-
-    <div class="notifications">
-        <div class="notification warning">Вы вызваны в суд</div>
-        <div class="notification danger">У вас запрет на увольнение</div>
-        <div class="notification danger">У вас судебный штраф</div>
-        <button class="more-btn">see more</button>
-    </div>
-</div>

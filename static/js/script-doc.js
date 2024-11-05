@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
             if (isAuthenticated && isPermission) { 
                 modalElem.classList.add('active');
+                modalElem.style.display = 'flex';
                 overlay.classList.add('active');
                 body.style.position = 'fixed'; 
                 body.style.width = '100%'; 

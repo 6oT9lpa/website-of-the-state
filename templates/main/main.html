@@ -1,23 +1,24 @@
 <main>
     {% if has_access %}
     <a class="crnewbutton" id="createnewsbutton" style="display: flex;" onclick="openModalcn()">+</a>
-    {% else %}
-    <a class="crnewbutton" id="createnewsbutton">+</a>
     {% endif %}
     <div id="myModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            <h2 id="modalHeader">Header</h2>
+            <span class="share-btn" onclick="sharenews()"><img src="static\img\share.png"></span>
+            {% if has_access %}
+            <span class="delete-btn" onclick="deletenews(document.getElementById('modalID').textContent)"><img src="static\img\trash.svg"></span>
+            {% endif %}
             <p><strong>ID:</strong> <span id="modalID"></span></p>
-            <p><strong>Name:</strong> <span id="modalName"></span></p>
-            <p><strong>Description:</strong> <span id="modalDescription"></span></p>
-            <p><strong>modalNewsType:</strong> <span id="modalNewsType"></span></p>
+            <h2 id="modalName"></h2>
+            <p><img id="modalpicture" onerror="errorimgfix(this)" style="max-width: 100%;"></p>
+            <p> <span id="modalDescription"></span></p>
         </div>
     </div>
-    <div id="Modalcn" class="modal">
-        <div class="modal-content">
+    <div id="Modalcn" class="modalcn">
+        <div class="modalcn-content">
             <span class="close-btn" onclick="closeModalcn()">&times;</span>
-            <h2 id="modalHeader">Header</h2>
+            <h2 id="modalHeader">Создание новости</h2>
             {% with messages = get_flashed_messages(with_categories=true) %}
                   {% if messages %}
                     <ul class=flashes>
@@ -28,10 +29,11 @@
                   {% endif %}
                 {% endwith %}
             <form id="newscForm" method="POST" action="{{ url_for('main.index') }}">
-            {{ form.zagolovok.label }} {{ form.zagolovok }}<br><br>
-            {{ form.desc.label }} {{ form.desc }}<br><br>
-            {{ form.type_news.label }} {{ form.type_news }}<br><br>
-            {{ form.submit }}
+            <div id="inputformcn">{{ form.zagolovok.label }} {{ form.zagolovok }}</div><br><br>
+            <div id="inputformcn">{{ form.desc.label }} {{ form.desc(class='dynamic-input', id='dynamic-input') }}</div><br><br>
+            <div id="inputformcn">{{ form.type_news.label }} {{ form.type_news }}</div><br><br>
+            <div id="inputformcn">{{ form.img.label }} {{ form.img }}</div><br><br>
+            {{ form.submit(class="subbtn", id="subbtn") }}
             </form>
             <div id="responseMessage"></div>
         </div>
@@ -39,26 +41,31 @@
     <div class="newscont">
     <div class="city_hallnews">
         {% for item in city_hallnews %}
-            <div class="list-item" onclick="openModal('{{ item.id }}', '{{ item.headernews }}', '{{ item.textnews }}', '{{ item.typenews }}')">
-                <strong>ID:</strong> {{ item.id }} <br>
-                <strong>Name:</strong> {{ item.headernews }}
+            <div class="list-item" onclick="openModal('{{ item.id }}', '{{ item.headernews }}', '{{ item.textnews }}', '{{ item.typenews }}', '{{ item.picture }}')">
+                {% if item.picture %}
+                <img src="{{ item.picture }}" style="max-width: 350px; max-height: 240px;"><br>
+                {% endif %}
+                <strong>{{ item.headernews }}</strong>
             </div>
         {% endfor %}
     </div>
     <div class="leadernewsy">
         {% for lditem in leadernews %}
-            <div class="list-item" onclick="openModal('{{ lditem.id }}', '{{ lditem.headernews }}', '{{ lditem.textnews }}', '{{ lditem.typenews }}')">
-                <strong>ID:</strong> {{ lditem.id }} <br>
-                <strong>Name:</strong> {{ lditem.headernews }} 
+            <div class="list-item" onclick="openModal('{{ lditem.id }}', '{{ lditem.headernews }}', '{{ lditem.textnews }}', '{{ lditem.typenews }}', '{{ lditem.picture }}')">
+                {% if lditem.picture %}
+                <img src="{{ lditem.picture }}" style="max-width: 350px; max-height: 240px;"><br>
+                {% endif %}
+                <strong> {{ lditem.headernews }} </strong>
             </div>
         {% endfor %}
     </div>
     <div class="weazelnewsy">
         {% for wzitem in weazelnewsn %}
-            <div class="list-item" onclick="openModal('{{ wzitem.id }}', '{{ wzitem.headernews }}', '{{ wzitem.textnews }}', '{{ wzitem.typenews }}')">
-                <strong>ID:</strong> {{ wzitem.id }} <br>
-                <strong>Name:</strong> {{ wzitem.headernews }} <br>
-                <strong>Description:</strong> {{ wzitem.textnews }}
+            <div class="list-item" onclick="openModal('{{ wzitem.id }}', '{{ wzitem.headernews }}', '{{ wzitem.textnews }}', '{{ wzitem.typenews }}', '{{ wzitem.picture }}')">
+                {% if wzitem.picture %}
+                <img src="{{ wzitem.picture }}" style="max-width: 350px;  max-height: 240px;"><br>
+                {% endif %}
+                <strong> {{ wzitem.headernews }} </strong>
             </div>
         {% endfor %}
     </div>

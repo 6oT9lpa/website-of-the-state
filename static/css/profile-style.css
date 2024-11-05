@@ -8,7 +8,7 @@ main{
     width: 100%;
     display: flex;
     position: absolute;
-
+    z-index: 1;
   }
 
   .container
@@ -326,6 +326,62 @@ main{
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
+}
+.modalcp {
+  display: none; /* Скрыто по умолчанию */
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+  justify-content: center;
+  align-items: center;
+}
+.modalcp-content {
+  background-color: #3c3b3bd6;
+  margin: 15% auto;
+  margin-top: 10rem;
+  padding: 20px;
+  width: 100%;
+  max-width: 400px;
+  min-height: 100px;
+  color: white;
+  box-shadow: 0 0 20px 10px #262626c2;
+  border-radius: 10px;
+}
+input {
+  background-color: #444; /* Фон поля */
+  box-shadow: none;       /* Убираем любые тени */
+  padding: 8px;
+  border: 1px solid #666;
+  border: #e81c597a solid 2px;
+  border-radius: 10px;
+  background-color: #444;
+  color: #fff;
+}
+input::placeholder {
+  background-color: #444;  /* Пример темного фона */
+  color: white;
+  opacity: 1;
+}
+.subbtn {
+  font-size: 16px;
+  font-weight: 800;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 25px;
+  background-color: #67A438;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in, color 0.2s ease-in 
+}
+#inputformcn{
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  max-width: 370px;
 }
 .close {
     color: #aaa;
