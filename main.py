@@ -525,10 +525,10 @@ def profile():
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
   rank_name = get_rank_info(ranks, organ, rank)
-  YW = current_user.YW
-  SW = current_user.SW
+
       
-  return render_template('profile.html', nickname=nickname, organ=organ, rank=rank, rank_name=rank_name, color=color, YW=YW, SW=SW, form=form)
+  return render_template('profile.html', nickname=nickname, organ=organ, rank=rank, rank_name=rank_name, color=color, form=form)
+
 @main.route('/doc')
 def doc():
   if not current_user.is_authenticated:

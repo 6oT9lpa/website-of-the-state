@@ -14,11 +14,6 @@
     {% block main %}
         {% include 'main/main.html' %}
     {% endblock %}
-    {% block footer %}
-        {% include 'footer/footer.html' %}
-    {% endblock %}
-
-    <div class="background"></div>
 
     {% with messages = get_flashed_messages() %}
         {% if messages %} 
@@ -46,12 +41,12 @@
             {% endif %}
         {% endwith %}
     </main> 
+
+
+    <div class="background"></div>
     {% block footer %}
         {% include 'footer/footer.html' %}
     {% endblock %}
-
-    <div class="background"></div>
-
     <script>
         let bg = document.querySelector('.background');
         window.addEventListener('mousemove', function(e) {
