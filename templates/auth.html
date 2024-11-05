@@ -15,7 +15,8 @@
         <span class="close-button" ><a href="{{ url_for('main.index')}}">x</a></span>
         <h1>ВХОД</h1>
         <p style="text-align: center; color: white; margin-bottom: 20px;">личный кабинет</p>
-        <form method="POST">
+        <div id="responseMessage"></div>
+        <form id="loginForm" method="POST">
             {{ form.hidden_tag() }}
 
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -57,6 +58,48 @@
             <div class="form-button-container">
                 {{ form.submit(class="form-button") }}
             </div>
+            <a class="auth-zp" href="#">Забыл пароль</a>
+        </form>
+        <form id="formfp" method="POST">
+            {{ form.hidden_tag() }}
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }} errorli">{{ message }}</li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+            {% endwith %}
+            <div class="form-group">
+                {{ formfp.staticfp }}
+            </div>
+            <div class="form-button-container">
+                {{ formfp.submitfp(class="form-button") }}
+            </div>
+        </form>
+        <form id="formfp2" method="POST">
+            {{ form.hidden_tag() }}
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }} errorli">{{ message }}</li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+            {% endwith %}
+            <div class="form-group">
+                {{ formfp2.codefp }}
+            </div>
+            <div class="form-group">
+                {{ formfp2.new_password }}
+            </div>
+            <div class="form-button-container">
+                {{ formfp2.submitfp(class="form-button") }}
+            </div>
         </form>
     </div>
 
@@ -64,4 +107,111 @@
         {% include 'footer/footer.html' %}
     {% endblock %}
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        document.querySelector('.auth-zp').addEventListener('click', function(event) {
+            event.preventDefault(); // предотвращает переход по ссылке
+            document.querySelectorAll('#loginForm input, #loginForm button').forEach(function(element) {
+                element.disabled = true;
+            });
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('formfp').style.display = 'block';
+        });
+    });
+    document.querySelector('#formfp').addEventListener('submit', function(event) {
+        event.preventDefault(); // предотвращает стандартное поведение формы
+
+        // Собираем данные формы
+        var formData = new FormData(this);
+
+        // Отправляем данные формы с помощью AJAX
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+        // Проверяем статус-код ответа
+        const contentType = response.headers.get("content-type");
+        if (response.ok) {  // Статус 2xx
+            if (contentType && contentType.includes("application/json")) {
+                return response.json();  // Парсим как JSON
+            }
+            return response.text();  // Если это не JSON, возвращаем как текст
+        } else {
+            // Если это ошибка, тоже разбираем JSON, но с проверкой статуса
+            if (contentType && contentType.includes("application/json")) {
+                return response.json().then(errData => {
+                    throw new Error(errData.message || 'Ошибка сервера');
+                });
+            }
+            return response.text().then(errText => {
+                throw new Error(errText || 'Неизвестная ошибка');
+            });
+        }
+    })
+    .then(data => {
+        const responseMessage = document.getElementById('responseMessage');
+        responseMessage.textContent = 'Код отправлен';
+        responseMessage.style.color = 'green';
+        document.getElementById('formfp').style.display = 'none';
+        document.getElementById('formfp2').style.display = 'block';
+    })
+    .catch(error => {
+        const responseMessage = document.getElementById('responseMessage');
+        responseMessage.textContent = error.message;
+        responseMessage.style.color = 'red';
+        console.error('Ошибка:', error);
+    });
+    });
+    document.querySelector('#formfp2').addEventListener('submit', function(event) {
+        event.preventDefault(); // предотвращает стандартное поведение формы
+
+        // Собираем данные формы
+        var formData = new FormData(this);
+
+        // Отправляем данные формы с помощью AJAX
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+        // Проверяем статус-код ответа
+        const contentType = response.headers.get("content-type");
+        if (response.ok) {  // Статус 2xx
+            if (contentType && contentType.includes("application/json")) {
+                return response.json();  // Парсим как JSON
+            }
+            return response.text();  // Если это не JSON, возвращаем как текст
+        } else {
+            // Если это ошибка, тоже разбираем JSON, но с проверкой статуса
+            if (contentType && contentType.includes("application/json")) {
+                return response.json().then(errData => {
+                    alert('Вы ввели неправильный код');
+                    window.location.replace('/');
+                });
+            }
+            return response.text().then(errText => {
+                throw new Error(errText || 'Неизвестная ошибка');
+            });
+        }
+    })
+    .then(data => {
+        const responseMessage = document.getElementById('responseMessage');
+        responseMessage.textContent = 'Пароль изменен';
+        responseMessage.style.color = 'green';
+    })
+    .catch(error => {
+        const responseMessage = document.getElementById('responseMessage');
+        responseMessage.textContent = error.message;
+        responseMessage.style.color = 'red';
+        console.error('Ошибка:', error);
+    });
+    });
+</script>
 </html>

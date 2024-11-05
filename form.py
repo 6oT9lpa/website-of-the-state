@@ -39,6 +39,20 @@ class FormCreateDoc(FlaskForm):
     )
     submit = SubmitField(label='отправить', validators=[DataRequired()], render_kw={'id': 'FormBtn'})
     
+class Formchangepassword(FlaskForm):
+    oldpass = StringField('Старый Пароль', validators=[DataRequired(), length(min=10, max=45)], render_kw={"placeholder": "Введите старый пароль"})
+    newpass = StringField('Новый Пароль', validators=[DataRequired(), length(min=10, max=50)], render_kw={"placeholder": "Введите новый пароль"})
+    submit = SubmitField(label='Сменить', validators=[DataRequired()], render_kw={'id': 'FormBtn'})
+
+class Formforgetpassword1(FlaskForm):
+    staticfp = StringField( validators=[DataRequired()], render_kw={"placeholder": "Введите static"})
+    submitfp = SubmitField(label='Отправить код', validators=[DataRequired()], render_kw={'id': 'FormBtn'})
+
+class Formforgetpassword2(FlaskForm):
+    codefp = StringField( validators=[DataRequired()], render_kw={"placeholder": "Введите код"})
+    new_password = StringField( validators=[DataRequired(), length(min=10, max=45)], render_kw={"placeholder": "Введите новый пароль"})
+    submitfp = SubmitField(label='Сбросить пароль', validators=[DataRequired()], render_kw={'id': 'FormBtn'})
+
 class FormCreateResolution(FormCreateDoc):   
     param1 = BooleanField(label="Возбуждение уголовного дела.")
     param2 = BooleanField(label="Запрос видеофиксации задеражания.")
@@ -85,4 +99,15 @@ class FormEditResolution(FlaskForm):
     param3 = StringField(render_kw={"placeholder": "Статик обвиняемого."})
     param4 = StringField(render_kw={"placeholder": "Время ареста."})
     param5 = StringField(render_kw={"placeholder": "Убрать пункт"})
-    submit = SubmitField(label="Сохранить", validators=[DataRequired()])
+    submit = SubmitField("Сохранить")
+
+class Formnews(FlaskForm):
+    zagolovok = StringField("Заголовок", validators=[DataRequired(), length(min=5, max=50)], render_kw={"placeholder": "Введите заголовок"})
+    desc = StringField("Новость", render_kw={"placeholder": "Введите новость"})
+    type_news = RadioField('Тип новости', choices=[
+        ('cityhall', 'Правительство'),
+        ('weazel', 'Weazel News'),
+        ('leaders', 'Лидер'),
+    ], validators=[DataRequired()]
+    )
+    submit = SubmitField(label='отправить', validators=[DataRequired()], render_kw={'id': 'FormBtn'})

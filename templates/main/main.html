@@ -1,10 +1,66 @@
 <main>
-    <div class="sidebar">
-        <div>Губернатор | GOV<br><span>Marsille BlackMoon</span></div>
-        <div>Шериф | LSSD<br><span>Skeet Hennessy</span></div>
-        <div>Шеф | LSPD<br><span>Dieva Ivory</span></div>
-        <div>Генерал | SANG<br><span>Aleksey Stawski</span></div>
-        <div>Глав. Врач | EMS<br><span>Julio Gonzalez</span></div>
-        <div>Директор | FIB<br><span>Rammstein Immortal</span></div>
+    {% if has_access %}
+    <a class="crnewbutton" id="createnewsbutton" style="display: flex;" onclick="openModalcn()">+</a>
+    {% else %}
+    <a class="crnewbutton" id="createnewsbutton">+</a>
+    {% endif %}
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h2 id="modalHeader">Header</h2>
+            <p><strong>ID:</strong> <span id="modalID"></span></p>
+            <p><strong>Name:</strong> <span id="modalName"></span></p>
+            <p><strong>Description:</strong> <span id="modalDescription"></span></p>
+            <p><strong>modalNewsType:</strong> <span id="modalNewsType"></span></p>
+        </div>
     </div>
+    <div id="Modalcn" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModalcn()">&times;</span>
+            <h2 id="modalHeader">Header</h2>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    <ul class=flashes>
+                    {% for category, message in messages %}
+                      <li class="{{ category }} errorli">{{ message }}</li>
+                    {% endfor %}
+                    </ul>
+                  {% endif %}
+                {% endwith %}
+            <form id="newscForm" method="POST" action="{{ url_for('main.index') }}">
+            {{ form.zagolovok.label }} {{ form.zagolovok }}<br><br>
+            {{ form.desc.label }} {{ form.desc }}<br><br>
+            {{ form.type_news.label }} {{ form.type_news }}<br><br>
+            {{ form.submit }}
+            </form>
+            <div id="responseMessage"></div>
+        </div>
+    </div>
+    <div class="newscont">
+    <div class="city_hallnews">
+        {% for item in city_hallnews %}
+            <div class="list-item" onclick="openModal('{{ item.id }}', '{{ item.headernews }}', '{{ item.textnews }}', '{{ item.typenews }}')">
+                <strong>ID:</strong> {{ item.id }} <br>
+                <strong>Name:</strong> {{ item.headernews }}
+            </div>
+        {% endfor %}
+    </div>
+    <div class="leadernewsy">
+        {% for lditem in leadernews %}
+            <div class="list-item" onclick="openModal('{{ lditem.id }}', '{{ lditem.headernews }}', '{{ lditem.textnews }}', '{{ lditem.typenews }}')">
+                <strong>ID:</strong> {{ lditem.id }} <br>
+                <strong>Name:</strong> {{ lditem.headernews }} 
+            </div>
+        {% endfor %}
+    </div>
+    <div class="weazelnewsy">
+        {% for wzitem in weazelnewsn %}
+            <div class="list-item" onclick="openModal('{{ wzitem.id }}', '{{ wzitem.headernews }}', '{{ wzitem.textnews }}', '{{ wzitem.typenews }}')">
+                <strong>ID:</strong> {{ wzitem.id }} <br>
+                <strong>Name:</strong> {{ wzitem.headernews }} <br>
+                <strong>Description:</strong> {{ wzitem.textnews }}
+            </div>
+        {% endfor %}
+    </div>
+</div>
 </main>

@@ -31,6 +31,8 @@ class Users(db.Model, UserMixin):
     prevrank = db.Column(db.String(3), nullable=False)
     rankuser = db.Column(db.String(3), nullable=False)
     organ = db.Column(db.String(10), nullable=False)
+    YW = db.Column(db.Integer, nullable=False, default=0)
+    SW = db.Column(db.Integer, nullable=False, default=0)
     timespan = db.Column(DateTime, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     create_document = db.relationship('PDFDocument', back_populates='user', foreign_keys='PDFDocument.user_static')
@@ -118,6 +120,14 @@ class PublicDocumentAndNotificationsOrder(db.Model):
     number_order = db.Column(db.String(4), default='0001')
     
     is_modertation = db.Column(db.Boolean, default=False)
+
+class news(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    typenews = db.Column(db.String(10), nullable=False)
+
+    created_by = db.Column(db.String(45), db.ForeignKey('users.nikname'), nullable=False)
+    headernews = db.Column(db.String(100), nullable=False)
+    textnews = db.Column(db.Text, nullable=False)
     
 # создание бдешек
 with app.app_context():
