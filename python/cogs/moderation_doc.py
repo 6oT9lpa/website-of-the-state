@@ -79,7 +79,7 @@ class ModerationDoc(commands.Cog):
                 return
 
             # Если права есть, обновляем URL, помечаем кнопку как активную и сохраняем данные
-            self.messages[message_id]["button_url"] = f"http://26.184.54.209:8000/resolution?uid={uid}/moderation"
+            self.messages[message_id]["button_url"] = f"http://26.120.213.68:8000/resolution?uid={uid}/moderation"
             self.messages[message_id]["is_active"] = True
             self.save_message_data()
 

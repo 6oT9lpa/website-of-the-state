@@ -9,6 +9,7 @@
         <div>
             <form method="post" action="/create_doc">
                 {{ form.hidden_tag() }}
+
                 <div class="game-info">
                     <div class="form-input">
                         <label for="static">STATIC</label>
@@ -73,7 +74,7 @@
                             </div>
 
                             <div class="form-input wrapper-input" style="width: 60%;" id="input_checkbox1">
-                                {{ formResolution.case(class="input-field", id="case")}}
+                                {{ formResolution.case(class="input-field", id="caseInput")}}
                                 <span class="text-danger" id="is-unvalid"></span>
                             </div>
                         </div>
@@ -143,57 +144,154 @@
                 
                 <div class="contanier-wrapper" id="contanier-wrapper_order">
                     <div class="wrapper-selector" id="order-wrapper">
-                        <div class="form-input">
-                            <label for="param">Статьи Обвинения.</label>
-                            {% if formOrder.param1.errors %}
-                                {{ formOrder.param1(class="") }} 
-                                {% for error in formOrder.param1.errors %}
-                                    <span class="focus-input100 text-danger">{{ error }}</span>
-                                {% endfor %}
-                            {% else %}
-                                {{ formOrder.param1(class="is-valid") }} 
-                            {% endif %}
-
-                            <span class="text-danger" id="is-unvalid"></span>
-                        </div> 
-                        <div class="form-input">
-                            <label for="param">Срок заключения.</label>
-                            {% if formOrder.param2.errors %}
-                                {{ formOrder.param2(class="is-valid")}}
-                                {% for error in formOrder.param2.errors %}
-                                    <span class="focus-input100 text-danger">{{ error }}</span>
-                                {% endfor %}
+                        <div class="group">
+                            <div class="form-input">
+                                <label for="typeOrder">Тип Ордера</label>
+                                {% if formOrder.type_order.errors %}
+                                    {{ formOrder.type_order(class="") }} 
+                                    {% for error in formOrder.type_order.errors %}
+                                        <span class="focus-input100 text-danger">{{ error }}</span>
+                                    {% endfor %}
                                 {% else %}
-                                {{ formOrder.param2(class="")}}
-                            {% endif %}
+                                    {{ formOrder.type_order(class="is-valid") }} 
+                                {% endif %}
 
-                            <span class="text-danger" id="is-unvalid"></span>
+                                <span class="text-danger" id="is-unvalid"></span>
+                            </div>
                         </div>
-                        <div class="form-input">
-                            <label for="param">Срок исполения.</label>
-                            {% if formOrder.param3.errors %}
-                                {{ formOrder.param3(class="is-valid")}}
-                                {% for error in formOrder.param3.errors %}
-                                    <span class="focus-input100 text-danger">{{ error }}</span>
-                                {% endfor %}
+                        <div class="group">
+                            <div class="form-input hidden-input" id="adreasSuspect">
+                                <label for="param">Адреас проживания</label>
+                                {% if formOrder.adreas_suspect.errors %}
+                                    {{ formOrder.adreas_suspect(class="") }} 
+                                    {% for error in formOrder.adreas_suspect.errors %}
+                                        <span class="focus-input100 text-danger">{{ error }}</span>
+                                    {% endfor %}
                                 {% else %}
-                                {{ formOrder.param3(class="")}}
-                            {% endif %}
+                                    {{ formOrder.adreas_suspect(class="is-valid") }} 
+                                {% endif %}
 
-                            <span class="text-danger" id="is-unvalid"></span>
+                                <span class="text-danger" id="is-unvalid"></span>
+                            </div>
+                            <div class="form-input hidden-input" id="articlesAccusation">
+                                <label for="param">Статьи Обвинения.</label>
+                                {% if formOrder.param1.errors %}
+                                    {{ formOrder.param1(class="") }} 
+                                    {% for error in formOrder.param1.errors %}
+                                        <span class="focus-input100 text-danger">{{ error }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    {{ formOrder.param1(class="is-valid") }} 
+                                {% endif %}
+
+                                <span class="text-danger" id="is-unvalid"></span>
+                            </div> 
+                            <div class="form-input hidden-input" id="nameOrganForOrder">
+                                <label for="param">Название организации.</label>
+                                {% if formOrder.name_organ_for_order.errors %}
+                                    {{ formOrder.name_organ_for_order(class="") }} 
+                                    {% for error in formOrder.name_organ_for_order.errors %}
+                                        <span class="focus-input100 text-danger">{{ error }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    {{ formOrder.name_organ_for_order(class="is-valid") }} 
+                                {% endif %}
+
+                                <span class="text-danger" id="is-unvalid"></span>
+                            </div> 
+                            <div class="form-input hidden-input" id='termImprisonment'>
+                                <label for="param">Срок заключения.</label>
+                                {% if formOrder.param2.errors %}
+                                    {{ formOrder.param2(class="is-valid")}}
+                                    {% for error in formOrder.param2.errors %}
+                                        <span class="focus-input100 text-danger">{{ error }}</span>
+                                    {% endfor %}
+                                    {% else %}
+                                    {{ formOrder.param2(class="")}}
+                                {% endif %}
+
+                                <span class="text-danger" id="is-unvalid"></span>
+                            </div>
+                            <div class="form-input hidden-input" id='degree_ri'>
+                                <label for="degree_ri">Степень снятия неприкоса.</label>
+                                {% if formOrder.degree_ri.errors %}
+                                    {{ formOrder.degree_ri(class="is-valid")}}
+                                    {% for error in formOrder.degree_ri.errors %}
+                                        <span class="focus-input100 text-danger">{{ error }}</span>
+                                    {% endfor %}
+                                    {% else %}
+                                    {{ formOrder.degree_ri(class="")}}
+                                {% endif %}
+
+                                <span class="text-danger" id="is-unvalid"></span>
+                            </div>
+                            <div class="form-input hidden-input" id='adreasOrganForOrder'>
+                                <label for="adreas_organ_for_order">Адреас организации.</label>
+                                {% if formOrder.adreas_organ_for_order.errors %}
+                                    {{ formOrder.adreas_organ_for_order(class="is-valid")}}
+                                    {% for error in formOrder.adreas_organ_for_order.errors %}
+                                        <span class="focus-input100 text-danger">{{ error }}</span>
+                                    {% endfor %}
+                                    {% else %}
+                                    {{ formOrder.adreas_organ_for_order(class="")}}
+                                {% endif %}
+
+                                <span class="text-danger" id="is-unvalid"></span>
+                            </div>
                         </div>
-                        <div class="form-input">
-                            <label for="param">Номер дела.</label>
-                            {% if formOrder.param4.errors %}
-                                {{ formOrder.param4(class="")}}
-                                {% for error in formOrder.param4.errors %}
-                                    <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
-                                {% endfor %}
+                        <div class="group">
+                            <div class="form-input hidden-input" id="carBrand">
+                                <label for="param">Марка т\с</label>
+                                {% if formOrder.car_brand.errors %}
+                                    {{ formOrder.car_brand(class="") }} 
+                                    {% for error in formOrder.car_brand.errors %}
+                                        <span class="focus-input100 text-danger">{{ error }}</span>
+                                    {% endfor %}
                                 {% else %}
-                                {{ formOrder.param4(class="")}}
-                            {% endif %}
+                                    {{ formOrder.car_brand(class="is-valid") }} 
+                                {% endif %}
 
-                            <span class="text-danger" id="is-unvalid"></span>
+                                <span class="text-danger" id="is-unvalid"></span>
+                            </div>
+                            <div class="form-input hidden-input" id='time'>
+                                <label id='label-time' for="param">Срок исполения.</label>
+                                {% if formOrder.param3.errors %}
+                                    {{ formOrder.param3(class="is-valid")}}
+                                    {% for error in formOrder.param3.errors %}
+                                        <span class="focus-input100 text-danger">{{ error }}</span>
+                                    {% endfor %}
+                                    {% else %}
+                                    {{ formOrder.param3(class="")}}
+                                {% endif %}
+
+                                <span class="text-danger" id="is-unvalid"></span>
+                            </div>
+                            <div class="form-input hidden-input"  id='number_offWork'>
+                                <label for="param">Номер дела.</label>
+                                {% if formOrder.param4.errors %}
+                                    {{ formOrder.param4(class="")}}
+                                    {% for error in formOrder.param4.errors %}
+                                        <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
+                                    {% endfor %}
+                                    {% else %}
+                                    {{ formOrder.param4(class="")}}
+                                {% endif %}
+
+                                <span class="text-danger" id="is-unvalid"></span>
+                            </div>
+                            <div class="form-input hidden-input" id='application_num'>
+                                <label for="application_num">Номер заявления.</label>
+                                {% if formOrder.application_num.errors %}
+                                    {{ formOrder.application_num(class="")}}
+                                    {% for error in formOrder.application_num.errors %}
+                                        <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
+                                    {% endfor %}
+                                    {% else %}
+                                    {{ formOrder.application_num(class="")}}
+                                {% endif %}
+
+                                <span class="text-danger" id="is-unvalid"></span>
+                            </div>
                         </div>
                     </div>
                 </div>

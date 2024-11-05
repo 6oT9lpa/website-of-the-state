@@ -1,7 +1,7 @@
 <div class="card-container">
     {% for item in action_users %}
         <div class="card">
-            <div class="card-title"><p>Государаственный сотрудник <b><br>{{item.nickname_accused}} {{item.nickname_static}}</b></p></div>
+            <div class="card-title"><p>Гражданин штата SA - <b><br>{{item.nickname_accused}} {{item.nickname_static}}</b></p></div>
             <div class="card-content">
                 {% if item.param_limit1 %} <p>Возбуждение уголовного дела</p> {% endif %}
                 {% if item.param_limit2 %} <p>Предоставить видеофиксацию задержания и ареста, а также предпологаемого правонарушение гражданина {{item.param_limit2_nickmane}} с {{item.param_limit2_time}}</p> {% endif %}
@@ -9,9 +9,9 @@
                 {% if item.param_limit4 %} <p>Предоставить персонадьные данные сотрудника</p> {% endif %}
                 {% if item.param_limit5 %} <p>Запрет на смену персональных данных сотруднику</p> {% endif %}
                 {% if item.param_limit6 %} <p>Запрет на ведение службых обязаностей на время расследования</p> {% endif %}
-                <p>прокурор: <b>{{item.nickname_attorney}}</b> | <b>6ot9lpa@gov.sa</b></p>
+                <p>Прокурор: <b>{{item.nickname_attorney}}</b> | <b>6ot9lpa@gov.sa</b></p>
             </div>
-            <a href="#" class="open-link">Открыть</a>
+            <a href="/resolution?uid={{ item.uid }}" class="open-link">Открыть</a>
         </div>
     {% endfor%}
 

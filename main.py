@@ -10,7 +10,8 @@ from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
-import random, string, redis, json, os
+from textwrap import wrap
+import random, string, redis, json, os, re
 
 def increment_number_with_leading_zeros(record):
     num = int(record)
@@ -124,28 +125,6 @@ def check_user_action(f):
               logout_user()
               return redirect(url_for('main.index'))
       return f(*args, **kwargs)
-    return decorated_function
-  
-def user_permission_moderation(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        from __init__ import Users
-        if not current_user.is_authenticated:
-            flash('Необходимо войти для доступа к этой странице.')
-            return redirect(url_for('main.auth'))
-
-        user = Users.query.get(current_user.id)
-        uid = request.args.get('uid')
-        rankuser_value = int(user.rankuser) if user.rankuser.isdigit() else 0
-
-        if user.organ == 'GOV' and rankuser_value >= 11 and rankuser_value != 12:
-            send_to_bot_permission_none(False)
-            return f(*args, **kwargs)
-
-        send_to_bot_permission_none(True)
-        flash('У вас нет доступа к модерации постановлений!')
-        return redirect(url_for('main.index'))
-
     return decorated_function
   
 # главная страница
@@ -468,6 +447,9 @@ def doc():
   
   from __init__ import PermissionUsers
   perm_user = PermissionUsers.query.filter_by(user_static=current_user.static).first()
+  if not perm_user: 
+    flash('У вас отстутсвуют права для создания документации!')
+    return render_template('doc.html', is_permission=False, is_authenticated=True)
   if not (perm_user.creation_doc or perm_user.lider or perm_user.tech): 
     flash('У вас отстутсвуют права для создания документации!')
     return render_template('doc.html', is_permission=False, is_authenticated=True)
@@ -485,24 +467,359 @@ def doc():
 
   return render_template('doc.html', is_permission=True, is_authenticated=True, form=form, formResolution=formResolution, formOrder=formOrder, formAgenda=formAgenda, nickname=nickname, organ=organ, color=color)
   
-  
-
 @main.route('/create_doc',  methods=['POST', 'GET'])
 def create_doc():
-  from __init__ import Users, PDFDocument, PublicDocumentAndNotifications, db
+  from __init__ import Users, PDFDocument, PublicDocumentAndNotificationsResolution, PublicDocumentAndNotificationsOrder, db, PermissionUsers
   from form import FormCreateDoc, FormCreateResolution, FormCreateOrder, FormCreateAgenda
   form = FormCreateDoc()
   formResolution = FormCreateResolution()
   formOrder = FormCreateOrder()
   formAgenda = FormCreateAgenda()
-  
+
+  if not current_user.is_authenticated:
+    flash('Для создания постановления требуется войти в аккаунт!')
+    return redirect(url_for('main.doc'))
+
+  perm_user = PermissionUsers.query.filter_by(user_static=current_user.static).first()
+  rankuser_value = int(current_user.rankuser) if current_user.rankuser.isdigit() else 0
+  if not (current_user.organ == 'GOV' and (rankuser_value == 10 or rankuser_value == 11 or rankuser_value >= 18)):
+    flash('Для создания постановлений требуется уровень доступа, прокурор!')
+    return redirect(url_for('main.doc'))
+    
+  elif not (perm_user.creation_doc or perm_user.admin or perm_user.tech):
+    flash('Для создания постановлений требуется разрешение!')
+    return redirect(url_for('main.doc'))
+    
   if form.validate_on_submit():
     typeDoc = form.type_doc.data
-    
+    nickname = form.nickname.data
+    static = form.static.data
+
+    if static == '':
+      flash('Неверный формат. Поле статик не может быть пустым!')
+      return redirect(url_for('main.doc'))
+ 
     if typeDoc == 'Order':
-      pass
+      def create_order_header(pdf, title, subtitle, subtitle2):
+        pdf.setFont("TimesNewRoman-Bold", 14)
+        pdf.drawString(50 * mm, 235 * mm, title)
+        pdf.drawString(70 * mm, 230 * mm, subtitle)
+        pdf.setFont("TimesNewRoman-Bold", 16)
+        pdf.drawString(80 * mm, 220 * mm, subtitle2)
+
+      # Функция для добавления основной информации ордера
+      def add_order_details(pdf, details, y, max_width=95):
+        pdf.setFont("TimesNewRoman", 12)
+        line_height = pdf._fontsize + 2 
+        subheading_indent = 2 * mm 
+
+        for text in details:
+            if text.startswith("4. Особые указания:") or text.startswith("   "):
+                current_indent = subheading_indent
+            else:
+                current_indent = line_height
+
+            wrapped_text = wrap(text, width=max_width) 
+            for line in wrapped_text:
+                pdf.drawString(15 * mm, y, line)
+                y -= line_height
+            
+            y -= current_indent
+
+        return y
+      
+      def get_basis_for_immunity_removal(document_string):
+        regex = r"^(Иск|Прокуратура)\s№\s*(\d+)$"
+        match = re.match(regex, document_string)
+        
+        if match:
+            return match.group(1), match.group(2)
+        else:
+            flash("Неверный формат. Неверно заполнены пункты в ордере.")
+            return None, None
+
+      buffer = BytesIO()
+      pdf = canvas.Canvas(buffer, pagesize=A4)
+
+      # Установка шрифтов
+      font_path = os.path.join('static', 'fonts', 'times.ttf')
+      pdfmetrics.registerFont(TTFont('TimesNewRoman', font_path))
+      pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))
+      pdf.setFont("TimesNewRoman", 12)
+
+      # Заголовок изображения и логотипа
+      image_path = os.path.join('static', 'img', 'DepOfJustice.png')
+      pdf.drawImage(image_path, 50 * mm, 245 * mm, width=100 * mm, height=50 * mm)
+
+      # Текст разделителя
+      separator_path = os.path.join('static', 'img', 'text separator.png')
+      pdf.drawImage(separator_path, 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
+
+      # Получение номера документа
+      last_record = PublicDocumentAndNotificationsOrder.query.order_by(PublicDocumentAndNotificationsOrder.id.desc()).first()
+      record = last_record.id if last_record else 0
+      num_order = increment_number_with_leading_zeros(record)
+
+      # Общая информация
+      pdf.drawString(150 * mm, 200 * mm, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
+      pdf.drawString(30 * mm, 200 * mm, f"Doc. No: {num_order}")
+      
+      # Стартовая координата y
+      y = 190
+
+      # Динамическое заполнение по типу ордера
+      if formOrder.type_order.data == 'AS' or formOrder.type_order.data == 'Arrest and Search':
+        create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Arrest and Search')
+        str_typeOrder = 'Arrest and Search'
+        offwork = formOrder.param4.data
+        time = formOrder.param3.data
+        articlesAccusation = formOrder.param1.data
+        termImprisonment = formOrder.param2.data
+
+        if not all([offwork, time, articlesAccusation, termImprisonment]):
+           flash('Неверный формат. Вы заполнили не все поля')
+           return redirect(url_for('main.doc'))
+
+        details = [
+            "1. Цель. Проведение процедуры законного задержания гражданина штата Сан-Андреас, "
+            f"{nickname if nickname != '' else ''}, с номером паспорта {static}, с последующим заключением в Федеральной "
+            f"тюрьме сроком на {termImprisonment}.", 
+
+            "2. Пояснение к цели. Данный ордер выдан для законного задержания гражданина и его последующего "
+            "увольнения с занимаемой государственной должности. После этого осуществляется арест " 
+            f"на срок {termImprisonment}.", 
+
+            "3. Основания для авторизации ордера. Гражданин виновен в нарушении следующих положений "
+            f"законодательства штата Сан-Андреас: {articlesAccusation}. Дополнительно, к делу прилагается документация с "
+            f"номерами производств: {offwork}.",
+
+            f"4. Сроки исполнения. Ордер вступает в силу с момента его публикации и подписания на официальном "
+            f"портале штата Сан-Андреас, и остается действительным {time}, указанных в нем целей."
+        ]
+        y = add_order_details(pdf, details, y * mm)
+
+      elif formOrder.type_order.data == 'RI' or formOrder.type_order.data == 'Removal of Immunity':
+        create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Removal of Immunity')
+        str_typeOrder = 'Removal of Immunity'
+        applicationNum = formOrder.application_num.data
+        degreeRI = formOrder.degree_ri.data
+        time = formOrder.param3.data
+
+        if not all([applicationNum, degreeRI, time]):
+          flash('Неверный формат. Вы заполнили не все поля')
+          return redirect(url_for('main.doc'))
+        
+        document_string = applicationNum
+        basis_type, basis_number = get_basis_for_immunity_removal(document_string)
+
+        if not basis_type or not basis_number:
+          return redirect(url_for('main.doc'))
+
+        if basis_type == "Иск":
+          basis_text = f"исковым заявлением № {basis_number}"
+        else:
+          basis_text = f"заявлением в прокуратуру № {basis_number}"
+      
+        if degreeRI == 'частично':
+          details = [
+              f"1. Цель. Частичное снятие статуса неприкосновенности у гражданина {nickname if nickname != '' else ''}, паспортные "
+              f"данные {static}, для проведения следственных действий в рамках прокурорского расследования.", 
+
+              "2. Разрешение. Настоящий ордер предоставляет Прокуратуре штата Сан-Андреас право на осуществление "
+              "следственных действий в отношении указанного лица, за исключением задержания и "
+              "применения ограничительных мер, связанных с арестом.",
+
+              f"3. Ордер выдан в связи с проведением прокурорской проверки по {basis_text} и расследования "
+              "в отношении лица, указанного в пункте 1.",
+
+              f"4. Действие данного ордера оканчивается в месте с завершением прокурорского расследования "
+              f"по {basis_text}, либо до его отмены компетентными органами."
+          ]
+
+        elif degreeRI == 'полностью':
+           details = [
+              f"1. Цель. Полное снятие статуса неприкосновенности с гражданина {nickname if nickname != '' else ''}, паспортные данные "
+              f"{static}, для задержания и проведения дальнейших процессуальных действий, включая арест.", 
+
+              "2. Разрешение. Настоящий ордер предоставляет право на проведение следственных, процессуальных "
+              "и иных необходимых действий, включая задержание и арест указанного лица, с соблюдением "
+              "законодательства штата Сан-Андреас.", 
+
+              f"3. Ордер выдан в связи с заявлением № номер заявления, в рамках которого проведение "
+              "ареста признано необходимым для обеспечения безопасности и правосудия.", 
+
+              f"4. Настоящий ордер на полное снятие неприкосновенности действует до окончания всех "
+              f"процессуальных мероприятий, либо до издания иного распоряжения компетентных органов."
+          ]
+        
+        else:
+          flash("Неверный формат. Такой степени снятия неприкосновености не существует, проверьте правописание")
+          return redirect(url_for('main.doc'))
+        
+        y = add_order_details(pdf, details, y * mm)
+      
+      elif formOrder.type_order.data == 'AR' or formOrder.type_order.data == 'Access To Raid':
+        create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Access To Raid')
+        str_typeOrder = 'Access To Raid'
+        nameCrimeOrgam = formOrder.name_organ_for_order.data
+        adreasCrimeOrgan = formOrder.adreas_organ_for_order.data
+        offwork = formOrder.param4.data
+        time = formOrder.param3.data
+        articlesAccusation = formOrder.param1.data
+
+        if not all([nameCrimeOrgam, adreasCrimeOrgan, offwork, time, articlesAccusation, static]):
+           flash('Неверный формат. Вы заполнили не все поля')
+           return redirect(url_for('main.doc'))
+        
+        details = [
+          "1. Цель: Прекращение преступной деятельности граждан, выявление и задержание лиц, "
+          "нарушающих законодательство штата Сан-Андреас.", 
+
+          f"2. Пояснение к цели: Разрешено проведение рейда на территории {nameCrimeOrgam} "
+          f"расположенного по адресу: Сан-Андреас, {adreasCrimeOrgan}. Цель мероприятия, провести "
+          "обыск сотрудников и транспортных средств, находящихся на прилегающей территории, а "
+          "также осуществить задержание и допрос предполагаемого владельца автомастерской, "
+          f"{nickname if nickname != '' else ''} с паспортными данными {static}.",
+        
+          f"Основания для ордера: Ордер выдан на основании делопроизводства {offwork}, при "
+          "наличии следующих нарушений в соответствии с Уголовным кодексом штата Сан-Андреас:                              "
+          f"{articlesAccusation}", 
+
+          f"Срок действия ордера: Ордер действителен {time} всех указанных целей и задач."
+        ]
+        y = add_order_details(pdf, details, y * mm)
+
+      elif formOrder.type_order.data == 'SA' or formOrder.type_order.data == 'Search Access':
+        create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Search Access')
+        str_typeOrder = 'Search Access'
+        adreasSuspect = formOrder.adreas_suspect.data
+        carBrand = formOrder.car_brand.data
+        articlesAccusation = formOrder.param1.data
+        time = formOrder.param3.data
+
+        if not all([adreasSuspect, carBrand, articlesAccusation, time]):
+          flash('Неверный формат. Вы заполнили не все поля')
+          return redirect(url_for('main.doc'))
+        
+        details = [
+          "1. Цель: Проведение обыска имущества и транспортных средств, связанных с подозреваемыми в"
+          "преступной деятельности, в целях сбора доказательств и пресечения правонарушений.", 
+
+          "2. Пояснение к цели: Разрешено проведение обыска на территории объектов, находящихся в собственности или в "
+          f"распоряжении подозреваемого, {nickname if nickname != '' else ''} с паспортными данными {static}, "
+          "включая все здания, помещения, транспортные средства и прилегающую территорию. "
+          f"Объекты, подлежащие обыску, включают: адрес(a) жилого(ых) помещения(ий) {adreasSuspect} "
+          f"марска т\с: {carBrand}", 
+          
+          "3. Основания для обыска: Обыск проводится, в соответсивии с подозрениями в совершение " 
+          f"правонарушений по статьям: {articlesAccusation}", 
+
+          f"4. Настоящий ордер действителен {time} обысковых мероприятий и сбора доказательств, необходимых для "
+          "достижения целей расследования."
+        ]
+        y = add_order_details(pdf, details, y * mm)
+      
+      elif formOrder.type_order.data == 'FW' or formOrder.type_order.data == 'Federal Wanted':
+        create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Federal Wanted')
+        str_typeOrder = 'Federal Wanted'
+        articlesAccusation = formOrder.param1.data
+        time = formOrder.param3.data
+        offwork = formOrder.param4.data
+
+        if not all([articlesAccusation, time, offwork]):
+          flash('Неверный формат. Вы заполнили не все поля')
+          return redirect(url_for('main.doc'))
+        
+        details = [
+          f"1. Цель: Объявление в розыск и задержание гражданина {nickname if nickname != '' else ''} с паспортынми данными {static}, "
+          f"подозреваемого в совершении преступлений, с целью пресечения его противоправной деятельности и "
+          "обеспечения его явки для проведения следственных и процессуальных действий.",
+
+          "2. Пояснение к цели: Данный ордер выдается для организации оперативно-розыскных мероприятий "
+          f"c целью установления местонахождения гражданина {nickname if nickname != '' else ''}, с паспортынми данными {static} "
+          f"имеются обоснованные подозрения в нарушении законодательства штата Сан-Андреас. Подозреваемый "
+          "обвиняется в совершении следующих преступлений согласно Уголовному кодексу штата Сан-Андреас:                " 
+          f"{articlesAccusation}.", 
+
+          "3. Основания для объявления в розыск: Ордер на объявление в розыск выдан на основании дела "
+          f"{offwork} в связи с наличием подозрений, что указанный гражданин может представлять "
+          "опасность для общества или скрываться от следствия.", 
+
+          "4. Особые указания:"
+          "Правоохранительным органам штата Сан-Андреас предписывается:",
+          
+          "   1. Установить место нахождения подозреваемого и при обнаружении произвести задержание в "
+          "      рамках полномочий.",
+          "   2. При необходимости привлечь дополнительные подразделения для проведения оперативных действий.",
+          "   3. Обеспечить сохранность всех потенциальных доказательств, которые могут быть обнаружены "
+          "      при задержании подозреваемого.",
+
+          f"5. Ордер на розыск действует {time} подозреваемого или его добровольной явки в "
+          "правоохранительные органы."
+        ]
+        y = add_order_details(pdf, details, y * mm)
+
+      else:
+        flash('Такого ордера не существует, проверьте правильность написания!')
+        return redirect(url_for('main.doc'))
+
+      # Сохранение и запись PDF
+      pdf.showPage()
+      pdf.save()
+      buffer.seek(0)
+
+      uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
+      file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
+      with open(file_path, 'wb') as f:
+          f.write(buffer.getvalue())
+
+      # Создание и сохранение документа в базе данных
+      pdf_document = PDFDocument(
+          user_static=current_user.static, 
+          user_discordid=current_user.discordid,
+          uid=uid,
+          content=file_path,
+          created_at=datetime.now()
+      )
+      db.session.add(pdf_document)
+      db.session.commit()
+      
+      # Отправка информации о новом ордере в бот
+      send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status='moder', number_resolution=num_order)
+
+      # Создание и добавление записи в PublicDocumentAndNotificationsOrder
+      user = Users.query.filter_by(static=static).first()
+      new_order = PublicDocumentAndNotificationsOrder(
+        uid=uid, 
+        nickname_attorney=current_user.nikname,
+        static_attorney=current_user.static,
+        discord_attorney=current_user.discordid, 
+        nickname_accused=nickname,
+        static_accused=static,
+        discord_accused=user.discordid if user else None,
+        type_order=str_typeOrder,
+        time=formOrder.param3.data if formOrder.param3.data != '' else None,
+        articlesAccusation=formOrder.param1.data if formOrder.param1.data != '' else None,
+        termImprisonment=formOrder.param2.data if formOrder.param2.data != '' else None,
+        offWork=formOrder.param4.data if formOrder.param4.data != '' else None,
+        number_order=num_order
+      )
+      
+      db.session.add(new_order)
+      db.session.commit()
     
     elif typeDoc == 'Resolution':
+      param1 = formResolution.param1.data
+      param2 = formResolution.param2.data
+      param3 = formResolution.param3.data
+      param4 = formResolution.param4.data
+      param5 = formResolution.param5.data
+      param6 = formResolution.param6.data
+      
+      if not any([param1, param2, param3, param4, param5, param6]):
+        flash('При создании постановленмя должен быть выбран хотя бы один пунк!')
+        return redirect(url_for('main.doc'))
+      
       uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
       session['uid'] = uid
 
@@ -510,13 +827,7 @@ def create_doc():
       static = form.static.data
       
       user = Users.query.filter_by(static=static).first()
-        
-      param1 = formResolution.param1.data
-      param2 = formResolution.param2.data
-      param3 = formResolution.param3.data
-      param4 = formResolution.param4.data
-      param5 = formResolution.param5.data
-      param6 = formResolution.param6.data
+      
       nickname_victim = formResolution.param2_nickname.data
       case_number = formResolution.case.data
       arrest_time = formResolution.arrest_time.data
@@ -548,10 +859,10 @@ def create_doc():
       image_path = os.path.join('static', 'img', 'text separator.png')
       pdf.drawImage(image_path, 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
       
-      if PublicDocumentAndNotifications.query.count() == 0:
+      if PublicDocumentAndNotificationsResolution.query.count() == 0:
         record = 0     
       else:
-        last_record = PublicDocumentAndNotifications.query.order_by(PublicDocumentAndNotifications.id.desc()).first()
+        last_record = PublicDocumentAndNotificationsResolution.query.order_by(PublicDocumentAndNotificationsResolution.id.desc()).first()
         record = last_record.id
       
       num_resolution = increment_number_with_leading_zeros(record)
@@ -637,15 +948,15 @@ def create_doc():
           
       else:
         if param1:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Возбудить уголовное дело в отношении сотрудника гражаданина {nickname} с номером идентификационного")
+          pdf.drawString(15 * mm, y * mm, f"{num}. Возбудить уголовное дело в отношении сотрудника гражаданина {nickname} с номером паспортных")
           y -= 5
-          pdf.drawString(15 * mm, y * mm, f"знака {static}, присвоить делу идентификатор {case_number}. Принять дело к собственному производству.")
+          pdf.drawString(15 * mm, y * mm, f"данных {static}, присвоить делу идентификатор {case_number}. Принять дело к собственному производству.")
           y -= 10
           num += 1
           isParam1 = True
           
         if param2:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Сотруднику гражданина {nickname} с номером идентификационного знака {static}, в течении")
+          pdf.drawString(15 * mm, y * mm, f"{num}. Сотруднику гражданина {nickname} с номером паспортных данных {static}, в течении")
           y -= 5
           pdf.drawString(15 * mm, y * mm, f"24-ёх часов надлежит предоставить на почту Прокурора {current_user.nikname} {current_user.discordname}@gov.sa")
           y -= 5
@@ -661,9 +972,9 @@ def create_doc():
         if param3:
           pdf.drawString(15 * mm, y * mm, f"{num}. Предоставить личное дело сотрудника гражданина {nickname} с номером")
           y -= 5
-          pdf.drawString(15 * mm, y * mm, f"идентификационного знак {static}, включающее в себя: паспортные данные, должность в государственной")
+          pdf.drawString(15 * mm, y * mm, f"паспортных данных {static}, включающее в себя: паспортные данные, должность в государственной")
           y -= 5
-          pdf.drawString(15 * mm, y * mm, "структуре. Информация должна быть предоставлена в течение 24-х")
+          pdf.drawString(15 * mm, y * mm, "структуре. Информация должна быть предоставлена в течение 24-х часов")
           y -= 10
           num += 1
           isParam3 = True
@@ -714,8 +1025,7 @@ def create_doc():
       buffer.seek(0)
       
       curr_user = Users.query.filter_by(static=current_user.static).first()
-
-      global file_path
+      
       file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
       with open(file_path, 'wb') as f:
           f.write(buffer.getvalue())
@@ -734,7 +1044,7 @@ def create_doc():
       send_to_bot_new_resolution(uid=uid, nickname=curr_user.nikname, static=curr_user.static, discordid=curr_user.discordid, status=status, number_resolution=num_resolution)
       
       if not user:
-        new_resolution = PublicDocumentAndNotifications(
+        new_resolution = PublicDocumentAndNotificationsResolution(
           uid=uid, 
           nickname_attorney=current_user.nikname,
           static_attorney=current_user.static,
@@ -753,7 +1063,7 @@ def create_doc():
           number_resolution = num_resolution
           ) 
       elif user:
-        new_resolution = PublicDocumentAndNotifications(
+        new_resolution = PublicDocumentAndNotificationsResolution(
           uid=uid, 
           nickname_attorney=current_user.nikname,
           static_attorney=current_user.static,
@@ -778,13 +1088,19 @@ def create_doc():
 
     elif typeDoc == 'Agenda':
       pass
-    
+
+    else:
+      flash('Неверный формат. Вы должны выбрать какой нибуть тип документации!')
+      return redirect(url_for('main.doc'))
+  else:
+    flash('Неверный формат. Проверьте правильность заполнения формы!')
+    return redirect(url_for('main.doc'))
+  
   return redirect(url_for('main.doc'))
 
 @main.route('/resolution', methods=['POST', 'GET'])
-@user_permission_moderation
 def resolution():
-  from __init__ import PDFDocument, PublicDocumentAndNotifications, db
+  from __init__ import PDFDocument, PublicDocumentAndNotificationsResolution, PublicDocumentAndNotificationsOrder, Users, db
   from form import FormModerationResolution
   
   uid = request.args.get('uid')
@@ -793,39 +1109,55 @@ def resolution():
   
   uid_parts = uid.split('/')
   if len(uid_parts) > 1 and uid_parts[1] == 'moderation':
-      uid = uid_parts[0]
+    send_to_bot_permission_none(False)
+    uid = uid_parts[0]
+
 
   pdf_doc = PDFDocument.query.filter_by(uid=uid).first()
   if pdf_doc:
       if not os.path.exists(pdf_doc.content):
           return "PDF file not found on server", 404
 
-      moder = PublicDocumentAndNotifications.query.filter_by(uid=uid).first()
+      moder_resolution = PublicDocumentAndNotificationsResolution.query.filter_by(uid=uid).first()
       form = FormModerationResolution()
 
       if form.validate_on_submit():
           if form.success.data:
-              moder.is_modertation = True
+              moder_resolution.is_modertation = True
               moderation = True
               reason = 'None'
-              send_to_bot_information_resolution(moder.discord_attorney, current_user.discordid, moderation, reason, uid)
+              send_to_bot_information_resolution(moder_resolution.discord_attorney, current_user.discordid, moderation, reason, uid)
               db.session.commit()
               return redirect(url_for('main.resolution', uid=uid))
 
           elif form.rejected.data:
               reason = form.reason.data
               moderation = False
-              send_to_bot_information_resolution(moder.discord_attorney, current_user.discordid, moderation, reason, uid)
+              send_to_bot_information_resolution(moder_resolution.discord_attorney, current_user.discordid, moderation, reason, uid)
               return redirect(url_for('main.doc'))
 
       # Проверка модерационного статуса
-      if moder.is_modertation:
-          # Показ страницы предпросмотра, если документ уже проверен
+      if moder_resolution:
+        if moder_resolution.is_modertation:
           return render_template('prewiew_resolution.html', pdf_path=pdf_doc.content, uid=uid)
-
+      
       # Если модерация еще не завершена, показываем страницу модерации
       if 'moderation' in request.args.get('uid'):
+        if not current_user.is_authenticated:
+          flash('Для модерации постановлений требуется войти в аккаунт!')
+          send_to_bot_permission_none(True)
+          return redirect(url_for('main.index'))
+        
+        user = Users.query.get(current_user.id)
+        rankuser_value = int(user.rankuser) if user.rankuser.isdigit() else 0
+        if user.organ == 'GOV' and rankuser_value >= 11 and rankuser_value != 12:
+          send_to_bot_permission_none(False)
           return render_template('temporary_page.html', pdf_path=pdf_doc.content, form=form, uid=uid)
+        
+        else: 
+          flash('У вас отсутсвуют права на модерацию постановлений!')
+          send_to_bot_permission_none(True)
+          return redirect(url_for('main.index'))
 
   else:
       text_error = "PDF not found or invalid UID"
@@ -862,7 +1194,7 @@ def user_is_moder(f):
 @main.route('/edit_doc')
 @user_is_moder
 def edit_doc():
-  from __init__ import PDFDocument, PublicDocumentAndNotifications, Users, db
+  from __init__ import PDFDocument
   from form import FormEditResolution
   
   uid = request.args.get('uid')
@@ -880,14 +1212,14 @@ def edit_doc():
 
 @main.route('/edit_resolution', methods=['GET', 'POST'])
 def edit_resolution():
-  from __init__ import PublicDocumentAndNotifications, Users, db
+  from __init__ import PublicDocumentAndNotificationsResolution, Users, db
   from form import FormEditResolution
   
   uid = request.args.get('uid')
   
   form = FormEditResolution()
   if request.method == 'POST':
-    doc = PublicDocumentAndNotifications.query.filter_by(uid=uid).first()
+    doc = PublicDocumentAndNotificationsResolution.query.filter_by(uid=uid).first()
     nickname_victim = form.param1.data
     nickname_accused = form.param2.data
     static_accused = form.param3.data
@@ -1130,10 +1462,10 @@ def edit_resolution():
 
 @main.route('/get_prosecution_office_content')
 def get_prosecution_office_content():
-  from __init__ import PublicDocumentAndNotifications
+  from __init__ import PublicDocumentAndNotificationsResolution
   is_visibily_attoney = True
 
-  action_users = PublicDocumentAndNotifications.query.filter_by(is_modertation=True).all()
+  action_users = PublicDocumentAndNotificationsResolution.query.filter_by(is_modertation=True).all()
   
   return render_template(
     'main/main-doc-attomey.html', 

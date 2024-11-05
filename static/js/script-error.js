@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 access_message.style.transform = 'translateY(0px)';
                 access_message.classList.add('show');
-                access_message.classList.remove('hidden'); // Убираем класс hidden после показа
+                access_message.classList.remove('hidden');
             }, 10); 
-        }, 200); // Измените на желаемую задержку
+        }, 200); 
     }
 
     document.querySelector('.modal-close-error')?.addEventListener('click', closeModal_error);

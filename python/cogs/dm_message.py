@@ -76,7 +76,7 @@ class SendDmMessage(commands.Cog):
 
             button = Button(
                 label="Сменить пароль",
-                url="http://26.184.54.209:8000/auth?next=http://26.184.54.209:8000/change_password",
+                url="http://26.120.213.68:8000/auth?next=http://26.120.213.68:8000/change_password",
                 style=ButtonStyle.link
             )
 
@@ -121,7 +121,7 @@ class SendDmMessage(commands.Cog):
                     description=(
                         f"<@{discord_from}> одобрил ваше постановление \n"
                         f"и оно было направленно в официальную пуликацию\n\n"
-                        "его можно увидеть во вкладке /doc"
+                        "его можно увидеть во вкладке /doc или по кнопке ниже"
                     ),
                     color=disnake.Color.green()
                 )
@@ -129,7 +129,7 @@ class SendDmMessage(commands.Cog):
                 
                 button = Button(
                     label="Осмотреть постановление",
-                    url="http://26.184.54.209:8000/auth",
+                    url=f"http://26.120.213.68:8000/resolution?uid={ uid }",
                     style=ButtonStyle.link
                 )
 
@@ -160,7 +160,7 @@ class SendDmMessage(commands.Cog):
                 
                 button = Button(
                     label="Исправить постановление",
-                    url=f"http://26.184.54.209:8000/auth?next=http://26.184.54.209:8000/edit_doc?uid={uid}",
+                    url=f"http://26.120.213.68:8000/auth?next=http://26.120.213.68:8000/edit_doc?uid={uid}",
                     style=ButtonStyle.link
                 )
 
@@ -188,9 +188,9 @@ async def process_new_resolution_message(dm_message):
                 uid = data['uid']
                 nickname = data['nickname']
                 static = data['static']
-                discrodid = data['discrodid']
+                discordid = data['discordid']
                 
-                await dm_message.send_dm_resolution(uid, nickname, static, discrodid)
+                await dm_message.send_dm_resolution(uid, nickname, static, discordid)
             except Exception as e:
                 print(f"Ошибка обработки сообщения: {e}")
                 traceback.print_exc()

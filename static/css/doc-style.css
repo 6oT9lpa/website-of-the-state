@@ -46,6 +46,7 @@ main{
     color: white;
     box-shadow: 0 0 20px 10px #262626c2;
     border-radius: 10px;
+    
 }
 
 .modal-close {
@@ -65,6 +66,7 @@ main{
 .modal.active {
     opacity: 1; /* Полная видимость при активном состоянии */
     visibility: visible; /* Делаем элемент видимым */
+    z-index: 2;
 }
 
 .overlay {
@@ -81,6 +83,7 @@ main{
 .overlay.active {
     opacity: 1; /* Полная видимость при активном состоянии */
     visibility: visible; /* Делаем элемент видимым */
+    z-index: 1;
 }
 
 .nikname
@@ -337,7 +340,6 @@ main{
 {
     display: flex;
     flex-direction: column;
-    width: 40%;
 }
 
 #agenda-wrapper
@@ -364,15 +366,16 @@ main{
 
 .form-input
 {
+    width: 200px;
     padding: 5px 0px !important;
+    display: block;
+    opacity: 1;
 }
 
 .form-input.error input
 {
     background-color: #632525 !important;  
 }
-
-
 
 .wrapper-input {
     opacity: 0;
@@ -393,7 +396,7 @@ main{
 #attorney-content
 {
     position: absolute;
-    z-index: -1;
+    z-index: 1;
 }
 
 .input-wrapper
@@ -513,3 +516,164 @@ main{
     border-radius: 4px;
 }
 
+.group
+{
+    display: flex;
+    justify-content: center;
+}
+
+.hidden-input {
+    display: none;
+    opacity: 0;
+    transform: translateY(-10px);
+    transform: translateX(20px);
+    transition: opacity 0.3s ease, transform 0.5s ease;
+}
+
+.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+    transform: translateX(0);
+    transition: opacity 0.3s ease, transform 0.5s ease;
+}
+
+@media (max-width: 480px) { 
+    .modal-content {
+        width: 95%;
+        margin-top: 20%;
+    }
+
+    .nikname {
+        font-size: 16px;
+        padding: 0 10px;
+    }
+
+    .personal-date {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        padding: 5px;
+    }
+
+    .checkbox-wrapper {
+        flex-direction: column;
+        gap: 5px;
+        width: 100%;
+    }
+
+    .checkbox-label {
+        width: 20px;
+        height: 20px;
+    }
+
+    .select-button {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+
+    .card-container {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .card {
+        padding: 15px;
+        max-width: 100%;
+    }
+
+    #access-message {
+        margin: 10px;
+        font-size: 14px;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) { 
+    .modal-content {
+        width: 90%;
+        margin-top: 10%;
+    }
+
+    .nikname {
+        font-size: 17px;
+    }
+
+    .personal-date {
+        width: 80%;
+    }
+
+    .checkbox-wrapper {
+        flex-direction: row;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .checkbox-label {
+        width: 22px;
+        height: 22px;
+    }
+
+    .select-button {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .card-container {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .card {
+        padding: 18px;
+    }
+
+    #access-message {
+        font-size: 15px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) { 
+    .modal-content {
+        width: 80%;
+        margin-top: 5%;
+    }
+
+    .nikname {
+        font-size: 18px;
+    }
+
+    .personal-date {
+        width: 70%;
+    }
+
+    .checkbox-label {
+        width: 24px;
+        height: 24px;
+    }
+
+    .select-button {
+        padding: 10px 15px;
+    }
+
+    .card-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    #access-message {
+        font-size: 16px;
+    }
+}
+
+@media (min-width: 1025px) { 
+    .modal-content {
+        width: 60%;
+        margin-top: 3%;
+    }
+
+    .card-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

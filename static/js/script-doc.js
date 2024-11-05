@@ -16,15 +16,42 @@ document.addEventListener('DOMContentLoaded', function() {
     const checkbox2 = document.getElementById('param2_checkbox');
     const input_checkbox1 = document.getElementById('input_checkbox1');
     const input_checkbox2 = document.getElementById('input_checkbox2');
+    const caseInput = document.getElementById('caseInput');
+    const access_message = document.querySelector('#access-message');
+
+    document.getElementById('load-prosecution-office').addEventListener('click', function(event) {
+        event.preventDefault();
+
+        fetch('/get_prosecution_office_content')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сети');
+                }
+                return response.text();
+            })
+            .then(data => {
+                const attorneyContent = document.getElementById('attorney-content');
+                if (attorneyContent) {
+                    attorneyContent.innerHTML = data;
+                    attorneyContent.classList.add('fade-in');
+                    document.getElementById('load-prosecution-office').classList.add('active-button');
+                } else {
+                    console.error('Элемент с id "attorney-content" не найден.');
+                }
+            })
+            .catch(error => console.error('Ошибка загрузки контента:', error));
+    });
 
     if (checkbox1 && input_checkbox1) {
         checkbox1.addEventListener('change', function() {
             if (this.checked) {
+                enableFields([caseInput]);
                 input_checkbox1.style.display = 'flex';
                 requestAnimationFrame(() => {
                     input_checkbox1.classList.add('visible-input');
                 });
             } else {
+                disableFields([caseInput]);
                 input_checkbox1.classList.remove('visible-input');
                 input_checkbox1.addEventListener('transitionend', function handleTransitionEnd() {
                     input_checkbox1.style.display = 'none'; 
@@ -50,6 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
     modalButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             e.preventDefault();
@@ -62,19 +90,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 body.style.position = 'fixed'; 
                 body.style.width = '100%'; 
             }
+            else{
+                access_message.classList.add('hidden'); // Изначально скрываем
+                access_message.style.display = 'block'; 
+                access_message.style.transform = 'translateY(30px)';
+                setTimeout(() => {
+                    access_message.style.transform = 'translateY(0px)';
+                    access_message.classList.add('show');
+                    access_message.classList.remove('hidden'); // Убираем класс hidden после показа
+                }, 10); 
+            }
         });
     });
-    
+
     if (isAuthenticated && isPermission) {
         closeButton.addEventListener('click', closeModal);
         overlay.addEventListener('click', closeModal);
     } 
+    else{
+        document.querySelector('.modal-close-error')?.addEventListener('click', closeModal_error);
+    }
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeModal();
+            closeModal_error();
         }
     });
+
+    function closeModal_error() {
+        if (access_message) {
+            access_message.classList.remove('show');
+            access_message.style.transform = 'translateY(-30px)';
+            access_message.classList.add('hidden');
+            setTimeout(() => {
+                access_message.style.display = 'none'; 
+            }, 500); 
+        }
+    }
 
     function closeModal() {
         const activeModal = document.querySelector('.modal.active');
@@ -110,7 +163,13 @@ const param4 = document.getElementById('param4');
 const param5 = document.getElementById('param5');
 const param6 = document.getElementById('param6');
 const param7 = document.getElementById('param7');
+const typeOrder = document.getElementById('typeOrder');
+const input_degreeRI = document.getElementById('degreeRI');
+const input_applicationNum = document.getElementById('applicationNum');
+const input_nameCrimeOrgan = document.getElementById('nameCrimeOrgan');
+const input_adreasCrimeOrgan = document.getElementById('adreasCrimeOrgan');
 const wrapperOrder = document.getElementById('order-wrapper');
+const termImprisonment = document.getElementById('termImprisonment');
 const wrapperResolution = document.getElementById('resolution-wrapper');
 const wrapperAgenda = document.getElementById('agenda-wrapper');
 const contanier_res = document.getElementById('contanier-wrapper_res');
@@ -173,12 +232,12 @@ function ValidFormResolutionArrestTime(input) {
 }
 
 function ValidFormOrgan_param1(input) {
-    const regex = /^(?:\d|[1-9]\d)\.(?:\d|[1-9]\d).(?:\d|[1-9]\d)\s*УК$/;
+    const regex = /^(?:\d{1,2}(?:\.\d{1,2}){0,2}\s*(?:УК|АК))(?:,\s*\d{1,2}(?:\.\d{1,2}){0,2}\s*(?:УК|АК))*$/;
     if (input.value === '') {
         showError(input, 'Поле не может быть пустым');
         return false;
     } else if (!regex.test(input.value)) {
-        showError(input, 'Неверный формат. Должен быть x.x, xx.x, x.xx или xx.xx УК.');
+        showError(input, 'Неверный формат. Должен быть x.x УК, xx.x УК, x.xx УК, xx.xx УК или x.x.x УК, разделенные запятыми.');
         return false;
     } else {
         clearError(input);
@@ -257,58 +316,271 @@ function ValidFormOrgan_param7(input)
     }
 }
 
-function addValidationListeners() {
-    param1.addEventListener('input', validateParam1);
-    param2.addEventListener('input', validateParam2);
-    param3.addEventListener('input', validateParam3);
-    param4.addEventListener('input', validateParam4);
-    case_input.addEventListener('input', validateCaseinput);
-    arrest_time.addEventListener('input', validateArrestTime);
+function ValidateInputDegreeRI(input)
+{
+    if (input.value !== '')
+    {
+        clearError(input);
+
+        if (input.value === 'полностью'){
+            clearError(input);
+            return true;
+        }
+        else if (input.value === 'частично'){
+            clearError(input);
+            return true;
+        }
+        else{
+            showError(input, 'Неприкос можно снять *частично* либо *полностью*');
+        }
+    }
+    else
+    {
+        showError(input, 'Поле не может быть пустым');
+        return false;
+    }
 }
 
-function removeValidationListeners() {
-    param1.removeEventListener('input', validateParam1);
-    param2.removeEventListener('input', validateParam2);
-    param3.removeEventListener('input', validateParam3);
-    param4.removeEventListener('input', validateParam4);
-    case_input.removeEventListener('input', validateCaseinput);
-    arrest_time.removeEventListener('input', validateArrestTime);
+function ValidateInputApplicationNum(input) {
+    const regex = /^(Иск|Прокуратура)\s№\s*\d+$/;
+    
+    if (input.value === '') {
+        showError(input, 'Поле не может быть пустым');
+        return false;
+    } else if (!regex.test(input.value)) {
+        showError(input, 'Неверный формат. Введите "Иск № номер" или "Прокуратура № номер".');
+        return false;
+    } else {
+        clearError(input);
+        return true;
+    }
 }
 
-function validateCaseinput() {
-    ValidFormResolutionCaseInput(case_input);
+function ValidateNameCrimeOrgan(input)
+{
+    if (input.value === '')
+    {
+        showError(input, 'Поле не может быть пустым');
+        return false;
+    }
+    else {
+        clearError(input);
+        return false;
+    }
 }
 
-function validateArrestTime() {
-    ValidFormResolutionArrestTime(arrest_time);
+function ValidateAdreasCrimeOrgan(input)
+{
+    if (input.value === '')
+        {
+            showError(input, 'Поле не может быть пустым');
+            return false;
+        }
+        else {
+            clearError(input);
+            return false;
+        }
 }
 
-function validateParam1() {
-    ValidFormOrgan_param1(param1);
+function ValidFormTypeOrder(input) {
+    if (input.value !== '') {
+        clearError(input);
+
+        const articlesAccusation = document.getElementById('articlesAccusation');
+        const degreeRI = document.getElementById('degree_ri');
+        const applicationNum = document.getElementById('application_num');
+        const number_offWork = document.getElementById('number_offWork');
+        const termImprisonment = document.getElementById('termImprisonment');
+        const labelTime = document.getElementById('label-time');
+        const time = document.getElementById('time');
+        const carBrand = document.getElementById('carBrand');
+        const adreasSuspect = document.getElementById('adreasSuspect');
+        const nameOrganForOrder = document.getElementById('nameOrganForOrder');
+        const adreasOrganForOrder = document.getElementById('adreasOrganForOrder');
+
+        const elements = [
+            articlesAccusation, degreeRI, applicationNum, number_offWork,
+            termImprisonment, nameOrganForOrder, time, adreasOrganForOrder,
+            adreasSuspect, carBrand
+        ];
+
+        // Функция для добавления анимации появления
+        const showElement = (element) => {
+            element.style.display = 'block'
+            element.style.transform = 'translateX(20px)';
+            setTimeout(() => {
+                element.classList.add('fade-in');
+                element.style.transform = 'translateX(0px)';
+                element.classList.remove('hidden-input');
+            }, 10);
+        };
+
+        // Функция для добавления анимации исчезновения
+        const hideElement = (element) => {
+            element.classList.remove('fade-in');
+            element.style.transform = 'translateX(-20px)';
+            element.classList.add('hidden-input');
+            setTimeout(() => {
+                element.style.display = 'none'
+            }, 300);
+        };
+        
+        elements.forEach(element => hideElement(element));
+        disableFields([input_degreeRI, input_applicationNum, param1, param2, param3, param4]);
+
+        // Анимация в зависимости от типа ордера
+        switch (input.value) {
+            case 'SA':
+            case 'Search Access':
+                clearError(input);
+
+                setTimeout(() => {
+                    enableFields([param3])
+
+                    showElement(time);
+                    showElement(articlesAccusation);
+                    showElement(carBrand);
+                    showElement(adreasSuspect);
+
+                    labelTime.textContent = 'Срок исполнения';
+                }, 310);
+
+                return true;
+
+            case 'AS':
+            case 'Arrest and Search':
+                clearError(input);
+
+                setTimeout(() => {
+                    enableFields([param1, param2, param3, param4])
+
+                    showElement(time);
+                    showElement(termImprisonment);
+                    showElement(number_offWork);
+                    showElement(articlesAccusation);
+
+                    labelTime.textContent = 'Срок исполнения';
+                }, 310);
+                return true;
+
+            case 'ML':
+            case 'Martial Law':
+                clearError(input);
+
+
+
+                return true;
+
+            case 'AR':
+            case 'Access To Raid':
+                clearError(input);    
+
+                setTimeout(() => {
+                    enableFields([param3, param4, param1, input_adreasCrimeOrgan, input_nameCrimeOrgan])
+
+                    showElement(articlesAccusation);
+                    showElement(number_offWork);
+                    showElement(nameOrganForOrder);
+                    showElement(time);
+                    showElement(adreasOrganForOrder);
+
+                    labelTime.textContent = 'Срок исполнения';
+                }, 310);
+                return true;
+
+            case 'RI':
+            case 'Removal of Immunity':
+                clearError(input);
+
+                setTimeout(() => { 
+                    enableFields([param3, input_degreeRI, input_applicationNum])
+
+                    showElement(applicationNum);
+                    showElement(degreeRI);
+                    showElement(time);
+
+                    labelTime.textContent = 'Срок действия';
+                }, 310);
+                return true;
+
+            case 'FW':
+            case 'Federal Wanted':
+                clearError(input);
+
+                setTimeout(() => {
+                    enableFields([param3, param1, param4])
+
+                    showElement(articlesAccusation);
+                    showElement(number_offWork);
+                    showElement(time);
+
+                    labelTime.textContent = 'Срок действия';
+                }, 310);
+
+                return true;
+
+            default:
+                showError(input, 'Такого ордера не существует!');
+
+                return false;
+                
+        }
+    } else {
+        showError(input, 'Поле не может быть пустым');
+        return false;
+    }
 }
 
-function validateParam2() {
-    ValidFormOrgan_param2(param2);
+function enableFields(fields) {
+    fields.forEach(field => {
+        if (field) {
+            field.removeAttribute('disabled');
+            field.setAttribute('required', 'true');
+            addValidationListener(field); 
+        }
+    });
 }
 
-function validateParam3() {
-    ValidFormOrgan_param3(param3);
+function disableFields(fields) {
+    fields.forEach(field => {
+        if (field) { 
+            field.setAttribute('disabled', 'true');
+            field.removeAttribute('required');
+            removeValidationListener(field); 
+        }
+    });
 }
 
-function validateParam4() {
-    ValidFormOrgan_param4(param4);
+const validationListeners = {
+    param1: () => ValidFormOrgan_param1(param1),
+    param2: () => ValidFormOrgan_param2(param2),
+    param3: () => ValidFormOrgan_param3(param3),
+    param4: () => ValidFormOrgan_param4(param4),
+    param5: () => ValidFormOrgan_param5(param5),
+    param6: () => ValidFormOrgan_param6(param6),
+    param7: () => ValidFormOrgan_param7(param7),
+    caseInput: () => ValidFormResolutionCaseInput(case_input),
+    arrest_time: () => ValidFormResolutionArrestTime(arrest_time),
+    typeOrder: () => ValidFormTypeOrder(typeOrder),
+    degreeRI: () => ValidateInputDegreeRI(input_degreeRI),
+    applicationNum: () => ValidateInputApplicationNum(input_applicationNum),
+    nameCrimeOrgan: () => ValidateNameCrimeOrgan(input_nameCrimeOrgan),
+    adreasCrimeOrgan: () => ValidateAdreasCrimeOrgan(input_adreasCrimeOrgan)
+};
+
+function addValidationListener(field) {
+    const listener = validationListeners[field.id];
+    if (listener) {
+        field.addEventListener('input', listener);
+    }
 }
 
-function validateParam5() {
-    ValidFormOrgan_param5(param5);
-}
+function removeValidationListener(field) {
+    const listener = validationListeners[field.id];
 
-function validateParam6() {
-    ValidFormOrgan_param6(param6);
-}
-
-function validateParam7() {
-    ValidFormOrgan_param7(param7);
+    if (listener) {
+        field.removeEventListener('input', listener);
+    }
 }
 
 function selectOption(label) {
@@ -328,26 +600,26 @@ function selectOption(label) {
     selectedValue.textContent = label;
     toggleOptions();
 
+    disableFields([typeOrder, case_input, arrest_time, param1, param2, param3, param4, param5, param6, param7, input_degreeRI, input_applicationNum, input_adreasCrimeOrgan, input_nameCrimeOrgan]);
     let selectedWrapper;
     if (label === 'Ордер') {
         selectedWrapper = wrapperOrder;
         contanier_wrapper = contanier_order;
         wrapperOrder.classList.add('hidden-wrapper');
+        enableFields([typeOrder]);
 
-        enableFields([param1, param2, param3, param4, param5, param6, param7]);
-        disableFields([case_input, arrest_time]);
     } else if (label === 'Постановление') {
         selectedWrapper = wrapperResolution;
         contanier_wrapper = contanier_res;
         wrapperResolution.classList.add('hidden-wrapper');
-        disableFields([param1, param2, param3, param4, param5, param6, param7]);
+        disableFields([typeOrder, case_input, arrest_time, param1, param2, param3, param4, param5, param6, param7, input_degreeRI, input_applicationNum, input_adreasCrimeOrgan, input_nameCrimeOrgan]);
 
     } else if (label === 'Повестка') {
         selectedWrapper = wrapperAgenda;
         contanier_wrapper = contanier_agenda
         wrapperAgenda.classList.add('hidden-wrapper');
         enableFields([param5, param6, param7]);
-        disableFields([param1, param2, param3, param4, case_input, arrest_time]);
+        disableFields([typeOrder, case_input, arrest_time, param1, param2, param3, param4, param5, param6, param7, input_degreeRI, input_applicationNum, input_adreasCrimeOrgan, input_nameCrimeOrgan]);
     }
 
     if (selectedWrapper) {
@@ -364,41 +636,30 @@ function selectOption(label) {
     }
 }
 
-function disableFields(fields) {
-    fields.forEach(field => {
-        field.setAttribute('disabled', 'true');
-        field.removeAttribute('required'); 
-    });
-}
-
-function enableFields(fields) {
-    fields.forEach(field => {
-        field.removeAttribute('disabled');
-        field.setAttribute('required', 'true'); 
-    });
-}
+const static = document.getElementById('static')
 
 if (isAuthenticated && isPermission) {
     formBtn.addEventListener('click', function(event) {
-        if (wrapperOrder.classList.contains('hidden-wrapper') && 
-            (!ValidFormOrgan_param1(param1) || !ValidFormOrgan_param2(param2) || 
-            !ValidFormOrgan_param3(param3) || !ValidFormOrgan_param4(param4))) {
+        if (static.value === '' && !ValidFormTypeOrder(typeOrder)) {
             event.preventDefault();
             return;
         }
 
+
         if (wrapperResolution.classList.contains('hidden-wrapper')) {
-            if (case_input.offsetParent === null) {
-                case_input.removeAttribute('required');
-            } else {
-                case_input.setAttribute('required', 'true');
-            }
+            document.getElementById('param1_checkbox').addEventListener('change', function () {
+                const caseInput = document.getElementById('case');
+                
+            });
             
-            if (arrest_time.offsetParent === null) {
-                arrest_time.removeAttribute('required');
-            } else {
-                arrest_time.setAttribute('required', 'true');
-            }
+            document.getElementById('param2_checkbox').addEventListener('change', function () {
+                const arrestTime = document.getElementById('arrest_time');
+                if (this.checked) {
+                    enableFields([arrestTime]);
+                } else {
+                    disableFields([arrestTime]);
+                }
+            });
             
             if(!ValidFormResolutionCaseInput(case_input) || !ValidFormResolutionArrestTime(arrest_time)) {
                 event.preventDefault();
@@ -410,28 +671,3 @@ if (isAuthenticated && isPermission) {
         }
     });
 }
-
-document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('load-prosecution-office').addEventListener('click', function(event) {
-        event.preventDefault();
-
-        fetch('/get_prosecution_office_content')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Ошибка сети');
-                }
-                return response.text();
-            })
-            .then(data => {
-                const attorneyContent = document.getElementById('attorney-content');
-                if (attorneyContent) {
-                    attorneyContent.innerHTML = data;
-                    attorneyContent.classList.add('fade-in');
-                    document.getElementById('load-prosecution-office').classList.add('active-button');
-                } else {
-                    console.error('Элемент с id "attorney-content" не найден.');
-                }
-            })
-            .catch(error => console.error('Ошибка загрузки контента:', error));
-    });
-});

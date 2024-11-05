@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
         print("Процесс run_bot запущен.")
 
-        app.run(host='26.184.54.209', port=8000, debug=False)
+        app.run(host='26.120.213.68', port=8000, debug=False)
 
     except Exception as e:
         print(f"Произошла ошибка: {e}")

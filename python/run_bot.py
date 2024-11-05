@@ -1,9 +1,6 @@
-import disnake, json, redis, asyncio, traceback
-from disnake.ext import commands, tasks
-from disnake import ButtonStyle
-from datetime import datetime
-from disnake.ui import View, Button
-import os, time, sys
+import disnake, json
+from disnake.ext import commands
+import sys
 
 with open('./python/config.json', 'r') as f:
     config = json.load(f)

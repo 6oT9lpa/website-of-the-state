@@ -11,7 +11,7 @@ app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SECRET_KEY'] = '9QKKakkd0.api1ii2kkalofmqlo31miqmmfkTBo9lMaTbIIIJluxa'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-app.config['JSON_AS_ASCII'] = False
+app.config['JSON_AS_ASCII'] = True
 app.config['WTF_CSRF_ENABLED'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
 app.register_blueprint(main)
@@ -41,7 +41,7 @@ class ActionUsers(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     discordid = db.Column(db.String(20), nullable=False)
     discordname = db.Column(db.String(45), nullable=False)
-    static = db.Column(db.String(6), nullable=False)
+    static = db.Column(db.String(6), nullable=False, unique=True)
     staticof = db.Column(db.String(6), nullable=False)
     nikname = db.Column(db.String(45), nullable=False)
     actionof = db.Column(db.String(20), nullable=False)
@@ -51,7 +51,7 @@ class ActionUsers(db.Model, UserMixin):
     
 class PermissionUsers(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    user_static = db.Column(db.String(6), db.ForeignKey('users.static'), nullable=False)
+    user_static = db.Column(db.String(6), db.ForeignKey('users.static'), nullable=False, unique=True)
     user_discordid = db.Column(db.String(20), db.ForeignKey('users.discordid'), nullable=False)
     tech = db.Column(db.Boolean, default=False)
     admin = db.Column(db.Boolean, default=False)
@@ -69,7 +69,7 @@ class PDFDocument(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now())
     user = db.relationship('Users', back_populates='create_document', foreign_keys=[user_static])
     
-class PublicDocumentAndNotifications(db.Model):
+class PublicDocumentAndNotificationsResolution(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     uid = db.Column(db.String(26), unique=True, nullable=False)
     
@@ -92,6 +92,30 @@ class PublicDocumentAndNotifications(db.Model):
     param_limit2_nickmane = db.Column(db.String(52))
     param_limit2_time = db.Column(db.String(52))
     number_resolution = db.Column(db.String(4), default='0001')
+    
+    is_modertation = db.Column(db.Boolean, default=False)
+
+class PublicDocumentAndNotificationsOrder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    uid = db.Column(db.String(26), unique=True, nullable=False)
+    
+    nickname_attorney = db.Column(db.String(52), nullable=False)
+    static_attorney = db.Column(db.String(7), nullable=False)
+    discord_attorney = db.Column(db.String(20),  nullable=False)
+    
+    nickname_accused = db.Column(db.String(52), default='Гражданин')
+    static_accused = db.Column(db.String(7))
+    discord_accused = db.Column(db.String(20))
+
+    nameCrimeOrgan = db.Column(db.String(60), default='null')
+    adreasCrimeOrgan = db.Column(db.String(60), default='null')
+    offWork = db.Column(db.String(60), default='null')
+    termImprisonment = db.Column(db.String(60), default='null')
+    articlesAccusation = db.Column(db.String(60), default='null')
+    time = db.Column(db.String(60), default='null')
+    
+    type_order = db.Column(db.String(20), nullable=False)
+    number_order = db.Column(db.String(4), default='0001')
     
     is_modertation = db.Column(db.Boolean, default=False)
     

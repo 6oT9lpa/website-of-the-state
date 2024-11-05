@@ -250,10 +250,7 @@ main
     border-radius: 10px;
     background-color: #444;
     color: #fff;
-}
-
-.form-input input:hover{
-     /*animation: hoverin 0.2s ease;            написать для всех элементов анимацию :)*/
+    width: 175px;
 }
 
 .form-input select {
