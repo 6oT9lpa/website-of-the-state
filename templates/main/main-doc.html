@@ -7,7 +7,7 @@
         </div>
 
         <div>
-            <form method="post" action="/create_doc">
+            <form method="post" action="/create_doc" id='resolutionForm'>
                 {{ form.hidden_tag() }}
 
                 <div class="game-info">
@@ -63,6 +63,16 @@
                     </div>
                 </div>
                 <div class="contanier-wrapper" id="contanier-wrapper_res">
+                    <div class='container-custom-resolution'>
+                        <div class="custom-inputs hidden" id="custom-inputs-container">
+                            <div class='header-custom'>
+                                <a class="close-button" onclick="resetCustomForm()">Закрыть</a>
+                                <a class="add-input-button" onclick="addInput()">+</a>
+                            </div>
+                            <div class="input-container" id="dynamic-input-container">
+                            </div>
+                        </div>
+                    </div>
                     <div class="wrapper-selector" id="resolution-wrapper">
                         <div class="checkbox-wrapper">
                             <div class="checkbox">
@@ -73,7 +83,7 @@
                                 <span class="checkbox-text">{{ formResolution.param1.label }}</span>
                             </div>
 
-                            <div class="form-input wrapper-input" style="width: 60%;" id="input_checkbox1">
+                            <div class="form-input wrapper-input" style='display: none;' id="input_checkbox1">
                                 {{ formResolution.case(class="input-field", id="caseInput")}}
                                 <span class="text-danger" id="is-unvalid"></span>
                             </div>
@@ -88,7 +98,7 @@
                                 <span class="checkbox-text">{{ formResolution.param2.label }}</span>
                             </div>
 
-                            <div class="form-input wrapper-input" style="width: 60%;" id="input_checkbox2">
+                            <div class="form-input" style='display: none;' id="input_checkbox2">
                                 <div class="input-wrapper">
                                     {{ formResolution.arrest_time(class="input-field", id="arrest_time")}} 
                                     <span class="text-danger" id="is-unvalid"></span>
@@ -160,7 +170,7 @@
                             </div>
                         </div>
                         <div class="group">
-                            <div class="form-input hidden-input" id="adreasSuspect">
+                            <div class="form-input hidden-input" style='display: none;' id="adreasSuspect">
                                 <label for="param">Адреас проживания</label>
                                 {% if formOrder.adreas_suspect.errors %}
                                     {{ formOrder.adreas_suspect(class="") }} 
@@ -173,7 +183,7 @@
 
                                 <span class="text-danger" id="is-unvalid"></span>
                             </div>
-                            <div class="form-input hidden-input" id="articlesAccusation">
+                            <div class="form-input hidden-input" style='display: none;' id="articlesAccusation">
                                 <label for="param">Статьи Обвинения.</label>
                                 {% if formOrder.param1.errors %}
                                     {{ formOrder.param1(class="") }} 
@@ -186,7 +196,7 @@
 
                                 <span class="text-danger" id="is-unvalid"></span>
                             </div> 
-                            <div class="form-input hidden-input" id="nameOrganForOrder">
+                            <div class="form-input hidden-input" style='display: none;' id="nameOrganForOrder">
                                 <label for="param">Название организации.</label>
                                 {% if formOrder.name_organ_for_order.errors %}
                                     {{ formOrder.name_organ_for_order(class="") }} 
@@ -199,7 +209,7 @@
 
                                 <span class="text-danger" id="is-unvalid"></span>
                             </div> 
-                            <div class="form-input hidden-input" id='termImprisonment'>
+                            <div class="form-input hidden-input" style='display: none;' id='termImprisonment'>
                                 <label for="param">Срок заключения.</label>
                                 {% if formOrder.param2.errors %}
                                     {{ formOrder.param2(class="is-valid")}}
@@ -212,7 +222,7 @@
 
                                 <span class="text-danger" id="is-unvalid"></span>
                             </div>
-                            <div class="form-input hidden-input" id='degree_ri'>
+                            <div class="form-input hidden-input" style='display: none;' id='degree_ri'>
                                 <label for="degree_ri">Степень снятия неприкоса.</label>
                                 {% if formOrder.degree_ri.errors %}
                                     {{ formOrder.degree_ri(class="is-valid")}}
@@ -225,7 +235,7 @@
 
                                 <span class="text-danger" id="is-unvalid"></span>
                             </div>
-                            <div class="form-input hidden-input" id='adreasOrganForOrder'>
+                            <div class="form-input hidden-input" style='display: none;' id='adreasOrganForOrder'>
                                 <label for="adreas_organ_for_order">Адреас организации.</label>
                                 {% if formOrder.adreas_organ_for_order.errors %}
                                     {{ formOrder.adreas_organ_for_order(class="is-valid")}}
@@ -240,7 +250,7 @@
                             </div>
                         </div>
                         <div class="group">
-                            <div class="form-input hidden-input" id="carBrand">
+                            <div class="form-input hidden-input" style='display: none;' id="carBrand">
                                 <label for="param">Марка т\с</label>
                                 {% if formOrder.car_brand.errors %}
                                     {{ formOrder.car_brand(class="") }} 
@@ -253,7 +263,7 @@
 
                                 <span class="text-danger" id="is-unvalid"></span>
                             </div>
-                            <div class="form-input hidden-input" id='time'>
+                            <div class="form-input hidden-input" style='display: none;' id='time'>
                                 <label id='label-time' for="param">Срок исполения.</label>
                                 {% if formOrder.param3.errors %}
                                     {{ formOrder.param3(class="is-valid")}}
@@ -266,7 +276,7 @@
 
                                 <span class="text-danger" id="is-unvalid"></span>
                             </div>
-                            <div class="form-input hidden-input"  id='number_offWork'>
+                            <div class="form-input hidden-input" style='display: none;' id='number_offWork'>
                                 <label for="param">Номер дела.</label>
                                 {% if formOrder.param4.errors %}
                                     {{ formOrder.param4(class="")}}
@@ -279,7 +289,7 @@
 
                                 <span class="text-danger" id="is-unvalid"></span>
                             </div>
-                            <div class="form-input hidden-input" id='application_num'>
+                            <div class="form-input hidden-input" style='display: none;' id='application_num'>
                                 <label for="application_num">Номер заявления.</label>
                                 {% if formOrder.application_num.errors %}
                                     {{ formOrder.application_num(class="")}}
@@ -295,54 +305,17 @@
                         </div>
                     </div>
                 </div>
-                <div class="contanier-wrapper" id="contanier-wrapper_agenda">
-                    <div class="wrapper-selector" id="agenda-wrapper">
-                        <div class="form-input">
-                            <label for="param">Куда явится по повестке.</label>
-                            {% if formAgenda.param5.errors %}
-                                {{ formAgenda.param5(class="")}}
-                                {% for error in formAgenda.param5.errors %}
-                                    <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
-                                {% endfor %}
-                                {% else %}
-                                {{ formAgenda.param5(class="")}}
-                            {% endif %}
-
-                            <span class="text-danger" id="is-unvalid"></span>
-                        </div>
-
-                        <div class="form-input">
-                            <label for="param">В какой время явится.</label>
-                            {% if formAgenda.param6.errors %}
-                                {{ formAgenda.param6(class="")}}
-                                {% for error in formAgenda.param6.errors %}
-                                    <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
-                                {% endfor %}
-                                {% else %}
-                                {{ formAgenda.param6(class="")}}
-                            {% endif %}
-
-                            <span class="text-danger" id="is-unvalid"></span>
-                        </div>
-
-                        <div class="form-input">
-                            <label for="param">С какой целью.</label>
-                            {% if formAgenda.param7.errors %}
-                                {{ formAgenda.param7(class="")}}
-                                {% for error in formAgenda.param7.errors %}
-                                    <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
-                                {% endfor %}
-                                {% else %}
-                                {{ formAgenda.param7(class="")}}
-                            {% endif %}
-
-                            <span class="text-danger" id="is-unvalid"></span>
-                        </div>
+                <div class="form-button-container">
+                    <div class='container-btn-custom'>
+                        {{ form.submit(class="form-button", id="btn") }}
+                    </div>
+                    <div class='container-btn-custom' id='btn-custom-resolution' style='display: none;'>
+                        {{ formResolution.custom_button_pressed(type="hidden", value="false") }}
+                        <a class='btn-custom' onclick="toggleCustomForm()">создать кастом</a>
                     </div>
                 </div>
-                <div class="form-button-container">
-                    {{ form.submit(class="form-button", id="btn") }}
-                </div>
+
+                <span id="loadingText" style="display: none;">Отправка...</span>
             </form>
         </div>
     </div>

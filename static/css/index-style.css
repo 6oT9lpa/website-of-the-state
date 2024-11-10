@@ -11,10 +11,6 @@ body
     overflow-x: hidden;
     overflow-y: hidden;
 }
-main {
-    display: flex;
-    justify-content: center;
-}
 
 main
 {
@@ -104,50 +100,8 @@ nav a {
     transition: color 0.3s;
 }
 
-.crnewbutton {
-    display: none;
-    color: white;
-    text-decoration: none;
-    position: relative;
-    font-weight: 800;
-    font-size: 20px;
-    padding: 0 50px;
-    transition: color 0.3s;
-}
-.newscont {
-    display: flex;
-    justify-content: center;
-    max-height: 520px; 
-    overflow-y: auto; 
-    padding: 10px;
-    background: transparent;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    width: 80%; /* Максимальная ширина блока */
-    max-height: 680px; /* Максимальная высота блока */
-    margin-top: 20px;
-    overflow: auto; /* Добавление прокрутки, если содержимое превышает размер блока */
-    overflow-x: hidden;
-}
-.newscont::-webkit-scrollbar {
-    width: 12px; /* Ширина полосы прокрутки */
-}
-
-.newscont::-webkit-scrollbar-track {
-    background: #f1f1f1; /* Цвет фона полосы прокрутки */
-    border-radius: 10px;
-}
-.newscont::-webkit-scrollbar-thumb {
-    background: #888; /* Цвет бегунка полосы прокрутки */
-    border-radius: 10px; /* Закругление бегунка */
-    border: 3px solid transparent; /* Прозрачная граница для смещения бегунка */
-    background-clip: content-box; /* Обрезка фона по содержимому */
-}
-.active {
+.nav-button:hover {
     color: #888888;
-}
-.nohidden {
-    display: block;
 }
 
 .sidebar {
@@ -182,107 +136,11 @@ nav a {
 .sidebar div:hover {
     color: #888888;
 }
-.city_hallnews {
-    display: none;
-    opacity: 0; /* Начальное значение для анимации */
-    transform: translateY(20px); /* Начальное значение для анимации */
-    grid-template-columns: repeat(6, 1fr); 
-    gap: 20px; /* Добавляем отступы между элементами */
-    animation: fadeIn 0.8s ease-out forwards;
-}
-.leadernewsy {
-    display: grid;
-    opacity: 0; /* Начальное значение для анимации */
-    transform: translateY(20px); /* Начальное значение для анимации */
-    grid-template-columns: repeat(6, 1fr); 
-    gap: 20px; /* Добавляем отступы между элементами */
-    animation: fadeIn 0.8s ease-out forwards;
-}
-.weazelnewsy {
-    display: none;
-    opacity: 0; /* Начальное значение для анимации */
-    transform: translateY(20px); /* Начальное значение для анимации */
-    grid-template-columns: repeat(6, 1fr); 
-    gap: 20px; /* Добавляем отступы между элементами */
-    animation: fadeIn 0.8s ease-out forwards;
-}
-@keyframes fadeIn {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-.modal {
-    display: none; /* Скрыто по умолчанию */
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
-    justify-content: center;
-    align-items: center;
-}
-.modal-content {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    width: 60%;
-    max-width: 500px;
-    text-align: left;
-}
-.close-btn {
-    float: right;
-    font-size: 20px;
-    cursor: pointer;
-}
-.list-item {
-    width: 200px; 
-    height: 150px; 
-    padding: 15px;
-    background-color: #f9f9f9; 
-    border: 1px solid #ccc; 
-    border-radius: 8px; 
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
-    display: flex;
-    flex-direction: column;
-    justify-content: center; 
-    align-items: center;
-    text-align: center;
-}
-
-.list-item strong {
-    display: block;
-    margin-bottom: 5px;
-}
-
-.list-item.expanded {
-    transform: scale(1.5);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    z-index: 10;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(1.5);
-    background-color: white;
-    padding: 20px;
-    width: 80%;
-    height: auto;
-    overflow: auto;
-}
-
-.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
 
 footer {
-    position: absolute;
-            bottom: 10px;
-            width: 100%;
-            text-align: center;
-            color: white;
+    color: white;
+    text-align: center;
+    margin-top: auto;
 }
 
 @media (max-width: 600px) {

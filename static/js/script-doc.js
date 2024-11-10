@@ -1,5 +1,26 @@
 let bg = document.querySelector('.background');
 
+// Функция для добавления анимации появления
+const showElement = (element) => {
+    element.style.display = 'block'
+    element.style.transform = 'translateX(20px)';
+    setTimeout(() => {
+        element.classList.add('fade-in');
+        element.style.transform = 'translateX(0px)';
+        element.classList.remove('hidden-input');
+    }, 10);
+};
+
+// Функция для добавления анимации исчезновения
+const hideElement = (element) => {
+    element.classList.remove('fade-in');
+    element.style.transform = 'translateX(-20px)';
+    element.classList.add('hidden-input');
+    setTimeout(() => {
+        element.style.display = 'none'
+    }, 300);
+};
+
 // паралакс эффект на background
 window.addEventListener('mousemove', function(e) {
     let x = e.clientX / window.innerWidth;
@@ -46,17 +67,10 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox1.addEventListener('change', function() {
             if (this.checked) {
                 enableFields([caseInput]);
-                input_checkbox1.style.display = 'flex';
-                requestAnimationFrame(() => {
-                    input_checkbox1.classList.add('visible-input');
-                });
+                showElement(input_checkbox1)
             } else {
                 disableFields([caseInput]);
-                input_checkbox1.classList.remove('visible-input');
-                input_checkbox1.addEventListener('transitionend', function handleTransitionEnd() {
-                    input_checkbox1.style.display = 'none'; 
-                    input_checkbox1.removeEventListener('transitionend', handleTransitionEnd);
-                }, { once: true });
+                hideElement(input_checkbox1)
             }
         });
     }
@@ -64,16 +78,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (checkbox2 && input_checkbox2) {
         checkbox2.addEventListener('change', function() {
             if (this.checked) {
-                input_checkbox2.style.display = 'flex';
-                requestAnimationFrame(() => {
-                    input_checkbox2.classList.add('visible-input');
-                });
+                enableFields([arrest_time, param2_nickname]);
+                showElement(input_checkbox2)
             } else {
-                input_checkbox2.classList.remove('visible-input');
-                input_checkbox2.addEventListener('transitionend', function handleTransitionEnd() {
-                    input_checkbox2.style.display = 'none'; 
-                    input_checkbox2.removeEventListener('transitionend', handleTransitionEnd);
-                }, { once: true });
+                disableFields([arrest_time, param2_nickname]);
+                hideElement(input_checkbox2)
             }
         });
     }
@@ -152,7 +161,7 @@ function toggleOptions() {
         options.style.display = "block";
         setTimeout(() => {
             options.style.opacity = "1"; // Анимация появления
-        }, 0);
+        }, 100);
     }
 }
 
@@ -163,6 +172,7 @@ const param4 = document.getElementById('param4');
 const param5 = document.getElementById('param5');
 const param6 = document.getElementById('param6');
 const param7 = document.getElementById('param7');
+const param2_nickname = document.getElementById('param2_nickname');
 const typeOrder = document.getElementById('typeOrder');
 const input_degreeRI = document.getElementById('degreeRI');
 const input_applicationNum = document.getElementById('applicationNum');
@@ -176,7 +186,7 @@ const contanier_res = document.getElementById('contanier-wrapper_res');
 const contanier_order = document.getElementById('contanier-wrapper_order');
 const contanier_agenda = document.getElementById('contanier-wrapper_agenda');
 const formBtn = document.getElementById('btn');
-const case_input = document.getElementById('case');
+const case_input = document.getElementById('caseInput');
 const arrest_time = document.getElementById('arrest_time');
 
 function showError(input, message) {
@@ -195,8 +205,18 @@ function clearError(input) {
     }
 }
 
+function VaidateFormParam2Nickname(input){
+    if (input.value === '') {
+        showError(input, 'Поле не может быть пустым');
+        return false;
+    } else {
+        clearError(input);
+        return true;
+    }
+}
+
 function ValidFormResolutionCaseInput(input) {
-    if (input.offsetParent === null) {
+    if (!document.getElementById('param1_checkbox').checked) {
         return true; 
     }
     const regex = /^JD-+(.+)$/;
@@ -403,27 +423,6 @@ function ValidFormTypeOrder(input) {
             termImprisonment, nameOrganForOrder, time, adreasOrganForOrder,
             adreasSuspect, carBrand
         ];
-
-        // Функция для добавления анимации появления
-        const showElement = (element) => {
-            element.style.display = 'block'
-            element.style.transform = 'translateX(20px)';
-            setTimeout(() => {
-                element.classList.add('fade-in');
-                element.style.transform = 'translateX(0px)';
-                element.classList.remove('hidden-input');
-            }, 10);
-        };
-
-        // Функция для добавления анимации исчезновения
-        const hideElement = (element) => {
-            element.classList.remove('fade-in');
-            element.style.transform = 'translateX(-20px)';
-            element.classList.add('hidden-input');
-            setTimeout(() => {
-                element.style.display = 'none'
-            }, 300);
-        };
         
         elements.forEach(element => hideElement(element));
         disableFields([input_degreeRI, input_applicationNum, param1, param2, param3, param4]);
@@ -435,7 +434,7 @@ function ValidFormTypeOrder(input) {
                 clearError(input);
 
                 setTimeout(() => {
-                    enableFields([param3])
+                    enableFields([param3, param1])
 
                     showElement(time);
                     showElement(articlesAccusation);
@@ -544,6 +543,8 @@ function enableFields(fields) {
 function disableFields(fields) {
     fields.forEach(field => {
         if (field) { 
+            field.value = '';
+            clearError(field);
             field.setAttribute('disabled', 'true');
             field.removeAttribute('required');
             removeValidationListener(field); 
@@ -559,6 +560,7 @@ const validationListeners = {
     param5: () => ValidFormOrgan_param5(param5),
     param6: () => ValidFormOrgan_param6(param6),
     param7: () => ValidFormOrgan_param7(param7),
+    param2_nickname: () => VaidateFormParam2Nickname(param2_nickname),
     caseInput: () => ValidFormResolutionCaseInput(case_input),
     arrest_time: () => ValidFormResolutionArrestTime(arrest_time),
     typeOrder: () => ValidFormTypeOrder(typeOrder),
@@ -600,27 +602,24 @@ function selectOption(label) {
     selectedValue.textContent = label;
     toggleOptions();
 
-    disableFields([typeOrder, case_input, arrest_time, param1, param2, param3, param4, param5, param6, param7, input_degreeRI, input_applicationNum, input_adreasCrimeOrgan, input_nameCrimeOrgan]);
+    disableFields([param2_nickname, typeOrder, case_input, arrest_time, param1, param2, param3, param4, param5, param6, param7, input_degreeRI, input_applicationNum, input_adreasCrimeOrgan, input_nameCrimeOrgan]);
     let selectedWrapper;
-    if (label === 'Ордер') {
-        selectedWrapper = wrapperOrder;
-        contanier_wrapper = contanier_order;
-        wrapperOrder.classList.add('hidden-wrapper');
-        enableFields([typeOrder]);
-
-    } else if (label === 'Постановление') {
-        selectedWrapper = wrapperResolution;
-        contanier_wrapper = contanier_res;
-        wrapperResolution.classList.add('hidden-wrapper');
-        disableFields([typeOrder, case_input, arrest_time, param1, param2, param3, param4, param5, param6, param7, input_degreeRI, input_applicationNum, input_adreasCrimeOrgan, input_nameCrimeOrgan]);
-
-    } else if (label === 'Повестка') {
-        selectedWrapper = wrapperAgenda;
-        contanier_wrapper = contanier_agenda
-        wrapperAgenda.classList.add('hidden-wrapper');
-        enableFields([param5, param6, param7]);
-        disableFields([typeOrder, case_input, arrest_time, param1, param2, param3, param4, param5, param6, param7, input_degreeRI, input_applicationNum, input_adreasCrimeOrgan, input_nameCrimeOrgan]);
-    }
+    switch(label){
+        case 'Ордер':
+            selectedWrapper = wrapperOrder;
+            contanier_wrapper = contanier_order;
+            wrapperOrder.classList.add('hidden-wrapper');
+            enableFields([typeOrder]);
+            toggleCustomButton(false);
+            break;
+        
+        case 'Постановление':
+            selectedWrapper = wrapperResolution;
+            contanier_wrapper = contanier_res;
+            wrapperResolution.classList.add('hidden-wrapper');
+            toggleCustomButton(true);
+            break;
+    }        
 
     if (selectedWrapper) {
         selectedWrapper.style.display = 'block';
@@ -644,7 +643,6 @@ if (isAuthenticated && isPermission) {
             event.preventDefault();
             return;
         }
-
 
         if (wrapperResolution.classList.contains('hidden-wrapper')) {
             document.getElementById('param1_checkbox').addEventListener('change', function () {
@@ -670,4 +668,118 @@ if (isAuthenticated && isPermission) {
         if (wrapperAgenda.classList.contains('hidden-wrapper')) {
         }
     });
+}
+
+document.getElementById('resolutionForm').addEventListener('submit', function() {
+    document.getElementById('btn').disabled = true;
+    document.getElementById('loadingText').style.display = 'inline';
+});
+
+
+const showElementButton = (element) => {
+    element.style.display = 'flex';
+    setTimeout(() => {
+        element.classList.add('show-custom');
+        element.classList.remove('hidden-custom');
+    }, 10);
+};
+
+// Функция для добавления анимации исчезновения
+const hideElementButton = (element) => {
+    element.classList.remove('show-custom');
+    element.classList.add('hidden-custom');
+    setTimeout(() => {
+        element.style.display = 'none';
+    }, 300);
+};
+
+function toggleCustomButton(show) {
+    const customButton = document.getElementById('btn-custom-resolution');
+
+    if (customButton) {
+        if (show) {
+            showElementButton(customButton);
+            customButton.addEventListener('click', toggleCustomForm);
+            document.querySelector('[name="custom_button_pressed"]').value = "false"
+        } else {
+            hideElementButton(customButton);
+            customButton.removeEventListener('click', toggleCustomForm);     
+        }
+    }
+    return false;
+}
+
+function toggleCustomForm() {
+    document.querySelectorAll('.checkbox input[type="checkbox"]').forEach(checkbox => {
+        checkbox.setAttribute('disabled', true);
+        checkbox.closest('.checkbox-wrapper').style.display = 'none';
+    });
+
+    document.querySelector('[name="custom_button_pressed"]').value = "true"
+    document.getElementById('custom-inputs-container').classList.remove('hidden');
+
+    
+}
+
+let inputCount = 0;
+const maxTextareaWidth = 400; 
+const compactWidth = 180; 
+const maxTextareaHeight = 100; 
+
+function addInput() {
+    if (inputCount >= 10) return;
+
+    const newTextarea = document.createElement('textarea');
+    newTextarea.name = `custom_text_${inputCount}`;
+    newTextarea.className = 'dynamic-textarea fade-in-text'; 
+    newTextarea.placeholder = 'Введите значение';
+
+    newTextarea.rows = 1;
+    newTextarea.oninput = () => autoResizeTextarea(newTextarea);
+    newTextarea.onfocus = () => expandTextarea(newTextarea);
+    newTextarea.onblur = () => shrinkTextarea(newTextarea);
+
+    const container = document.createElement('div');
+    container.className = 'input-container';
+    container.appendChild(newTextarea);
+
+    document.getElementById('dynamic-input-container').appendChild(container);
+    inputCount++;
+
+    setTimeout(() => {
+        newTextarea.classList.remove('fade-in-text');
+    }, 300); 
+}
+
+function autoResizeTextarea(textarea) {
+    textarea.style.height = 'auto'; 
+    textarea.style.height = Math.min(textarea.scrollHeight, maxTextareaHeight) + 'px';
+    textarea.style.width = Math.min(textarea.scrollWidth + 15, maxTextareaWidth) + 'px';
+}
+
+function expandTextarea(textarea) {
+    textarea.style.width = maxTextareaWidth + 'px'; 
+    textarea.style.height = Math.min(textarea.scrollHeight, maxTextareaHeight) + 'px';
+}
+
+function shrinkTextarea(textarea) {
+    textarea.style.width = compactWidth + 'px'; 
+    textarea.style.height = 'auto'; 
+    textarea.rows = 1; 
+}
+
+function resetCustomForm() {
+    document.querySelectorAll('.checkbox input[type="checkbox"]').forEach(checkbox => {
+        checkbox.removeAttribute('disabled');
+        checkbox.closest('.checkbox-wrapper').style.display = 'flex';
+    });
+
+    document.getElementById('custom-inputs-container').classList.add('hidden');
+    document.querySelector('[name="custom_button_pressed"]').value = "false"
+
+    const inputContainer = document.getElementById('dynamic-input-container');
+    while (inputContainer.children.length > 0) {
+        inputContainer.removeChild(inputContainer.lastChild);
+    }
+    inputCount = 0;
 }
