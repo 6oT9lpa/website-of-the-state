@@ -314,9 +314,9 @@ def index():
     name = form.zagolovok.data
     desc = form.desc.data
     news_type = form.type_news.data
-    userperm = PermissionUsers.query.filter_by(user_static=current_user.static).first()
+    userperm = current_user.permissions[0]
     user = Users.query.filter_by(static=current_user.static).first()
-    if userperm.create_news != True:
+    if not userperm.create_news:
       return jsonify(message='Отказано в доступе!'), 403
     if news_type == "leaders" and not userperm.admin:
       return jsonify(message='Вы не администратор!'), 400
