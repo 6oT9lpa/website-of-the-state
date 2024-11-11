@@ -1,0 +1,76 @@
+
+.iskscont {
+    display: none;
+    justify-content: center;
+}
+.iskocont {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    flex-direction: column;
+}
+.modalci {
+    display: none; /* Скрыто по умолчанию */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+    justify-content: center;
+    align-items: center;
+}
+.claims-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.claims-group input {
+    max-width: 150px;
+}
+.claims-group button {
+    max-width: 158px;
+}
+.modalci-content {
+    background-color: #3c3b3bd6;
+    margin: 15% auto;
+    margin-top: 10rem;
+    padding: 20px;
+    width: 100%;
+    max-width: 600px;
+    min-height: 200px;
+    color: white;
+    box-shadow: 0 0 20px 10px #262626c2;
+    border-radius: 10px;
+}
+.list-item2 {
+    padding: 0 10px;
+    background: rgba(0, 0, 0, 0.425);
+    color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    max-height: 100px; /* Ограничение по высоте */
+    margin-top: 20px;
+    overflow-y: hidden; /* Скроллинг по вертикали для избежания переполнения */
+    overflow-x: hidden;
+    line-height: 0.7;
+    display: block; /* Убеждаемся, что элемент ведет себя как обычный блок */
+}
+.applcont {
+    display: flex;
+    justify-content: center;
+    max-height: 520px; 
+    overflow-y: auto; 
+    padding: 10px;
+    background: transparent;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    width: 70%; /* Максимальная ширина блока */
+    max-height: 680px; /* Максимальная высота блока */
+    margin-top: 20px;
+    margin-left: 14%;
+    overflow: auto; /* Добавление прокрутки, если содержимое превышает размер блока */
+    overflow-x: hidden;
+}

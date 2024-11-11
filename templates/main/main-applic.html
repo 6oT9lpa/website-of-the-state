@@ -1,0 +1,130 @@
+<div class="applcont">
+<div class="iskscont"></div>
+<div class="iskocont">{% for disitem in district %}
+    <div class="list-item2" onclick="sendData({{ disitem.id }})">
+        <h2>Исковое заявление №{{ "%03d" | format(disitem.id) }}</h2>
+        <p>Истец: {{ disitem.created }} Ответчик: {{ disitem }} {% if disitem.prosecutor %} Прокурор: {{ disitem.prosecutor }} {% endif %} {% if disitem.judge %} Судья: {{ disitem.judge }} {% endif %}</p>
+    </div>
+{% endfor %}</div>
+</div>
+<div class="nav-button" onclick="openModalci()">+</div>
+<div id="Modalci" class="modalci">
+    <div class="modalci-content">
+        <span class="close-btn" onclick="closeModalci()">&times;</span>
+        <h2 id="modalHeader">Подача Иска</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class=flashes>
+                {% for category, message in messages %}
+                  <li class="{{ category }} errorli">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+        <form id="iskcForm" method="POST" action="{{ url_for('main.iskapplications') }}">
+            <label for="isnt">Инстанция:</label>
+            <select id="isnt" name="isnt">
+                <option value="district">Окружной суд</option>
+                <option value="supreme">Верховный суд</option>
+            </select>
+            {% if authent != True %}
+            <label for="created">Имя Фамилия:</label>
+            <input type="text" id="created" name="created">
+            {% endif %}
+            <label for="defenda">Ответчик:</label>
+            <input type="text" id="defenda" name="defenda">
+            <label for="descri">Описание ситуации:</label>
+            <input type="text" id="descri" name="descri">
+            <label for="phonen">Номер телефона:</label>
+            <input type="text" id="phonen" name="phonen">
+            <label for="cardn">Номер карты:</label>
+            <input type="text" id="cardn" name="cardn">
+            <div class="claims-group">
+            <label for="claims">Исковые требования: 1.</label>
+            <input type="text" id="claims" name="claims[]" placeholder="Введите требование">
+            <button type="button" onclick="addInput()">+</button>
+            </div>
+            <input type="submit" value="Отправить">                
+        </form>
+        <div id="responseMessage"></div>
+    </div>
+</div>
+<script>
+    function sendData(id) {
+        const url = new URL('isk', window.location.origin);
+        url.searchParams.append('id', id);
+        url.searchParams.append('type', 'district');
+        window.location.href = url.toString();
+    }
+    function openModalci() {
+            document.getElementById("Modalci").style.display = "flex";
+        }
+    function closeModalci() {
+        document.getElementById("Modalci").style.display = "none";
+    }
+    function addInput() {
+            event.preventDefault();
+            const form = document.getElementById('iskcForm');
+            const inputNumber = form.querySelectorAll('.claims-group').length + 1;
+            const inputId = `claim${inputNumber}`;
+            const inputGroups = form.querySelectorAll('.claims-group');
+
+            if (inputGroups.length > 0) {
+                const lastInputGroup = inputGroups[inputGroups.length - 1];
+                const lastButton = lastInputGroup.querySelector('button');
+                lastButton.textContent = '-';
+                lastButton.onclick = function() {
+                    removeInput(lastInputGroup);
+                };
+            }
+
+            const newInputGroup = document.createElement('div');
+            newInputGroup.classList.add('claims-group');
+
+            const label = document.createElement('label');
+            label.setAttribute('for', inputId);
+            label.textContent = `${inputNumber}.`;
+            const newInput = document.createElement('input');
+            newInput.type = 'text';
+            newInput.id = inputId;
+            newInput.name = 'claims[]'; // Все инпуты будут переданы как массив
+            newInput.placeholder = 'Введите требование';
+
+            const addButton = document.createElement('button');
+            addButton.type = 'button';
+            addButton.textContent = '+';
+            addButton.onclick = addInput;
+            newInputGroup.appendChild(label);
+            newInputGroup.appendChild(newInput);
+            newInputGroup.appendChild(addButton);
+            form.appendChild(newInputGroup);
+        }
+        function removeInput(inputGroup) {
+            inputGroup.remove();
+            updateInputs();
+        }
+        function updateInputs() {
+            const inputGroups = document.querySelectorAll('.claims-group');
+
+            inputGroups.forEach((group, index) => {
+                // Обновляем номер и текст в лейбле
+                const label = group.querySelector('label');
+                if (index + 1 === 1) {
+                    label.textContent = `Исковые требования: ${index + 1}.`;
+                } else {
+                label.textContent = `${index + 1}. `;
+            }
+                // Меняем кнопку последнего инпута на `+`, остальные на `-`
+                const button = group.querySelector('button');
+                if (index === inputGroups.length - 1) {
+                    button.textContent = '+';
+                    button.onclick = addInput;
+                } else {
+                    button.textContent = '-';
+                    button.onclick = function() {
+                        removeInput(group);
+                    };
+                }
+            });
+        }
+</script>

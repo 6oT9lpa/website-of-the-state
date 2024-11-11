@@ -3,6 +3,7 @@ from sqlalchemy import DateTime, and_
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, LoginManager
 from datetime import datetime
+import uuid
 
 from main import main
 
@@ -19,6 +20,9 @@ app.register_blueprint(main)
 # получение достпука к бд через SQLAlchemy, также создание login manager
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
+
+def generate_uid():
+    return str(uuid.uuid4()).replace("-", "")[:16]
 
 # создание бд Users
 class Users(db.Model, UserMixin):
@@ -107,20 +111,56 @@ class news(db.Model):
     textnews = db.Column(db.Text, nullable=False)
     picture = db.Column(db.String(200), nullable=True)
 
-class iskapl(db.Model):
+class iskdis(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    court = db.Column(db.String(10), nullable=False)
-    judge = db.Column(db.String(45), nullable=False)
+    uid = db.Column(db.String(16), unique=True, default=generate_uid)
+    judge = db.Column(db.String(45), nullable=True)
+    discription = db.Column(db.Text, nullable=False)
+    claims = db.Column(db.PickleType, nullable=False)
+    phone = db.Column(db.String(12), nullable=False)
+    cardn = db.Column(db.String(15), nullable=False)
+    createdds = db.Column(db.String(100), nullable=False)
 
     created = db.Column(db.String(45), nullable=False) #Истец
-    defendant = db.Column(db.PickleType, nullable=False) #Ответчик(и)
-    prosecutor = db.Column(db.String(45), nullable=False)
+    defendant = db.Column(db.PickleType, nullable=True) #Ответчик(и)
+    def __repr__(self):
+        return ', '.join(map(str, self.defendant))
+    prosecutor = db.Column(db.String(45), nullable=True)
     
     lawerc = db.Column(db.String(45), nullable=True)
     lawerd = db.Column(db.String(45), nullable=True)
 
     otherme = db.Column(db.PickleType, nullable=True)
     create_at = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    is_archived = db.Column(db.Boolean, default=False)
+
+class isksup(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    uid = db.Column(db.String(16), unique=True, default=generate_uid)
+    judge = db.Column(db.String(45), nullable=True)
+    discription = db.Column(db.Text, nullable=False)
+    claims = db.Column(db.PickleType, nullable=False)
+    phone = db.Column(db.String(12), nullable=False)
+    cardn = db.Column(db.String(15), nullable=False)
+    createdds = db.Column(db.String(100), nullable=False)
+
+    created = db.Column(db.String(45), nullable=False) #Истец
+    defendant = db.Column(db.PickleType, nullable=True) #Ответчик(и)
+    prosecutor = db.Column(db.String(45), nullable=True)
+    
+    lawerc = db.Column(db.String(45), nullable=True)
+    lawerd = db.Column(db.String(45), nullable=True)
+
+    otherme = db.Column(db.PickleType, nullable=True)
+    create_at = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    is_archived = db.Column(db.Boolean, default=False)
+
+class repltoisks(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    type_document = db.Column(db.String(60), nullable=False)
+    uid = db.Column(db.String(16), nullable=False)
+    author = db.Column(db.String(45), nullable=False)
+    replyik = db.Column(db.PickleType, nullable=False)
 
     
 # создание бдешек

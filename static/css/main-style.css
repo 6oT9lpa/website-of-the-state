@@ -1,0 +1,340 @@
+.crnewbutton {
+    display: none;
+    color: white;
+    text-decoration: none;
+    position: relative;
+    font-weight: 800;
+    font-size: 20px;
+    padding: 0 50px;
+    transition: color 0.3s;
+}
+.newscont {
+    display: flex;
+    justify-content: center;
+    max-height: 520px; 
+    overflow-y: auto; 
+    padding: 10px;
+    background: transparent;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    width: 85%; /* Максимальная ширина блока */
+    max-height: 680px; /* Максимальная высота блока */
+    margin-top: 20px;
+    overflow: auto; /* Добавление прокрутки, если содержимое превышает размер блока */
+    overflow-x: hidden;
+}
+.newscont::-webkit-scrollbar {
+    width: 12px; /* Ширина полосы прокрутки */
+}
+
+.newscont::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Цвет фона полосы прокрутки */
+    border-radius: 10px;
+}
+.newscont::-webkit-scrollbar-thumb {
+    background: #888; /* Цвет бегунка полосы прокрутки */
+    border-radius: 10px; /* Закругление бегунка */
+    border: 3px solid transparent; /* Прозрачная граница для смещения бегунка */
+    background-clip: content-box; /* Обрезка фона по содержимому */
+}
+.active {
+    color: #888888;
+}
+.nohidden {
+    display: block;
+}
+
+.sidebar {
+    width: 270px;
+    height: 470px;
+    background: linear-gradient(to bottom left, #2B2B2B, #3E3E3E);
+    border-left: 5px solid #3E3E3E;
+    border-bottom: 5px solid #3E3E3E;
+    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box; 
+    position: absolute;
+    right: 0;
+    border-bottom-left-radius: 40px;
+    z-index: -1;
+  }
+  
+  .sidebar div {
+    padding: 10px 0;
+    border-bottom: 4px solid white;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    padding: 10px 20px;
+    transition: 0.3s;
+  }
+  
+  .sidebar div span {
+    display: block;
+    font-weight: normal;
+  }
+  
+.sidebar div:hover {
+    color: #888888;
+}
+.city_hallnews {
+    display: none;
+    opacity: 0; /* Начальное значение для анимации */
+    transform: translateY(20px); /* Начальное значение для анимации */
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 20px; /* Добавляем отступы между элементами */
+    animation: fadeIn 0.8s ease-out forwards;
+}
+.leadernewsy {
+    display: grid;
+    opacity: 0; /* Начальное значение для анимации */
+    transform: translateY(20px); /* Начальное значение для анимации */
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 20px; /* Добавляем отступы между элементами */
+    animation: fadeIn 0.8s ease-out forwards;
+}
+.weazelnewsy {
+    display: none;
+    opacity: 0; /* Начальное значение для анимации */
+    transform: translateY(20px); /* Начальное значение для анимации */
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 20px; /* Добавляем отступы между элементами */
+    animation: fadeIn 0.8s ease-out forwards;
+}
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.modal {
+    display: none; /* Скрыто по умолчанию */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+    justify-content: center;
+    align-items: center;
+}
+.modal-content {
+    background-color: #ffffff69;
+    padding: 20px;
+    border-radius: 8px;
+    width: 60%;
+    max-width: 700px;
+    text-align: left;
+}
+.modalcn {
+    display: none; /* Скрыто по умолчанию */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+    justify-content: center;
+    align-items: center;
+}
+.modalcn-content {
+    background-color: #3c3b3bd6;
+    margin: 15% auto;
+    margin-top: 10rem;
+    padding: 20px;
+    width: 100%;
+    max-width: 600px;
+    min-height: 200px;
+    color: white;
+    box-shadow: 0 0 20px 10px #262626c2;
+    border-radius: 10px;
+}
+input {
+    background-color: #444; /* Фон поля */
+    box-shadow: none;       /* Убираем любые тени */
+    padding: 8px;
+    border: 1px solid #666;
+    border: #e81c597a solid 2px;
+    border-radius: 10px;
+    background-color: #444;
+    color: #fff;
+}
+input::placeholder {
+    background-color: #444;  /* Пример темного фона */
+    color: white;
+    opacity: 1;
+}
+textarea {
+    font-family: Arial, sans-serif; /* Шрифт как у стандартного input */
+    font-size: 16px; /* Размер шрифта */
+    line-height: 1.5; /* Межстрочный интервал для читабельности */
+    padding: 8px; /* Внутренние отступы, как у input */
+    border: 1px solid #ccc; /* Светло-серая рамка, как у input */
+    border-radius: 4px; /* Округленные углы, как у большинства input */
+    outline: none; /* Убираем стандартное выделение */
+    resize: none; /* Отключаем изменение размера вручную */
+    box-shadow: none; /* Убираем тени, если они есть */
+    background-color: #444; /* Фон поля */
+    box-shadow: none;       /* Убираем любые тени */
+    padding: 8px;
+    border: 1px solid #666;
+    border: #e81c597a solid 2px;
+    border-radius: 10px;
+    background-color: #444;
+    color: #fff;
+}
+textarea::placeholder {
+    background-color: #444;  /* Пример темного фона */
+    color: white;
+    opacity: 1;
+}
+select {
+    background-color: #444; /* Фон поля */
+    box-shadow: none;       /* Убираем любые тени */
+    padding: 8px;
+    max-width: 160px;
+    border: 1px solid #666;
+    border: #e81c597a solid 2px;
+    border-radius: 10px;
+    background-color: #444;
+    color: #fff;
+}
+#inputformcn{
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+}
+#inputformcn label{
+    margin-bottom: 5px;
+}
+.dynamic-input {
+    width: auto;
+    height: auto;
+    min-width: 100px;
+    max-width: 100%;
+    min-height: 50px;
+    max-height: 34%;
+    box-sizing: border-box;
+    overflow: hidden;
+    resize: none;
+    overflow-y: auto;
+}
+.dynamic-input::-webkit-scrollbar {
+    width: 10px;  
+}
+
+
+.dynamic-input::-webkit-scrollbar-thumb {
+    background-color: transparent; 
+    border: 2px solid #e81c5a; 
+    border-radius: 8px; 
+}
+
+
+.dynamic-input::-webkit-scrollbar-thumb:hover {
+    background-color: #d31a527a; 
+}
+
+
+.dynamic-input::-webkit-scrollbar-track {
+    background: rgba(255, 96, 96, 0); 
+}
+
+.subbtn {
+    font-size: 16px;
+    font-weight: 800;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 25px;
+    background-color: #67A438;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in, color 0.2s ease-in 
+}
+.select-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 15px;
+    border: #e81c597a solid 2px;
+    border-radius: 10px;
+    background-color: #444;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.select-button:hover {
+    border-color: #888;
+}
+.modal-content img.error {
+    display: none;
+}
+.close-btn {
+    float: right;
+    font-size: 30px;
+    cursor: pointer;
+}
+.share-btn {
+    left: 20px;
+    float: right;
+    font-size: 20px;
+    cursor: pointer;
+}
+.delete-btn {
+    left: 40px;
+    float: right;
+    font-size: 20px;
+    cursor: pointer;
+}
+.delete-btn img {
+    width: 20px; 
+    height: 20px; 
+  }
+.share-btn img {
+    width: 15px; 
+    height: 15px; 
+  }
+#modalDescription {
+    font-weight: bold;
+    font-size: 28px;
+}
+.list-item {
+    width: 360px; 
+    height: 250px; 
+    padding: 15px;
+    background-color: #f9f9f97c; 
+    border: 1px solid #ccc; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+    display: flex;
+    flex-direction: column;
+    justify-content: center; 
+    align-items: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    text-align: center;
+}
+
+.list-item strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.list-item.expanded {
+    transform: scale(1.5);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1.5);
+    background-color: white;
+    padding: 20px;
+    width: 80%;
+    height: auto;
+    overflow: auto;
+}

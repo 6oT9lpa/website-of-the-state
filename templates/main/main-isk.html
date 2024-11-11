@@ -1,0 +1,239 @@
+<div id="isk-container">
+<button class="backbtn" onclick="window.location.href='http://26.45.155.104:8000/iskapplications'">Назад</button>
+<div class="sosisk">
+<div class="sub-isk">
+    {% if isk.judge %}<p>Судья: {{ isk.judge }}</p>{% endif %}
+
+    <p>Истец: {{ isk.created }}</p>
+    <p>Ответчик: {{ isk.__repr__() }}</p>
+    {% if isk.prosecutor %}<p>Прокурор: {{ isk.prosecutor }}</p>{% endif %}
+    {% if isk.lawerc %}<p>Представитель Истца: {{ isk.lawerc }}</p>{% endif %}
+    {% if isk.lawerd %}<p>Представитель Ответчика: {{ isk.lawerd }}</p>{% endif %}
+    {% if isk.otherme %}<p>Другие участники:</p>
+    <p> {% for index, value in isk.otherme.items() %} {{ index }}: {{ value }}</p> {% endfor %}{% endif %}
+</div>
+<div class="isk-buttons">
+    {% if isk.is_archived == False %}
+    {% if status and status != "Judge" %}
+    <button class="iskbutton"> <span>Подать ходатайство</span></button>
+    <button class="iskbutton"> <span>Привлечь свидетеля</span></button>
+    {% endif %}
+    {% if status == "prosecutor" %}
+    {% if isk.judge and not isk.prosecutor %}
+    <button class="iskbutton" onclick="openModalpd()"> <span>Возбудить дело</span></button>
+    <button class="iskbutton"> <span>Сдать дело</span></button> {% endif %}
+    {% endif %}
+    {% if status == "Judge" %}
+    {% if not isk.judge %}
+    <button class="iskbutton" onclick="openModalci()"> <span>Принять к производству</span></button>
+    <button class="iskbutton" onclick="openModalck()"> <span>Отказать</span></button> {% endif %}
+    <button class="iskbutton"> <span>Назначить заседание</span></button>
+    <button class="iskbutton"> <span>Перенести заседение</span></button>
+    <button class="iskbutton"> <span>Написать определение</span></button>
+    {% endif %} {% endif %}
+</div>    
+</div>
+<div class="iskcontainer">
+<div class="main-isk">
+    <h2>Исковое заявление №{{ "%03d" | format(isk.id) }}</h2>
+    <small>Подан: {{ isk.create_at }}</small>
+    <div class="isktext">
+    <p>{{ isk.discription }}</p>
+    <br>
+    <br>
+    <p>Исковые требования:</p>
+    {% for claim in isk.claims %}
+    <p>{{ loop.index }}. {{ claim }}</p>
+    {% endfor %}
+    <br>
+    </div>
+    <p>Контактные данные: {{ isk.phone }}.</p>
+    <p>Номер банковской карты: {{ isk.cardn }}</p>
+</div>
+{% if replies %}
+{% for reply in replies %}
+<div class="main-isk">
+    {% if reply.type_document == "acceptisk" %}
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Great_Seal_of_the_United_States_%28obverse%29.svg/1200px-Great_Seal_of_the_United_States_%28obverse%29.svg.png" alt="Герб США" class="seal">
+    <h3>Окружной Суд Штата Сан Андреас</h3>
+    <small>{{ isk.created }} VS {{ isk.__repr__() }}</small>
+    <br>
+    <br>
+    <img src="https://i.imgur.com/oumkght.png">
+    <br>
+    <p>No. SC-{{ "%03d" | format(isk.id) }}</p>
+    <p>ОПРЕДЕЛЕНИЕ No. SC-{{ "%03d" | format(isk.id) }}-01</p>
+    <p>ОБ ПРИНЯТИИ ИСКОВОГО ЗАЯВЛЕНИЯ К ПРОИЗОВДСТВУ СУДА.
+       ПОДГОТОВКЕ ДЕЛА К СУДЕБНОМУ РАЗБЕРАТЕЛЬТСВУ.</p>
+    <br>
+    <img src="https://i.imgur.com/oumkght.png">
+    <br>
+    <div class="isktext">
+    <h4>ОБСТОЯТЕЛЬСТВА</h4>
+    <p>{{ isk.create_at }} гражданин {{ isk.created }} обратился в Окружной суд Штата Сан Андреас с исковым заявлением №{{ "%03d" | format(isk.id) }}.</p>
+    <br>
+    <h4>РАССМОТРЕНИЕ</h4>
+    <p>{{ reply.replyik['motivirovka'] }}</p>
+    <br>
+    <h4>ЗАКЛЮЧЕНИЕ</h4>
+    <p>Исковое заявление №{{ "%03d" | format(isk.id) }} гражданина {{ isk.created }} - принимается к производству суда.</p>
+    <p>Суд обязывает Прокуратуру до {{ reply.replyik['investigation'] }} провести расследование по делу, истребовав при необходимости какие-либо материалы, а по выполнении данного требования незамедлительно письменно известить об этом суд с представлением результатов расследования и указанием позиции прокурора по делу;</p> 
+    </div>
+    {% endif %}
+    {% if reply.type_document == "otkazisk" %}
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Great_Seal_of_the_United_States_%28obverse%29.svg/1200px-Great_Seal_of_the_United_States_%28obverse%29.svg.png" alt="Герб США" class="seal">
+    <h3>Окружной Суд Штата Сан Андреас</h3>
+    <small>{{ isk.created }} VS {{ isk.__repr__() }}</small>
+    <br>
+    <br>
+    <img src="https://i.imgur.com/oumkght.png">
+    <br>
+    <p>No. SC-{{ "%03d" | format(isk.id) }}</p>
+    <p>ОПРЕДЕЛЕНИЕ No. SC-{{ "%03d" | format(isk.id) }}-01</p>
+    <p>ОБ ОТКАЗЕ В ПРИНЯТИИ ИСКОВОГО ЗАЯВЛЕНИЯ​.</p>
+    <br>
+    <img src="https://i.imgur.com/oumkght.png">
+    <br>
+    <div class="isktext">
+    <h4>ОБСТОЯТЕЛЬСТВА</h4>
+    <p>{{ isk.create_at }} гражданин {{ isk.created }} обратился в Окружной суд Штата Сан Андреас с исковым заявлением №{{ "%03d" | format(isk.id) }}.</p>
+    <br>
+    <h4>РАССМОТРЕНИЕ</h4>
+    <p>{{ reply.replyik['motivirovka'] }}</p>
+    <br>
+    <h4>ЗАКЛЮЧЕНИЕ</h4>
+    <p> На основании изложенного, суд отказывает в принятии искового заявления №{{ "%03d" | format(isk.id) }} гражданина {{ isk.created }}.</p>
+    </div>
+    {% endif %}
+    {% if reply.type_document == "prokdelo" %}
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Seal_of_the_United_States_Department_of_Justice.svg/1200px-Seal_of_the_United_States_Department_of_Justice.svg.png" alt="Герб DJ" class="seal">
+    <h3>Прокуратура Штата Сан Андреас</h3>
+    <br>
+    <br>
+    <img src="https://i.imgur.com/oumkght.png">
+    <br>
+    <div class="isktext">
+    <p>Я, {{ reply.replyik['prok'] }}, в качестве уполномоченного Прокурора штата Сан-Андреас, действуя в рамках полномочий,</p>
+    <p>предоставленных мне Конституцией и иными нормативно-правовыми актами,</p>
+    <h4>УВЕДОМЛЯЮ:</h4>
+    <br>
+    <br>
+    <p>Уважаемый суд в лице Судьи {{ isk.judge }}, по вашему запросу будет проведена прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта
+    нарушений Конституции и действующих на территории San-Andreas нормативно-правовых актов, на установление причин и условий, способствующих выявленным
+    нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений.​</p>
+    <br>
+    <p>{{ reply.replyik['prok'] }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endfor %} {% endif %}
+</div>
+</div>
+<div id="Modalot" class="modalci">
+    <div class="modalci-content">
+        <span class="close-btn" onclick="closeModalci()">&times;</span>
+        <h2 id="modalHeader">Принятие иска</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class=flashes>
+                {% for category, message in messages %}
+                  <li class="{{ category }} errorli">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+        <form id="iskcForm" method="POST" action="{{ url_for('main.isk') }}">
+            <input type="hidden" name="typeopr" value="prinatie">
+            <div class="elnt_container">
+                <label for="more-info">Мотивиционная часть</label>
+                <input id="more_info" name="more-info" type="checkbox" />
+            </div>
+            <div id="motivirovka">
+            <textarea name="motivirovkat" id="motivirovkat" cols="30" rows="10"></textarea>
+            </div>
+            <label for="investigation">Срок расследования:</label>
+            <input type="text" id="investigation" name="investigation">
+            <input type="submit" value="Отправить">                
+        </form>
+        <div id="responseMessage"></div>
+    </div>
+</div>
+
+<div id="Modalotk" class="modalci">
+    <div class="modalci-content">
+        <span class="close-btn" onclick="closeModalck()">&times;</span>
+        <h2 id="modalHeader">Отказ в иске</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class=flashes>
+                {% for category, message in messages %}
+                  <li class="{{ category }} errorli">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+        <form id="iskcoForm" method="POST" action="{{ url_for('main.isk') }}">
+            <div class="elnt_container">
+                <label for="more-infot">Мотивиционная часть</label>
+                <input id="more_infot" name="more-infot" type="checkbox" />
+            </div>
+            <div id="motivirovkaot">
+            <textarea name="motivirovkat" id="motivirovkat" cols="30" rows="10"></textarea>
+            </div>
+            <input type="hidden" name="typeopr" value="otkaz">
+            <input type="submit" value="Отправить">                
+        </form>
+        <div id="responseMessage"></div>
+    </div>
+</div>
+
+<div id="Modalprokdelo" class="modalci">
+    <div class="modalci-content">
+        <span class="close-btn" onclick="closeModalpd()">&times;</span>
+        <h2 id="modalHeader">Принятие иска</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class=flashes>
+                {% for category, message in messages %}
+                  <li class="{{ category }} errorli">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+        <form id="iskprokdeloForm" method="POST" action="{{ url_for('main.isk') }}">
+            <input type="hidden" name="typeopr" value="prokdelo">
+            <div>Вы уверены что хотите начать расследование по исковому заявлению №{{ "%03d" | format(isk.id) }}?</div>
+            <input type="submit" value="Да">                
+        </form>
+        <div id="responseMessage"></div>
+    </div>
+</div>
+<div id="district-container"></div>
+<script>
+    function openModalpd() {
+            document.getElementById("Modalprokdelo").style.display = "flex";
+        }
+    function closeModalpd() {
+        document.getElementById("Modalprokdelo").style.display = "none";
+    }
+    function openModalci() {
+            document.getElementById("Modalot").style.display = "flex";
+        }
+    function closeModalci() {
+        document.getElementById("Modalot").style.display = "none";
+    }
+    function openModalck() {
+            document.getElementById("Modalotk").style.display = "flex";
+        }
+    function closeModalck() {
+        document.getElementById("Modalotk").style.display = "none";
+    }
+    document.getElementById('more_infot').addEventListener('change', function() {
+    if (!this.checked) {
+        document.getElementById('motivirovkaot').style.display = 'none';
+    } else {
+        document.getElementById('motivirovkaot').style.display = 'block';
+    }
+});
+
+</script>

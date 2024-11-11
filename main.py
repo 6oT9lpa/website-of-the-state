@@ -236,6 +236,149 @@ def index():
     
   return render_template('index.html', city_hallnews=city_hallnews, leadernews=leadernews, weazelnewsn=weazelnewsn, has_access=has_access, form=form)
 
+@main.route('/iskapplications', methods=['POST', 'GET'])
+def iskapplications():
+  from __init__ import iskdis, isksup, PermissionUsers, Users, db
+  supreme = isksup.query.all()
+  district = iskdis.query.all()
+  authent = False
+  if current_user.is_authenticated:
+    authent = True
+  if request.method == "POST":
+    created = request.form.get('created')
+    if not created:
+      created = current_user.nikname
+    isnt = request.form.get('isnt')
+    defenda = request.form.get('defenda')
+    descri = request.form.get('descri')
+    phonen = request.form.get('phonen')
+    cardn = request.form.get('cardn')
+    claims = request.form.getlist('claims[]')
+    defenda_list = [name.strip() for name in defenda.split(',')] if defenda else []
+    if isnt == "district":
+      isk = iskdis(discription=descri, claims=claims, phone=phonen, cardn=cardn, created=created, defendant=defenda_list, createdds="1234")
+      db.session.add(isk)
+      db.session.commit()
+    return redirect(url_for('main.iskapplications'))
+  return render_template('applic.html', district=district, supreme=supreme, authent=authent)
+   
+@main.route('/isk', methods=['POST', 'GET'])
+def isk():
+  from __init__ import iskdis, isksup, PermissionUsers, Users, db, repltoisks
+  import time
+  id = request.args.get('id')
+  type = request.args.get('type')
+  status = None
+  def othermem(self):
+        if self.otherme:
+          return '\n'.join([f"{key}: {value}" for key, value in self.otherme.items()])
+  if request.method == "POST":
+    typeopr = request.form.get("typeopr")
+    if typeopr == "prinatie":
+      iskuid = session.get('iskuid')
+      ids = session.get('id')
+      iskt = session.get('type')
+      print(f'{ids}{iskt}')
+      motivirovka = request.form.get('motivirovkat')
+      investigation = request.form.get('investigation')
+      print(f'{iskuid} {motivirovka} {investigation}')
+      if motivirovka:
+        text = {
+        "motivirovka": motivirovka,
+        "investigation": investigation
+        }
+      else:
+        text = {
+        "investigation": investigation
+        }
+      replto = repltoisks(uid=iskuid, author=current_user.nikname, replyik=text, type_document="acceptisk")
+      db.session.add(replto)
+      db.session.commit()
+      if iskt == "district":
+        isktype = iskdis
+      elif iskt == "supreme":
+        isktype = isksup
+      db.session.query(isktype).filter_by(uid=iskuid).update({
+        "judge": current_user.nikname
+      })
+      return redirect(url_for('main.isk', id=ids, type=iskt))
+    elif typeopr == "otkaz":
+      iskuid = session.get('iskuid')
+      ids = session.get('id')
+      iskt = session.get('type')
+      motivirovka = request.form.get('motivirovkat')
+      text = {
+         "motivirovka": motivirovka
+      }
+      replto = repltoisks(uid=iskuid, author=current_user.nikname, replyik=text, type_document="otkazisk")
+      db.session.add(replto)
+      db.session.commit()
+      if iskt == "district":
+        isktype = iskdis
+      elif iskt == "supreme":
+        isktype = isksup
+      db.session.query(isktype).filter_by(uid=iskuid).update({
+        "judge": current_user.nikname,
+        "is_archived": True
+      })
+      return redirect(url_for('main.isk', id=ids, type=iskt))
+    elif typeopr == "prokdelo":
+      iskuid = session.get('iskuid')
+      ids = session.get('id')
+      iskt = session.get('type')
+      text = {
+        "prok": current_user.nikname
+      }
+      replto = repltoisks(uid=iskuid, author=current_user.nikname, replyik=text, type_document="prokdelo")
+      db.session.add(replto)
+      db.session.commit()
+      if iskt == "district":
+        isktype = iskdis
+      elif iskt == "supreme":
+        isktype = isksup
+      db.session.query(isktype).filter_by(uid=iskuid).update({
+        "prosecutor": current_user.nikname
+      })
+      return redirect(url_for('main.isk', id=ids, type=iskt))
+    elif typeopr == "svidetelhod":
+      iskuid = session.get('iskuid')
+      ids = session.get('id')
+      iskt = session.get('type')
+      count = db.session.query(repltoisks).filter(repltoisks.type_document == "hodataistvo").count()
+      namesvidetela = request.form.get('namesvidetela')
+      text = {
+        "namesvidetela": namesvidetela,
+        "type_hodataistva": "svidetelhod",
+        "№_hodataistva": count + 1,
+        "accepted": False
+      }
+      replto = repltoisks(uid=iskuid, author=current_user.nikname, replyik=text, type_document="hodataistvo")
+      db.session.add(replto)
+      db.session.commit()
+       
+  if type == "district":
+    isk = iskdis.query.filter_by(id=id).first_or_404()
+    replies = repltoisks.query.filter_by(uid=isk.uid).all()
+    otherme = othermem(isk)
+    if current_user.is_authenticated:
+      if current_user.nikname == isk.created:
+        status = "Created"
+      elif current_user.organ == "GOV" and 13 <= int(current_user.rankuser) <= 15:
+        status = "Judge"
+      elif current_user.organ == "GOV" and int(current_user.rankuser) == 9:
+        status = "prosecutor"
+      elif current_user.nikname in isk.defendant:
+        status = "defendant"
+      elif current_user.nikname == isk.lawerc or current_user.nikname == isk.lawerd:
+        status = "lawer"
+    session['iskuid'] = isk.uid
+    session['id'] = id
+    session['type'] = type
+    return render_template('isk.html', isk=isk, otherme=otherme, status=status, replies=replies)
+  elif type == "supreme":
+    isk = isksup.query.filter_by(id=id).first_or_404()
+    session['iskuid'] = isk.uid
+    return render_template('isk.html', isk=isk)
 @main.route('/get_news/<int:news_id>', methods=['GET'])
 def get_news(news_id):
     from __init__ import news
@@ -313,6 +456,8 @@ def auth():
       })
       return jsonify(message='Пароль изменен!'), 200
     else:
+      session.pop('codefp', None)
+      session.pop('staticfp', None)
       return jsonify(redirect_url=url_for('main.index')), 400
 
   return render_template('auth.html', form=form, formfp=formfp, formfp2=formfp2)
