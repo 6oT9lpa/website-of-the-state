@@ -336,8 +336,7 @@ def index():
     data = request.get_json()
     news_id = data.get('id')
     if news_id:
-      userperm = PermissionUsers.query.filter_by(user_static=current_user.static).first()
-      if userperm.create_news != True:
+      if not current_user.permissions[0].create_news:
         return jsonify(message='Отказано в доступе!'), 403
       news_item = db.session.query(News).filter_by(id=news_id).first()
       db.session.delete(news_item)
