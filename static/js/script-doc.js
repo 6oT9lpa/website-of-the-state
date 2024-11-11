@@ -95,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
             if (isAuthenticated && isPermission) { 
                 modalElem.classList.add('active');
-                modalElem.style.display = 'flex';
                 overlay.classList.add('active');
                 body.style.position = 'fixed'; 
                 body.style.width = '100%'; 
@@ -589,13 +588,13 @@ function removeValidationListener(field) {
 function selectOption(label) {
     const selectedValue = document.getElementById('selected-value').getElementsByTagName('span')[0];
 
-    [wrapperOrder, wrapperResolution, wrapperAgenda].forEach(wrapper => {
+    [wrapperOrder, wrapperResolution].forEach(wrapper => {
         wrapper.classList.remove('hidden-wrapper');
         wrapper.style.height = '0';
         wrapper.style.display = 'none';
     });
 
-    [contanier_order, contanier_res, contanier_agenda].forEach(container => {
+    [contanier_order, contanier_res].forEach(container => {
         container.style.height = '0';
         container.style.display = 'none';
     });

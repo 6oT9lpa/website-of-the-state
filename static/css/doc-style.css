@@ -41,8 +41,7 @@ main{
     margin: 15% auto;
     margin-top: 10rem;
     padding: 20px;
-    width: 100%;
-    max-width: 600px;
+    width: calc(100% - 50vw);
     min-height: 200px;
     color: white;
     box-shadow: 0 0 20px 10px #262626c2;

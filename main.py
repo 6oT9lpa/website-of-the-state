@@ -1114,7 +1114,7 @@ def create_doc():
     return redirect(url_for('main.doc'))
 
   perm_user = current_user.permissions[0]
-  rankuser_value = int(current_user.rankuser) if current_user.rankuser.isdigit() else 0
+  rankuser_value = current_user.curr_rank
   if not (current_user.organ == 'GOV' and (rankuser_value == 10 or rankuser_value == 11 or rankuser_value >= 18)):
     flash('Для создания постановлений требуется уровень доступа, прокурор!')
     return redirect(url_for('main.doc'))
@@ -1190,13 +1190,10 @@ def create_doc():
       pdf.drawImage(separator_path, 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
 
       # Получение номера документа
-      last_record = OrderTheUser.query.order_by(OrderTheUser.id.desc()).first()
-      record = last_record.id if last_record else 0
-      num_order = increment_number_with_leading_zeros(record)
-
-      # Общая информация
-      pdf.drawString(150 * mm, 200 * mm, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
-      pdf.drawString(30 * mm, 200 * mm, f"Doc. No: {num_order}")
+      record = ResolutionNumberCounter.increment(db.session)
+      new_resolution_number = increment_number_with_leading_zeros(record)
+      draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
+      draw_text(pdf, 30, 200, f"Doc. No: {new_resolution_number}")
       
       # Стартовая координата y
       y = 190
@@ -1410,11 +1407,9 @@ def create_doc():
       # Создание и сохранение документа в базе данных
       # Создание и добавление записи в PDFDocument
       pdf_document = PDFDocument(
-          user_static=current_user.static, 
-          user_discordid=current_user.discordid,
-          uid=uid,  # uid можно создать заранее
-          content=file_path,
-          created_at=datetime.now()
+        author_id=current_user.id,
+        uid=uid,
+        content=file_path
       )
       db.session.add(pdf_document)
       db.session.commit() 
@@ -1425,15 +1420,13 @@ def create_doc():
           static=current_user.static, 
           discordid=current_user.discordid, 
           status='moder', 
-          number_resolution=num_order
+          number_resolution=new_resolution_number
       )
 
       user = Users.query.filter_by(static=static).first()
       new_order = OrderTheUser(
           current_uid=uid,  
-          nickname_attorney=current_user.nikname,
-          static_attorney=current_user.static,
-          discord_attorney=current_user.discordid, 
+          author_id=current_user.id,
           nickname_accused=nickname,
           static_accused=static,
           discord_accused=user.discordid if user else None,
@@ -1442,7 +1435,6 @@ def create_doc():
           articlesAccusation=formOrder.param1.data if formOrder.param1.data != '' else None,
           termImprisonment=formOrder.param2.data if formOrder.param2.data != '' else None,
           offWork=formOrder.param4.data if formOrder.param4.data != '' else None,
-          number_order=num_order
       )
 
       db.session.add(new_order)
@@ -1550,11 +1542,9 @@ def create_doc():
           f.write(buffer.getvalue())
       
       pdf_document = PDFDocument(
-          user_static=current_user.static, 
-          user_discordid=current_user.discordid,
-          uid=uid,
-          content=file_path,
-          created_at=datetime.now()
+        author_id=current_user.id,
+        uid=uid,
+        content=file_path
       )
       db.session.add(pdf_document)
       db.session.commit()
@@ -1650,11 +1640,9 @@ def create_doc():
         f.write(buffer.getvalue())
       
       pdf_document = PDFDocument(
-        user_static=current_user.static, 
-        user_discordid=current_user.discordid,
+        author_id=current_user.id,
         uid=uid,
-        content=file_path,
-        created_at=datetime.now()
+        content=file_path
       )
       db.session.add(pdf_document)
       db.session.commit()
@@ -1723,24 +1711,24 @@ def resolution():
           send_to_bot_permission_none(True)
           return redirect(url_for('main.index'))
 
-        user = Users.query.get(current_user.id)
-        if not user:
+        if not current_user:
           flash('User not found!')
           return redirect(url_for('main.index'))
 
-        rankuser_value = int(user.rankuser) if user.rankuser.isdigit() else 0
+        rankuser_value = current_user.curr_rank
 
         def handle_moderation(moder_obj, min_rank, is_order, is_resolution, template_name):
-            if user.organ == 'GOV' and min_rank <= rankuser_value != 12:
+            if current_user.organ == 'GOV' and min_rank <= rankuser_value != 12:
                 send_to_bot_permission_none(False)
 
                 if form.validate_on_submit():
                     moderation = form.success.data
                     reason = 'None' if form.success.data else form.reason.data
-                    send_to_bot_information_resolution(moder_obj.discord_attorney, current_user.discordid, moderation, reason, base_uid)
+                    user = Users.query.get(moder_obj.author_id)
+                    send_to_bot_information_resolution(user.discordid, current_user.discordid, moderation, reason, base_uid)
 
                     if form.success.data: 
-                      if is_order and current_user.organ == 'GOV' and (current_user.rankuser == '18' or current_user.rankuser == '21'):
+                      if is_order and current_user.organ == 'GOV' and (current_user.curr_rank == 18 or current_user.curr_rank == 21):
                         pdf_path = os.path.join(pdf_doc.content)
                         generate_signature_order(pdf_path, current_user)
                         moder_obj.is_modertation = True

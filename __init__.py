@@ -30,10 +30,11 @@ from logging import handlers
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SECRET_KEY'] = '9QKKakkd0.api1ii2kkalofmqlo31miqmmfkTBo9lMaTbIIIJluxa'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_AS_ASCII'] = False
-app.config['WTF_CSRF_ENABLED'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:arnetik1@localhost:3306/site'
+app.config['WTF_CSRF_ENABLED'] = True
+app.config['DEBUG'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
 app.register_blueprint(main)
 
 db = SQLAlchemy(app)
@@ -65,7 +66,6 @@ class Users(db.Model, UserMixin):
     organ = db.Column(db.String(10), nullable=False)
     YW = db.Column(db.Integer, nullable=False, default=0)
     SW = db.Column(db.Integer, nullable=False, default=0)
-    timespan = db.Column(DateTime, nullable=False)
     password = db.Column(db.String(255), nullable=False)
 
     permissions = db.relationship('PermissionUsers', back_populates='user')
@@ -112,7 +112,7 @@ class PDFDocument(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-    uid = db.Column(db.Integer, unique=True, nullable=False)
+    uid = db.Column(db.String(26), unique=True, nullable=False)
     content = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
@@ -144,7 +144,7 @@ class CustomResolutionTheUser(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    current_uid = db.Column(db.Integer, db.ForeignKey('pdf_document.uid'), nullable=False)
+    current_uid = db.Column(db.String(26), db.ForeignKey('pdf_document.uid'), nullable=False)
 
     custom_fields = db.Column(db.JSON)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
@@ -157,7 +157,7 @@ class ResolutionTheUser(db.Model):
     __tablename__ = 'resolution'
 
     id = db.Column(db.Integer, primary_key=True)
-    current_uid = db.Column(db.Integer, db.ForeignKey('pdf_document.uid'), nullable=False)
+    current_uid = db.Column(db.String(26), db.ForeignKey('pdf_document.uid'), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     nickname_accused = db.Column(db.String(52), default='Гражданин')
@@ -184,7 +184,7 @@ class OrderTheUser(db.Model):
     __tablename__ = 'order'
 
     id = db.Column(db.Integer, primary_key=True)
-    current_uid = db.Column(db.Integer, db.ForeignKey('pdf_document.uid'), nullable=False)
+    current_uid = db.Column(db.String(26), db.ForeignKey('pdf_document.uid'), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     nickname_accused = db.Column(db.String(52), default='Гражданин')
@@ -198,7 +198,6 @@ class OrderTheUser(db.Model):
     articlesAccusation = db.Column(db.String(60), default='null')
     time = db.Column(db.String(60), default='null')
     type_order = db.Column(db.String(20), nullable=False)
-    number_order = db.Column(db.String(4), default='0001')
     
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     is_modertation = db.Column(db.Boolean, default=False)
@@ -279,7 +278,7 @@ with app.app_context():
     
     hash_password = generate_password_hash(password)
     new_user = Users(
-        id = get_next_id(),
+        id = get_next_id_user(),
         discordid="762514681209946122",
         discordname="6ot9lpa",
         static="77857",
@@ -292,7 +291,7 @@ with app.app_context():
     )
     db.session.add(new_user)
     db.session.commit()
-
+    
     user = Users.query.filter_by(static=77857).first()
     permission_entry = PermissionUsers(
         author_id=user.id,
