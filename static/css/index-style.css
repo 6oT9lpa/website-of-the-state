@@ -11,10 +11,6 @@ body
     overflow-x: hidden;
     overflow-y: hidden;
 }
-main {
-    display: flex;
-    justify-content: center;
-}
 
 main
 {
@@ -104,12 +100,47 @@ nav a {
     transition: color 0.3s;
 }
 
-footer {
+.nav-button:hover {
+    color: #888888;
+}
+
+.sidebar {
+    width: 270px;
+    height: 470px;
+    background: linear-gradient(to bottom left, #2B2B2B, #3E3E3E);
+    border-left: 5px solid #3E3E3E;
+    border-bottom: 5px solid #3E3E3E;
+    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box; 
     position: absolute;
-            bottom: 10px;
-            width: 100%;
-            text-align: center;
-            color: white;
+    right: 0;
+    border-bottom-left-radius: 40px;
+    z-index: -1;
+  }
+  
+  .sidebar div {
+    padding: 10px 0;
+    border-bottom: 4px solid white;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    padding: 10px 20px;
+    transition: 0.3s;
+  }
+  
+  .sidebar div span {
+    display: block;
+    font-weight: normal;
+  }
+  
+.sidebar div:hover {
+    color: #888888;
+}
+
+footer {
+    color: white;
+    text-align: center;
+    margin-top: auto;
 }
 
 @media (max-width: 600px) {

@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, SubmitField, SelectField, PasswordField, BooleanField, RadioField, TextAreaField
+from wtforms import StringField, SubmitField, SelectField, PasswordField, BooleanField, RadioField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired, length,  Regexp, ValidationError
 
 # форма ка
@@ -13,8 +13,8 @@ class FormAuditPush(FlaskForm):
         ],
         validators=[DataRequired()],
     )
-    discordID = StringField(validators=[DataRequired(), length(min=18, max=20)],render_kw={"placeholder": "Введите дс id"})
-    discordName = StringField(validators=[DataRequired(), length(min=3, max=20)], render_kw={"placeholder": "Введите дс имя"})
+    discordID = StringField(render_kw={"placeholder": "Введите дс id"})
+    discordName = StringField( render_kw={"placeholder": "Введите дс имя"})
     static = StringField(validators=[DataRequired(), length(min=1, max=6)], render_kw={"placeholder": "Введите статик"})
     nikname = StringField(validators=[DataRequired(), length(min=3, max=45)], render_kw={"placeholder": "Введите ник"})
     rank = StringField(validators=[DataRequired(), length(min=1, max=3)], render_kw={"placeholder": "Введите ранг"})
@@ -33,8 +33,7 @@ class FormCreateDoc(FlaskForm):
     static = StringField(validators=[DataRequired(), length(min=1, max=6)], render_kw={"placeholder": "Статик обвиняемого"})
     type_doc = RadioField('Тип документа', choices=[
         ('Order', 'Ордер'),
-        ('Resolution', 'Постановление'),
-        ('Agenda', 'Повестка'),
+        ('Resolution', 'Постановление')
     ], validators=[DataRequired()]
     )
     submit = SubmitField(label='отправить', validators=[DataRequired()], render_kw={'id': 'FormBtn'})
@@ -60,6 +59,8 @@ class FormCreateResolution(FormCreateDoc):
     param4 = BooleanField(label="Запрет на смену перснональных данных.")
     param5 = BooleanField(label="Запрет на увольнение, перевод в другую фракцию.")
     param6 = BooleanField(label="Запрет на ведении службы на время расследования.")  
+    custom_button_pressed = HiddenField('Custom Button Pressed', default="false")
+    button_custom = SubmitField("создать кастом")
     
     case = StringField(render_kw={"placeholder": "Введите номер дела."})
     arrest_time = StringField(render_kw={"placeholder": "Время ареста."})
@@ -81,12 +82,6 @@ class FormCreateOrder(FormCreateDoc):
     time_ml = StringField(label="Время ВП", render_kw={"placeholder": "Введите время дейстивя ВП", "id": "timeML"})
     areas_under_ml = StringField(label="Время ВП", render_kw={"placeholder": "Введите время дейстивя ВП", "id": "areasUnderML"})
     degree_ri = StringField(label="Степень снятия неприкоса", render_kw={"placeholder": "Введите степень", "id": "degreeRI"})
-
-    
-class FormCreateAgenda(FormCreateDoc):
-    param5 = StringField(label="Куда явится по повестке.", render_kw={"placeholder": "Введите место", "id": "param5"})
-    param6 = StringField(label="В какой время явится.", render_kw={"placeholder": "Введите время", "id": "param6"})
-    param7 = StringField(label="С какой целью.", render_kw={"placeholder": "Введите цель", "id": "param7"})
 
 class FormModerationResolution(FlaskForm):
     success = SubmitField("Одобренно", render_kw={'id': 'success'})

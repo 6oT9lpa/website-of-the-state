@@ -1,14 +1,14 @@
+from multiprocessing import Process
 from __init__ import app
 from python.run_bot import run_bot
-import multiprocessing
+
+def start_bot():
+    run_bot()
 
 if __name__ == "__main__":
     try:
-        manager = multiprocessing.Manager()
-        shared_data = manager.dict()
-        
-        run_bot_process = multiprocessing.Process(target=run_bot) 
-        run_bot_process.start()
+        bot_process = Process(target=start_bot)
+        bot_process.start()
 
         print("Процесс run_bot запущен.")
 
@@ -16,6 +16,5 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"Произошла ошибка: {e}")
-
     finally:
-        print('Запуск завершен')
+        print("Запуск завершен")

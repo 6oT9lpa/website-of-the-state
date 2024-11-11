@@ -5,10 +5,10 @@
             {% for user in action_users %}
             <div class="history-item">
                 <p>{{ user.timespan }} - на кого</p>
-                <p>Name: {{ userof.nikname }} | Discord Name: {{ userof.discordname }}</p>
-                <p>Static: {{ userof.static }} | DS ID: {{ userof.discordid }}</p>
-                <p>Rank prev: {{  user.prevrankof }} | Rank curr: {{  user.currrankof }}  | Action: {{ user.actionof }}</p>
-                <p>КА написал - {{ user.nikname }} | {{ user.static }}</p>
+                <p>Name: {{ user.nikname }} | Discord Name: {{ user.discordname }}</p>
+                <p>Static: {{ user.static }} | DS ID: {{ user.discordid }}</p>
+                <p>Rank prev: {{  user.prev_rank }} | Rank curr: {{  user.curr_rank }}  | Action: {{ user.action }}</p>
+                <p>КА написал - {{ current_user.nikname }} | {{ current_user.static }}</p>
             </div>
             {% endfor %}
         </div>

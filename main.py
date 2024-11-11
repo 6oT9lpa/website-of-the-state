@@ -1,21 +1,163 @@
 from flask import render_template, redirect, url_for, request, flash, Blueprint, session, send_file, make_response, jsonify, abort
 from functools import wraps
+from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import check_password_hash, generate_password_hash
 from form import FormAuditPush, FormAuthPush, Formchangepassword, Formforgetpassword1, Formforgetpassword2
 from flask_login import login_user, login_required, logout_user, current_user
-from datetime import datetime
+from datetime import datetime, timedelta
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, letter
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 from textwrap import wrap
-import random, string, redis, json, os, re
+from PyPDF2 import PdfReader, PdfWriter
+import random, string, redis, json, os, re, shutil, logging, json
+from logging import handlers
+
+"""
+def setup_logging():
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+
+    # Создаем обработчик для записи в файл
+    handler = handlers.RotatingFileHandler('debug.txt', maxBytes=10*1024*1024, backupCount=5)
+    handler.setLevel(logging.DEBUG)
+
+    # Форматирование логов в JSON
+    def json_formatter(record):
+        log_record = {
+            'levelname': record.levelname,
+            'message': record.getMessage(),
+            'time': record.asctime,
+            'name': record.name,
+            'filename': record.pathname,
+            'line': record.lineno,
+        }
+        return json.dumps(log_record)
+
+    formatter = logging.Formatter('%(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+setup_logging()
+"""
+def is_send_allowed(wait_seconds=30):
+    """Проверяет, прошло ли достаточно времени с последней отправки и возвращает оставшееся время."""
+    last_sent_time = session.get('last_sent_time')
+    
+    if last_sent_time:
+        last_sent_time = datetime.strptime(last_sent_time, '%Y-%m-%d %H:%M:%S')
+        remaining_time = (last_sent_time + timedelta(seconds=wait_seconds)) - datetime.now()
+        
+        if remaining_time.total_seconds() > 0:
+            # Вычисляем оставшиеся секунды и выводим сообщение
+            seconds_left = int(remaining_time.total_seconds())
+            flash(f"Пожалуйста, подождите {seconds_left} секунд перед повторной отправкой.")
+            return False
+
+    # Обновляем временную метку, если отправка разрешена
+    session['last_sent_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    return True
+
+def draw_text(pdf, x, y, text, font="TimesNewRoman", size=12):
+  pdf.setFont(font, size)
+  pdf.drawString(x * mm, y * mm, text)
+      
+def draw_multiline_text(pdf, text, x, y, max_width=95, font="TimesNewRoman", size=12):
+  pdf.setFont(font, size)
+  wrapped_text = wrap(text, width=max_width) 
+
+  for line in wrapped_text:
+    pdf.drawString(x * mm, y * mm, line)
+    y -= 5
+
+  return y
+
+def generate_signature(pdf, y, current_user, state, page=1):
+    # Устанавливаем шрифт для подписи
+    sing_font_path = os.path.join('static', 'fonts', 'Updock-Regular.ttf') 
+    pdfmetrics.registerFont(TTFont('Updock', sing_font_path))
+    pdf.setFont("Updock", 32)
+    
+    # Получаем имя для подписи
+    full_name = current_user.nikname
+    name_parts = full_name.split()
+    first_name = name_parts[0]
+    last_name_initial = name_parts[1][0] if len(name_parts) > 1 else ''
+    signature = f"{first_name} {last_name_initial}."
+
+    # Рисуем остальные детали, если состояние 'resolution'
+    if state == 'resolution':
+      pdf.setFont("TimesNewRoman-Bold", 14)
+      pdf.drawString(120 * mm, y - 10, "Министерство Юстиций")
+      
+      pdf.setFont("TimesNewRoman", 12)
+      pdf.drawString(115 * mm, y - 20, f"Прокурор {full_name} | {current_user.discordname}@gov.sa")
+      
+      pdf.setFont("Updock", 32)
+      pdf.drawString(130 * mm, y - 45, f"{signature}")
+      pdf.setFont("TimesNewRoman", 10)
+      
+      pdf.drawString(130 * mm, y - 45, "____________________")
+      pdf.drawString(140 * mm, y - 55, "(подпись)")
+      pdf.drawImage(os.path.join('static', 'img', 'print.png'), 20 * mm, y - 70, width=30 * mm, height=30 * mm)
+    
+
+def generate_signature_order(pdf_path, current_user):
+    pdf_reader = PdfReader(pdf_path)
+    pdf_writer = PdfWriter()
+
+    sing_font_path = os.path.join('static', 'fonts', 'Updock-Regular.ttf') 
+    pdfmetrics.registerFont(TTFont('Updock', sing_font_path))
+    pdfmetrics.registerFont(TTFont('Times-Roman', os.path.join('static', 'fonts', 'times.ttf')))
+    pdfmetrics.registerFont(TTFont('Times-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))
+    packet = BytesIO()
+    can = canvas.Canvas(packet, pagesize=A4)
+
+    full_name = current_user.nikname
+    name_parts = full_name.split()
+    first_name = name_parts[0]
+    last_name_initial = name_parts[1][0] if len(name_parts) > 1 else ''
+    signature = f"{first_name} {last_name_initial}."
+  
+    y = 50 
+
+    can.setFont("Times-Bold", 14)
+    can.drawString(120 * mm, y * mm, "Министерство Юстиций")
+    y -= 5
+    can.setFont("Times-Roman", 12)
+    can.drawString(100 * mm, y * mm, f"Генеральный Прокурор {full_name} | {current_user.discordname}@gov.sa")
+
+    y -= 15
+    can.setFont("Updock", 32) 
+    can.drawString(130 * mm, y * mm, signature)
+    can.setFont("Times-Roman", 10)
+    y -= 2
+    can.drawString(130 * mm, y * mm, "____________________")
+    y -= 3
+    can.drawString(140 * mm, y * mm, "(подпись)")
+    can.drawImage(os.path.join('static', 'img', 'print.png'), 20 * mm, y * mm, width=30 * mm, height=30 * mm)
+
+    can.save()
+    packet.seek(0)
+    signature_pdf = PdfReader(packet)
+    signature_page = signature_pdf.pages[0]
+
+    for page in pdf_reader.pages:
+        page.merge_page(signature_page)
+        pdf_writer.add_page(page)
+
+    temp_output_path = pdf_path + "_temp.pdf"
+    with open(temp_output_path, 'wb') as output_pdf:
+        pdf_writer.write(output_pdf)
+
+    shutil.move(temp_output_path, pdf_path)
+
 
 def increment_number_with_leading_zeros(record):
     num = int(record)
-    num += 1
     incremented_num_str = str(num).zfill(4)
     
     return incremented_num_str
@@ -90,43 +232,12 @@ def send_to_bot_new_resolution(uid, nickname, static, discordid, status, number_
   print("отправленно")
   redis_client.publish('new_resolution', json.dumps(message))
 
-def send_to_bot_invite(password, discord_id, static, organ):
-    message = {
-        'password': password,
-        'discord_id': discord_id,
-        'static': static, 
-        'organ': organ
-    }
-    redis_client.publish('invite_channel', json.dumps(message))
-
 def send_to_bot_changepass(code, discord_id):
     message = {
         'code': code,
         'discord_id': discord_id
     }
     redis_client.publish('changepass_channel', json.dumps(message))
-
-def send_to_bot_dismissal(discord_id, static, organ):
-    message = {
-        'discord_id': discord_id,
-        'static': static,
-        'organ': organ
-    }
-    redis_client.publish('dismissal_channel', json.dumps(message))
-
-def send_to_bot_ka(action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason):
-    message = {
-        'action': action,
-        'discord_id_from': discord_id_from,
-        'discord_id_to': discord_id_to,
-        'curr_rank': curr_rank,
-        'prev_rank': prev_rank,
-        'static_to': static_to,
-        'nikname_from': nikname_from,
-        'nikname_to': nikname_to,
-        'reason': reason
-    }
-    redis_client.publish('ka_channel', json.dumps(message))
 
 # создание блюпринта
 main = Blueprint('main', __name__)
@@ -182,16 +293,16 @@ def upload_image_to_imgur(image):
 # главная страница
 @main.route('/', methods=['POST', 'GET'])
 def index():
-  from __init__ import news, PermissionUsers, Users, db
+  from __init__ import PermissionUsers, Users, db, News
   from form import Formnews
   import time
   form = Formnews()
-  city_hallnews = news.query.filter_by(typenews="cityhall").all()
-  leadernews = news.query.filter_by(typenews="leaders").all()
-  weazelnewsn = news.query.filter_by(typenews="weazel").all()
+  city_hallnews = News.query.filter_by(typenews="cityhall").all()
+  leadernews = News.query.filter_by(typenews="leaders").all()
+  weazelnewsn = News.query.filter_by(typenews="weazel").all()
   has_access = False
   if current_user.is_authenticated:
-    cancrnews = PermissionUsers.query.filter_by(user_static=current_user.static, create_news=True).first()
+    cancrnews = current_user.permissions[0]
     if cancrnews:
        has_access = cancrnews is not None
   if 'zagolovok' in request.form:
@@ -215,9 +326,9 @@ def index():
     file = form.img.data
     if file:
       imgur_link = upload_image_to_imgur(file)
-      new_new = news(typenews=news_type, created_by=user.nikname, headernews=name, textnews=desc, picture=imgur_link)
+      new_new = News(typenews=news_type, created_by=user.nikname, headernews=name, textnews=desc, picture=imgur_link)
     else:
-      new_new = news(typenews=news_type, created_by=user.nikname, headernews=name, textnews=desc)
+      new_new = News(typenews=news_type, created_by=user.nikname, headernews=name, textnews=desc)
     db.session.add(new_new)
     db.session.commit()
     return jsonify(message='Успешно!'), 200
@@ -228,7 +339,7 @@ def index():
       userperm = PermissionUsers.query.filter_by(user_static=current_user.static).first()
       if userperm.create_news != True:
         return jsonify(message='Отказано в доступе!'), 403
-      news_item = db.session.query(news).filter_by(id=news_id).first()
+      news_item = db.session.query(News).filter_by(id=news_id).first()
       db.session.delete(news_item)
       db.session.commit()
       send_to_bot_log_dump(f'Новость {news_item.typenews} с ID {news_id} удалена', f"Заголовок {news_item.headernews}\nНовость {news_item.textnews}\nКартинка {news_item.picture}\nСоздано {news_item.created_by}\nУдалил {current_user.static}")
@@ -471,36 +582,416 @@ def redirect_login(response):
         
     return response
 
+# Обработка КА функций.
+def generate_random_password():
+  """Создание пароля"""
+  characters = string.ascii_letters + string.digits + string.punctuation
+  return ''.join(random.choice(characters) for i in range(10))
+
+def existing_discord_in_multiple_organizations(discord_id, discord_name):
+  from __init__ import Users
+  """Проверка на 2+ дискорда в Гос. фракции"""
+  return (Users.query.filter_by(discordid=discord_id).count() > 1 or 
+          Users.query.filter_by(discordname=discord_name).count() > 1)
+
+def send_to_bot_ka(action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason):
+  """Redis отправка формы КА в discord bot"""
+  message = {
+      'action': action,
+      'discord_id_from': discord_id_from,
+      'discord_id_to': discord_id_to,
+      'curr_rank': curr_rank,
+      'prev_rank': prev_rank,
+      'static_to': static_to,
+      'nikname_from': nikname_from,
+      'nikname_to': nikname_to,
+      'reason': reason
+  }
+  redis_client.publish('ka_channel', json.dumps(message))
+
+def send_to_bot_invite(password, discord_id, static, organ):
+  message = {
+      'password': password,
+      'discord_id': discord_id,
+      'static': static, 
+      'organ': organ
+  }
+  redis_client.publish('invite_channel', json.dumps(message))
+
+def send_to_bot_dismissal(discord_id, static, organ):
+  message = {
+      'discord_id': discord_id,
+      'static': static,
+      'organ': organ
+  }
+  redis_client.publish('dismissal_channel', json.dumps(message))
+
+def process_invite_action(user, form, reason, discord_id, static):
+  from __init__ import db, ActionUsers
+  """Обрабатывает Инвайт если пользователя есть в БД"""
+  password = generate_random_password()
+  hash_password = generate_password_hash(password)
+
+  try:
+    try:
+      user.password = hash_password
+      user.prev_rank = 0
+      user.curr_rank = 1
+      user.action = 'Invite'
+      user.organ = current_user.organ
+      user.nikname = form.nikname.data
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      flash('Произошла ошибка при сохранении данных. Попробуйте снова.', 'error')
+      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+      
+    try:
+      new_action = ActionUsers(
+        discordid = discord_id,
+        discordname = user.discordname,
+        static = static,
+        nikname = form.nikname.data,
+        action = 'Invite',
+        curr_rank = 1,
+        prev_rank = 0,
+        author_id = current_user.id
+      )
+      db.session.add(new_action)
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    logging.error(f"Ошибка обработки: {str(e)}")     
+
+  else:
+    send_to_bot_ka('Invite', static, current_user.discordid, discord_id, user.curr_rank, user.prev_rank, current_user.nikname, form.nikname.data, reason)
+    send_to_bot_invite(password, discord_id, static, user.organ)
+    flash('Пользователь успешно добавлен!', 'success')
+    logging.info('Пользователь был успешно добавлен в бд Users.')
+
+  if int(form.rank.data) > 1:
+    process_raise(user, form, reason)
+    return redirect(url_for('main.audit'))
+
+def process_new_invite(static, discord_id, discord_name, form, reason):
+  from __init__ import db, Users, ActionUsers, PermissionUsers, get_next_id_user, get_next_id_permission
+  """Обрабатывает Инвайт если пользователя нет в БД"""
+  if existing_discord_in_multiple_organizations(discord_id, discord_name):
+    flash('Данный дискорд уже состоит в 2-ух гос. структурах!', 'error')
+    return
+
+  password = generate_random_password()
+  hash_password = generate_password_hash(password)
+  
+  try:
+    try:
+      new_user = Users(
+        id=get_next_id_user(),
+        discordid=discord_id,
+        discordname=discord_name,
+        static=static,
+        nikname=form.nikname.data,
+        action='Invite',
+        organ=current_user.organ,
+        prev_rank=0,
+        curr_rank=1,
+        password=hash_password
+      )
+      db.session.add(new_user)
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      flash('Произошла ошибка при сохранении данных. Попробуйте снова.', 'error')
+      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+
+    user = Users.query.filter_by(static=static).first()
+    try:
+      new_permission = PermissionUsers(
+        id=get_next_id_permission(),
+        author_id=user.id
+      )
+      db.session.add(new_permission)
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения в базе данных (PermissionUsers): {str(e)}")
+      
+    try:
+      new_action = ActionUsers(
+        discordid = discord_id,
+        discordname = discord_name,
+        static = static,
+        nikname = form.nikname.data,
+        action = 'Invite',
+        curr_rank = 1,
+        prev_rank = 0,
+        author_id = current_user.id
+      )
+      db.session.add(new_action)
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    logging.error(f"Ошибка обработки: {str(e)}")
+
+  else:
+    send_to_bot_ka('Invite', static, current_user.discordid, discord_id, user.curr_rank, user.prev_rank, current_user.nikname, form.nikname.data, reason)
+    send_to_bot_invite(password, discord_id, static, user.organ)
+    flash('Пользователь успешно добавлен!', 'success')
+    logging.info('Пользователь был успешно добавлен в бд Users.')
+
+  if int(form.rank.data) > 1:
+    process_raise(user, form, reason)
+    return redirect(url_for('main.audit'))
+
+
+def process_dismissal(user, form, reason):
+  from __init__ import db, ActionUsers
+  """Обрабатывает увольнение пользователя."""
+
+  permission_current = current_user.permissions[0]
+  permission_user = user.permissions[0]
+  if permission_user and (permission_user.admin or permission_user.tech) \
+    and permission_current and (not permission_current.admin or not permission_current.tech):
+    flash('Вы не можете уволить админа/разработчика.')
+    return redirect(url_for('main.audit'))
+  
+  if current_user.organ != user.organ:
+    flash('Вы не можете уволить игрока другой фракции.')   
+    return redirect(url_for('main.audit'))
+  
+  if current_user.curr_rank < user.curr_rank:
+    flash('Вы не можете уволить игрока, если вы ниже рангом.')
+    return redirect(url_for('main.audit'))
+  
+  if user.action == 'Dismissal':
+    flash('Игрок уже был уволен.')
+    return redirect(url_for('main.audit'))
+
+  try:
+    try:
+      user.action = 'Dismissal'
+      user.prev_rank = user.curr_rank
+      user.curr_rank = 0
+      db.session.commit()
+    
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      flash('Произошла ошибка при сохранении данных. Попробуйте снова.', 'error')
+      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+
+    try:
+      permission_user.tech = False
+      permission_user.admin = False
+      permission_user.lider = False
+      permission_user.high_staff = False
+      permission_user.creation_doc = False
+      db.session.commit()
+    
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения в базе данных (PermissionUsers): {str(e)}")   
+
+    try:
+      new_action = ActionUsers(
+        discordid = user.discordid,
+        discordname = user.discordname,
+        static = form.static.data,
+        nikname = form.nikname.data,
+        action = 'Dismissal',
+        curr_rank = user.curr_rank,
+        prev_rank = user.prev_rank,
+        author_id = current_user.id
+      )
+      db.session.add(new_action)
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")    
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    logging.error(f"Ошибка обработки: {str(e)}")    
+
+  else:
+    send_to_bot_dismissal(user.discordid, user.static, user.organ)
+    send_to_bot_ka('Dismissal', form.static.data, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, form.nikname.data, reason)
+    flash('Пользователь успешно уволен!', 'success')
+    logging.info('Пользователь был успешно обновлен в бд Users.')
+
+
+def process_raise(user, form, reason):
+  from __init__ import db, ActionUsers
+  """Обрабатывает повышение пользователя."""
+  new_rank = form.rank.data
+
+  permission_current = current_user.permissions[0]
+  permission_user = user.permissions[0]
+  if permission_user and (permission_user.admin or permission_user.tech) \
+    and permission_current and (not permission_current.admin or not permission_current.tech):
+    flash('Вы не можете повысить админа/разработчика.')
+    return redirect(url_for('main.audit'))
+  
+  if current_user.organ != user.organ:
+    flash('Вы не можете повысить игрока другой фракции.')   
+    return redirect(url_for('main.audit'))
+  
+  if current_user.curr_rank <= user.curr_rank:
+    flash('Вы не можете повысить игрока, если вы ниже или таким же рангом.')
+    return redirect(url_for('main.audit'))
+  
+  if user.action == 'Dismissal':
+    flash('Игрок не находится во фракции.')
+    return redirect(url_for('main.audit'))
+  
+  if user.curr_rank >= int(new_rank):
+    flash('Вы не можете повысить на текущий/ниже ранг')
+    return redirect(url_for('main.audit'))
+
+  try:
+    try:
+      user.action = 'Raising'
+      user.prev_rank = user.curr_rank
+      user.curr_rank = new_rank
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      flash('Произошла ошибка при сохранении данных. Попробуйте снова.', 'error')
+      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+    
+    try:
+      new_action = ActionUsers(
+        discordid = user.discordid,
+        discordname = user.discordname,
+        static = form.static.data,
+        nikname = form.nikname.data,
+        action = 'Raising',
+        curr_rank = user.curr_rank,
+        prev_rank = user.prev_rank,
+        author_id = current_user.id
+      )
+      db.session.add(new_action)
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")    
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    logging.error(f"Ошибка обработки: {str(e)}")    
+ 
+  else:
+    send_to_bot_ka('Raising', form.static.data, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, form.nikname.data, reason)
+    flash('Пользователь успешно повышен!', 'success')
+    logging.info('Пользователь был успешно обновлен в бд Users.')
+
+
+def process_demotion(user, form, reason):
+  from __init__ import db, ActionUsers
+  """Обрабатывает понижение пользователя."""
+  new_rank = form.rank.data
+
+  permission_current = current_user.permissions[0]
+  permission_user = user.permissions[0]
+  if permission_user and (permission_user.admin or permission_user.tech) \
+    and permission_current and (not permission_current.admin or not permission_current.tech):
+    flash('Вы не можете понизить админа/разработчика.')
+    return redirect(url_for('main.audit'))
+  
+  if current_user.organ != user.organ:
+    flash('Вы не можете понизить игрока другой фракции.')   
+    return redirect(url_for('main.audit'))
+  
+  if current_user.curr_rank <= user.curr_rank:
+    flash('Вы не можете понизить игрока, если вы ниже или таким же рангом.')
+    return redirect(url_for('main.audit'))
+  
+  if user.action == 'Dismissal':
+    flash('Игрок не находится во фракции.')
+    return redirect(url_for('main.audit'))
+  
+  if user.curr_rank <= int(new_rank):
+    flash('Вы не можете понизить на текущий/выше ранг')
+    return redirect(url_for('main.audit'))
+  
+  try:
+    try:
+      user.action = 'Demotion'
+      user.prev_rank = user.curr_rank
+      user.curr_rank = new_rank
+      db.session.commit()
+    
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      flash('Произошла ошибка при сохранении данных. Попробуйте снова.', 'error')
+      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+    
+    try:
+      new_action = ActionUsers(
+        discordid = user.discordid,
+        discordname = user.discordname,
+        static = form.static.data,
+        nikname = form.nikname.data,
+        action = 'Demotion',
+        curr_rank = user.curr_rank,
+        prev_rank = user.prev_rank,
+        author_id = current_user.id
+      )
+      db.session.add(new_action)
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")    
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    logging.error(f"Ошибка обработки: {str(e)}")  
+
+  else:
+    send_to_bot_ka('Demotion', form.static.data, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, form.nikname.data, reason)
+    flash('Пользователь успешно понизили!', 'success')
+    logging.info('Пользователь был успешно обновлен в бд Users.')
+
+  if user.curr_rank == 0:
+    process_dismissal(user, form, reason)
+    return redirect(url_for('main.audit'))
+
+
 # Кадровый аудит
 @main.route('/audit', methods=['POST', 'GET'])
 @check_user_action
 @login_required
 def audit():
-  from __init__ import db, Users, ActionUsers, PermissionUsers
+  from __init__ import db, Users
   form = FormAuditPush()  
   
-  permissionUser = PermissionUsers.query.filter_by(user_static=current_user.static).first()
-  if not (permissionUser.high_staff or permissionUser.lider or permissionUser.admin or permissionUser.tech):
+  permission = current_user.permissions[0]
+  if not (permission.high_staff or permission.lider or permission.admin or permission.tech):
     flash("Доступ запрещен, отсутствуют права.")
     return redirect(url_for('main.profile'))
-
-  # получение изменения ка от конкретного юзера
-  action_users = []
-  action_users = ActionUsers.query.filter_by(static=current_user.static).all()
-  userof = ''
   
-  if action_users:
-    for item in action_users:
-      userof = Users.query.filter_by(static=item.staticof).first()
+  action_users = current_user.action_log
 
-  user_curr = Users.query.filter_by(static=current_user.static).first()     
-  if user_curr:
-    organ = user_curr.organ
-    nikname = user_curr.nikname
-    
-    color = color_organ(organ)
+  organ = current_user.organ
+  nikname = current_user.nikname
+  color = color_organ(organ)
 
-  # проверка валидации формы
   if form.validate_on_submit():
     static = form.static.data
     action = form.action.data
@@ -509,206 +1000,33 @@ def audit():
     reason = form.reason.data
 
     user = Users.query.filter_by(static=static).first()
-    user_curr = Users.query.filter_by(static=current_user.static).first()
-    
-    if static == user_curr.static:
+    if static == current_user.static:
       flash('Нельзя проводить действия над собой')
       return redirect(url_for('main.audit'))
-    
-    # проверка action invite на существование статика, если есть то ошибка
+
     if action == 'Invite':
       if user and user.action == 'Dismissal':
-        timespan = datetime.now()
-          
-        # получение фракции от юзера который пишет ка
-        if user_curr:
-          organ_curr = user_curr.organ
-
-        # создание первоначального пароля
-        characters = string.ascii_letters + string.digits + string.punctuation
-        password = ''.join(random.choice(characters) for i in range(10))
-        print(password)
-        
-        # хэшированиие пароля
-        hash_password = generate_password_hash(password)
-        
-        # запись сообщение в redis
-        send_to_bot_invite(password, discord_id, static, user.organ)
-        
-        # изменение существущей строки
-        user.password = hash_password
-        user.prevrank = '0'
-        user.rankuser = '1'
-        user.action = 'Invite'
-        user.organ = organ_curr
-        user.timespan = timespan
-        user.nikname = form.nikname.data
-
-        # создание изменения ка
-        new_action_curr_user = ActionUsers(discordid=current_user.discordid, discordname=current_user.discordname, static=current_user.static, nikname=current_user.nikname, timespan=timespan, staticof=user.static, actionof=action, currrankof='1', prevrankof='0')
-        db.session.add(new_action_curr_user)
-        db.session.commit()
-
-        send_to_bot_ka(action, static, user_curr.discordid, discord_id, '1', '0', user_curr.nikname, user.nikname, reason)
-        
-        flash('Успешно!', 'success')
-        return redirect(url_for('main.audit'))
-        
-      # если в базе отстуствует запись о пользователя
+          process_invite_action(user, form, reason, discord_id, static)
       elif user is None:
-        existing_discordID = Users.query.filter_by(discordid=discord_id).all()
-        existing_discordName = Users.query.filter_by(discordname=discord_name).all()
-        
-        # проверка на более двух дс во фракции
-        if len(existing_discordName) > 1 or len(existing_discordID) > 1:
-          flash('Данный дискорд уже состоит в 2-ух гос. структурах!', 'error')
-          return redirect(url_for('main.audit'))
-        
-        else:
-          # создание первоначального пароля
-          characters = string.ascii_letters + string.digits + string.punctuation
-          password = ''.join(random.choice(characters) for i in range(10))
-
-          timespan = datetime.now()
-          hash_password = generate_password_hash(password)
-          
-          # получение фракции юзера который пишет ка 
-          user_curr = Users.query.filter_by(static=current_user.static).first() 
-          if user_curr:
-            organ_curr = user_curr.organ
-            
-          # создание нового юзера  
-          new_user = Users(discordid=discord_id, discordname=discord_name, static=static, nikname=form.nikname.data, action=action, organ=organ_curr, prevrank='1', rankuser=form.rank.data, timespan=timespan, password=hash_password)
-
-          new_action_curr_user = ActionUsers(discordid=current_user.discordid, discordname=current_user.discordname, static=current_user.static, nikname=current_user.nikname, timespan=timespan, staticof=static, actionof=action, currrankof='1', prevrankof='0')
-          
-          db.session.add(new_action_curr_user)
-          db.session.add(new_user)
-          db.session.commit()
-          # запись сообщение в redis
-          send_to_bot_invite(password, discord_id, static, user_curr.organ)
-          
-          send_to_bot_ka(action, static, user_curr.discordid, discord_id, '1', '0', user_curr.nikname, form.nikname.data, reason)
-          
-          flash('Успешно!', 'success')
-          return redirect(url_for('main.audit'))
-          
+          process_new_invite(static, discord_id, discord_name, form, reason)
       else:
-        flash('Такой статик уже имеется во госс. фракции!', 'error')
-        return redirect(url_for('main.audit'))
-                  
+          flash('Такой статик уже имеется во госс. фракции!')
+          return redirect(url_for('main.audit'))
+
     else:
-      # actions (Raising, Demotion, Dismissal) поиск статика на существаония, если нет ошибка
-      user = Users.query.filter_by(static=static).first()
       if not user or user.action == 'Dismissal':
-          flash('Такого статика не существует во фракции!', 'error')
-          return redirect(url_for('main.audit'))
-        
-      else:
-        # увольнение существуещего юзера с фракции
-        if action == 'Dismissal':
-          timespan = datetime.now()
-          
-          new_action = ActionUsers(
-            discordid=current_user.discordid,
-            discordname=current_user.discordname,
-            static=current_user.static,
-            nikname=current_user.nikname,
-            timespan=timespan,
-            staticof=user.static,
-            actionof=action,
-            currrankof='0',
-            prevrankof=user.rankuser
-          )
-          user_perm = PermissionUsers(
-            user_static=user.static, 
-            user_discordid=user.discordid, 
-            tech=False, 
-            admin=False, 
-            lider=False, 
-            high_staff=False, 
-            creation_doc = False
-          )
-          
-          db.session.add(user_perm)
-          db.session.add(new_action)
-          
-          user.prevrank = user.rankuser
-          user.rankuser = '0' 
-          user.action = 'Dismissal'
-          user.timespan = timespan
-
-          send_to_bot_dismissal(user.discordid, user.static, user.organ)
-          db.session.commit()
-          
-          send_to_bot_ka(action, static, user_curr.discordid, discord_id, '0', '1', user_curr.nikname, user.nikname, reason)
-          
-          flash('Вы успешно уволили', 'success')
-          return redirect(url_for('main.audit'))
+        flash('Такого статика не существует во фракции!')
+        return redirect(url_for('main.audit'))
       
-          
-        # повышение существующего юзера во фракции
-        elif action == 'Raising':
-          prev_rank = user.rankuser
-          new_rank = form.rank.data
-          
-          if new_rank >= user_curr.rankuser:
-            flash('Вы не можете повысить на тот же или выше своего ранга!')
-            return redirect(url_for('main.audit'))
-          
-          if new_rank <= prev_rank:
-            flash('При повышении, новый ранг не может быть меньше или равен старому')
-            return redirect(url_for('main.audit'))
+      if action == 'Dismissal':
+        process_dismissal(user, form, reason)
+      elif action == 'Raising':
+        process_raise(user, form, reason)
+      elif action == 'Demotion':
+        process_demotion(user, form, reason)
 
-          timespan = datetime.now()
-          new_action_curr_user = ActionUsers(discordid=current_user.discordid, discordname=current_user.discordname, static=current_user.static, nikname=current_user.nikname, timespan=timespan, staticof=static, actionof=action, currrankof=form.rank.data, prevrankof=user.rankuser)
-          db.session.add(new_action_curr_user)
-          
-          # перезапись существущих данных строки 
-          user.prevrank = prev_rank
-          user.action = action
-          user.rankuser = new_rank 
-          user.timespan = timespan
-          
-          db.session.commit() 
-          
-          send_to_bot_ka(action, static, user_curr.discordid, discord_id, user.rankuser, user.prevrank, user_curr.nikname, user.nikname, reason)
-          
-          flash('Статик успешно повышен', 'success')
-          return redirect(url_for('main.audit'))
-        
-        # понижение сущесвующего юзера во фракции
-        elif action == 'Demotion':
-          prev_rank = user.rankuser
-          new_rank = form.rank.data
-          
-          if prev_rank >= user_curr.rankuser:
-            flash('Вы не можете понизить ранг выше или равен вашему')
-            return redirect(url_for('main.audit'))
-          
-          if new_rank >= prev_rank:
-            flash('При понижении, новый ранг не может быть больше или равен старому')
-            return redirect(url_for('main.audit'))
-          
-          timespan = datetime.now()
-          new_action_curr_user = ActionUsers(discordid=current_user.discordid, discordname=current_user.discordname, static=current_user.static, nikname=current_user.nikname, timespan=timespan, staticof=static, actionof=action, currrankof=form.rank.data, prevrankof=user.rankuser)
-          db.session.add(new_action_curr_user)
-          
-          user.action = action
-          user.rankuser = new_rank 
-          user.prevrank = prev_rank
-          user.timespan = timespan
-          
-          db.session.commit() 
-          
-          send_to_bot_ka(action, static, user_curr.discordid, discord_id, user.rankuser, user.prevrank, user_curr.nikname, user.nikname, reason)
-          
-          flash('Статик успешно понижен', 'success')
-          return redirect(url_for('main.audit'))
-          
     return redirect(url_for('main.audit'))
-
-  return render_template('ka.html', form=form, organ=organ, color=color, nikname=nikname, action_users=action_users,  userof=userof)
+  return render_template('ka.html', form=form, organ=organ, color=color, nikname=nikname, action_users=action_users, current_user=current_user)
 
 # выход с профиля 
 @main.route('/logout', methods=['GET', 'POST'])
@@ -726,7 +1044,7 @@ def profile():
   from flask import jsonify
   nickname = current_user.nikname
   organ = current_user.organ
-  rank = current_user.rankuser
+  rank = current_user.curr_rank
   color = color_organ(organ)
   form = Formchangepassword()
   if 'oldpass' in request.form and 'newpass' in request.form:
@@ -760,9 +1078,8 @@ def doc():
   if not current_user.is_authenticated:
     flash('Вам необходимо находиться в государственной структуре и быть залогированным на сайте, чтобы создавать документации!')
     return render_template('doc.html', is_permission=False, is_authenticated=False)
-  
-  from __init__ import PermissionUsers
-  perm_user = PermissionUsers.query.filter_by(user_static=current_user.static).first()
+
+  perm_user = current_user.permissions[0]
   if not perm_user: 
     flash('У вас отстутсвуют права для создания документации!')
     return render_template('doc.html', is_permission=False, is_authenticated=True)
@@ -770,33 +1087,34 @@ def doc():
     flash('У вас отстутсвуют права для создания документации!')
     return render_template('doc.html', is_permission=False, is_authenticated=True)
 
-  from form import FormCreateDoc, FormCreateResolution, FormCreateOrder, FormCreateAgenda
+  from form import FormCreateDoc, FormCreateResolution, FormCreateOrder
 
   form = FormCreateDoc()
   formResolution = FormCreateResolution()
   formOrder = FormCreateOrder()
-  formAgenda = FormCreateAgenda()
   
   nickname = current_user.nikname
   organ = current_user.organ
   color = color_organ(organ)
 
-  return render_template('doc.html', is_permission=True, is_authenticated=True, form=form, formResolution=formResolution, formOrder=formOrder, formAgenda=formAgenda, nickname=nickname, organ=organ, color=color)
+  return render_template('doc.html', is_permission=True, is_authenticated=True, form=form, formResolution=formResolution, formOrder=formOrder, nickname=nickname, organ=organ, color=color)
   
 @main.route('/create_doc',  methods=['POST', 'GET'])
 def create_doc():
-  from __init__ import Users, PDFDocument, PublicDocumentAndNotificationsResolution, PublicDocumentAndNotificationsOrder, db, PermissionUsers
-  from form import FormCreateDoc, FormCreateResolution, FormCreateOrder, FormCreateAgenda
+  from __init__ import Users, PDFDocument, ResolutionTheUser, OrderTheUser, db, ResolutionNumberCounter
+  from form import FormCreateDoc, FormCreateResolution, FormCreateOrder
   form = FormCreateDoc()
   formResolution = FormCreateResolution()
   formOrder = FormCreateOrder()
-  formAgenda = FormCreateAgenda()
+
+  if not is_send_allowed():
+    return redirect(url_for('main.doc'))
 
   if not current_user.is_authenticated:
     flash('Для создания постановления требуется войти в аккаунт!')
     return redirect(url_for('main.doc'))
 
-  perm_user = PermissionUsers.query.filter_by(user_static=current_user.static).first()
+  perm_user = current_user.permissions[0]
   rankuser_value = int(current_user.rankuser) if current_user.rankuser.isdigit() else 0
   if not (current_user.organ == 'GOV' and (rankuser_value == 10 or rankuser_value == 11 or rankuser_value >= 18)):
     flash('Для создания постановлений требуется уровень доступа, прокурор!')
@@ -806,7 +1124,9 @@ def create_doc():
     flash('Для создания постановлений требуется разрешение!')
     return redirect(url_for('main.doc'))
     
-  if form.validate_on_submit():
+  if request.method == 'POST':
+    custom_button_pressed = formResolution.custom_button_pressed.data
+    print(custom_button_pressed)
     typeDoc = form.type_doc.data
     nickname = form.nickname.data
     static = form.static.data
@@ -823,7 +1143,6 @@ def create_doc():
         pdf.setFont("TimesNewRoman-Bold", 16)
         pdf.drawString(80 * mm, 220 * mm, subtitle2)
 
-      # Функция для добавления основной информации ордера
       def add_order_details(pdf, details, y, max_width=95):
         pdf.setFont("TimesNewRoman", 12)
         line_height = pdf._fontsize + 2 
@@ -872,7 +1191,7 @@ def create_doc():
       pdf.drawImage(separator_path, 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
 
       # Получение номера документа
-      last_record = PublicDocumentAndNotificationsOrder.query.order_by(PublicDocumentAndNotificationsOrder.id.desc()).first()
+      last_record = OrderTheUser.query.order_by(OrderTheUser.id.desc()).first()
       record = last_record.id if last_record else 0
       num_order = increment_number_with_leading_zeros(record)
 
@@ -1087,9 +1406,150 @@ def create_doc():
       uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
       file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
       with open(file_path, 'wb') as f:
-          f.write(buffer.getvalue())
+        f.write(buffer.getvalue())
 
       # Создание и сохранение документа в базе данных
+      # Создание и добавление записи в PDFDocument
+      pdf_document = PDFDocument(
+          user_static=current_user.static, 
+          user_discordid=current_user.discordid,
+          uid=uid,  # uid можно создать заранее
+          content=file_path,
+          created_at=datetime.now()
+      )
+      db.session.add(pdf_document)
+      db.session.commit() 
+
+      send_to_bot_new_resolution(
+          uid=uid, 
+          nickname=current_user.nikname, 
+          static=current_user.static, 
+          discordid=current_user.discordid, 
+          status='moder', 
+          number_resolution=num_order
+      )
+
+      user = Users.query.filter_by(static=static).first()
+      new_order = OrderTheUser(
+          current_uid=uid,  
+          nickname_attorney=current_user.nikname,
+          static_attorney=current_user.static,
+          discord_attorney=current_user.discordid, 
+          nickname_accused=nickname,
+          static_accused=static,
+          discord_accused=user.discordid if user else None,
+          type_order=str_typeOrder,
+          time=formOrder.param3.data if formOrder.param3.data != '' else None,
+          articlesAccusation=formOrder.param1.data if formOrder.param1.data != '' else None,
+          termImprisonment=formOrder.param2.data if formOrder.param2.data != '' else None,
+          offWork=formOrder.param4.data if formOrder.param4.data != '' else None,
+          number_order=num_order
+      )
+
+      db.session.add(new_order)
+      db.session.commit()
+    
+    elif typeDoc == 'Resolution' and custom_button_pressed == 'false':
+      if not any([formResolution.param1.data, formResolution.param2.data, formResolution.param3.data, formResolution.param4.data, formResolution.param5.data, formResolution.param6.data]):
+        flash('При создании постановленмя должен быть выбран хотя бы один пунк!')
+        return redirect(url_for('main.doc'))
+      
+      user = Users.query.filter_by(static=static).first()
+
+      def generate_resolution_pdf(formResolution, user, current_user, static, nickname):
+        buffer = BytesIO()
+        pdf = canvas.Canvas(buffer, pagesize=A4)
+        pdf.setTitle("Постановление")
+
+        pdfmetrics.registerFont(TTFont('TimesNewRoman', os.path.join('static', 'fonts', 'times.ttf')))
+        pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))
+        
+        image_path = os.path.join('static', 'img', 'DepOfJustice.png')
+        pdf.drawImage(image_path, 50 * mm, 245 * mm, width=100 * mm, height=50 * mm)
+        
+        draw_text(pdf, 50, 235, "UNITED STATES DEPARTMENT OF JUSTICE", font="TimesNewRoman-Bold", size=14)
+        draw_text(pdf, 70, 230, "прокуратура штата Сан-Андреас", font="TimesNewRoman-Bold", size=14)
+        draw_text(pdf, 60, 225, "90001, г. Лос-Сантос, Рокфорд-Хиллз, Карцер-Вей")
+
+        pdf.drawImage(os.path.join('static', 'img', 'text separator.png'), 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
+
+        record = ResolutionNumberCounter.increment(db.session)
+        new_resolution_number = increment_number_with_leading_zeros(record)
+        draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
+        draw_text(pdf, 30, 200, f"Doc. No: {new_resolution_number}")
+
+        draw_text(pdf, 15, 190, f"Я, {current_user.nikname}, являюсь Прокурором штата San Andreas, пользуясь правами, данными мне Конституцией")
+        draw_text(pdf, 15, 185, "и законодательством штата San Andreas, а также иными нормативно-правовыми актами,")
+        draw_text(pdf, 15, 180, "в связи с необходимостью обеспечения законности и правопорядка в рамках своих полномочий,")
+        draw_text(pdf, 80, 170, "ПОСТАНОВЛЯЮ:")
+
+        y = 160
+        num = 1
+        if formResolution.param1.data:
+          text = (f"{num}. Возбудить уголовное дело в отношении {'сотрудника ' + user.organ if user else 'гражданина'} "
+                  f"{nickname if nickname != '' else ''}, с номером паспортные данные {static}. Присвоить делу идентификатор {formResolution.case.data} и принять его к производству прокуратурой штата.")
+          y = draw_multiline_text(pdf, text, 15, y)
+          y -= 5
+          num += 1
+
+        if formResolution.param2.data:
+          text = (f"{num}. Обязать {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортные данные {static}, "
+                  f"в течение 24 часов предоставить на почту Прокурора {current_user.nikname} ({current_user.discordname}@gov.sa) видеозапись процессуальных действий, проведённых в отношении {formResolution.param2_nickname.data}, время провдение ареста {formResolution.arrest_time.data}. "
+                  f"Запись должна содержать момент ареста {formResolution.arrest_time.data} и фиксировать предполагаемое нарушение.")
+          y = draw_multiline_text(pdf, text, 15, y)
+          y -= 5
+          num += 1
+
+        if formResolution.param3.data:
+          text = (f"{num}. Предоставить личное дело {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, "
+                  f"с номером паспортные данные {static}, включающее электронную почту, должность. Срок предоставления информации — 24 часа.")
+          y = draw_multiline_text(pdf, text, 15, y)
+          y -= 5
+          num += 1
+
+        if formResolution.param4.data:
+          text = f"{num}. Ввести запрет на смену персональных данных {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортные данные {static}."
+          y = draw_multiline_text(pdf, text, 15, y)
+          y -= 5
+          num += 1
+
+        if formResolution.param5.data and user and user.action != 'Dismissal':
+          text = (f"{num}. Ввести запрет на увольнение сотрудника {user.organ} {nickname if nickname != '' else ''} с номером паспортные данные {static} "
+                  f"и на перевод в другие государственные структуры на период расследования по делу с идентификатором {formResolution.case.data}.")
+          y = draw_multiline_text(pdf, text, 15, y)
+          y -= 5
+          num += 1
+
+        if formResolution.param6.data and user and user.action != 'Dismissal':
+          text = f"{num}. Временно отстранить сотрудника {user.organ} {nickname}, с номером паспортные данные {static}, от исполнения служебных обязанностей на время расследования по делу с идентификатором {formResolution.case.data}."
+          y = draw_multiline_text(pdf, text, 15, y)
+          y -= 5
+          num += 1
+
+        sing_font_path = os.path.join('static', 'fonts', 'Updock-Regular.ttf') 
+        pdfmetrics.registerFont(TTFont('Updock', sing_font_path))
+
+        # Генерация подписи
+        generate_signature(pdf, y, current_user, 'resolution', page=1)
+        y -= 5
+
+        pdf.showPage()
+        pdf.save()
+        buffer.seek(0)
+        
+        # Saving PDF and database operations here
+        return buffer, new_resolution_number
+
+      # Usage in main logic
+      buffer, num_resolution = generate_resolution_pdf(formResolution, user, current_user, static, nickname)
+      
+      uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
+      session['uid'] = uid
+      
+      file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
+      with open(file_path, 'wb') as f:
+          f.write(buffer.getvalue())
+      
       pdf_document = PDFDocument(
           user_static=current_user.static, 
           user_discordid=current_user.discordid,
@@ -1100,387 +1560,232 @@ def create_doc():
       db.session.add(pdf_document)
       db.session.commit()
       
-      # Отправка информации о новом ордере в бот
-      send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status='moder', number_resolution=num_order)
-
-      # Создание и добавление записи в PublicDocumentAndNotificationsOrder
-      user = Users.query.filter_by(static=static).first()
-      new_order = PublicDocumentAndNotificationsOrder(
-        uid=uid, 
-        nickname_attorney=current_user.nikname,
-        static_attorney=current_user.static,
-        discord_attorney=current_user.discordid, 
-        nickname_accused=nickname,
-        static_accused=static,
-        discord_accused=user.discordid if user else None,
-        type_order=str_typeOrder,
-        time=formOrder.param3.data if formOrder.param3.data != '' else None,
-        articlesAccusation=formOrder.param1.data if formOrder.param1.data != '' else None,
-        termImprisonment=formOrder.param2.data if formOrder.param2.data != '' else None,
-        offWork=formOrder.param4.data if formOrder.param4.data != '' else None,
-        number_order=num_order
-      )
+      status = 'moder'
+      send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status=status, number_resolution=num_resolution)
       
-      db.session.add(new_order)
+      new_resolution = ResolutionTheUser(
+        current_uid=uid, 
+        author_id=current_user.id,
+        nickname_accused = nickname,
+        static_accused = static,
+        discord_accused = user.discordid if user else None,
+        initiation_case=formResolution.param1.data,
+        provide_video=formResolution.param2.data,
+        provide_personal_file=formResolution.param3.data,
+        changing_personal_data=formResolution.param4.data,
+        dismissal_employee=formResolution.param5.data,
+        temporarily_suspend=formResolution.param6.data,
+        victim_nickname=formResolution.param2_nickname.data if formResolution.param2_nickname.data != '' else '', 
+        time_arrest=formResolution.arrest_time.data if formResolution.arrest_time.data != '' else '',
+        number_case=formResolution.case.data if formResolution.case.data != '' else ''
+        )
+        
+      db.session.add(new_resolution)
       db.session.commit()
-    
-    elif typeDoc == 'Resolution':
-      param1 = formResolution.param1.data
-      param2 = formResolution.param2.data
-      param3 = formResolution.param3.data
-      param4 = formResolution.param4.data
-      param5 = formResolution.param5.data
-      param6 = formResolution.param6.data
-      
-      if not any([param1, param2, param3, param4, param5, param6]):
-        flash('При создании постановленмя должен быть выбран хотя бы один пунк!')
-        return redirect(url_for('main.doc'))
-      
-      uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
-      session['uid'] = uid
 
-      nickname = form.nickname.data
-      static = form.static.data
-      
-      user = Users.query.filter_by(static=static).first()
-      
-      nickname_victim = formResolution.param2_nickname.data
-      case_number = formResolution.case.data
-      arrest_time = formResolution.arrest_time.data
+    elif typeDoc == 'Resolution' and custom_button_pressed:
+      custom_text_fields = [request.form[key] for key in request.form if key.startswith('custom_text_')]
+      print(custom_text_fields)
+
+      def add_order_details(pdf, details, y, max_width=95, line_spacing=12):
+        pdf.setFont("TimesNewRoman", 12)  
+        last_page = 1
+        for text in details:
+          wrapped_text = wrap(text, width=max_width) 
+          for line in wrapped_text:
+              if y < 20 * mm:
+                  last_page += 1
+                  pdf.showPage()
+                  pdf.setFont("TimesNewRoman", 12)
+                  y = 260 * mm
+              
+              pdf.drawString(15 * mm, y, line)
+              y -= line_spacing 
+          y -= line_spacing + 4 
+            
+        return y, last_page
+
+
+      if not any(custom_text_fields):
+        flash('Должно быть заполнено хотя бы одно кастомное поле.')
+        return redirect(url_for('main.doc'))
       
       buffer = BytesIO()
       pdf = canvas.Canvas(buffer, pagesize=A4)
       pdf.setTitle("Постановление")
 
-      # Путь к шрифту
-      font_path = os.path.join('static', 'fonts', 'times.ttf')
-      pdfmetrics.registerFont(TTFont('TimesNewRoman', font_path))  # Убедитесь, что файл находится в static/fonts
-      pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))  # Полужирный шрифт
+      pdfmetrics.registerFont(TTFont('TimesNewRoman', os.path.join('static', 'fonts', 'times.ttf')))
+      pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))
 
-      # Использование шрифта
-      pdf.setFont("TimesNewRoman", 12)
-      
-      # загрузка картинки
       image_path = os.path.join('static', 'img', 'DepOfJustice.png')
       pdf.drawImage(image_path, 50 * mm, 245 * mm, width=100 * mm, height=50 * mm)
-      
-      # Рисуем заголовок и основную информацию
-      pdf.setFont("TimesNewRoman-Bold", 14)
-      pdf.drawString(50 * mm, 235 * mm, "UNITED STATES DEPARTMENT OF JUSTICE")
-      pdf.drawString(70 * mm, 230 * mm, "прокуратура штата Сан-Андреас")
-      pdf.setFont("TimesNewRoman", 12)
-      pdf.drawString(60 * mm, 225 * mm, "90001, г. Лос-Сантос, Рокфорд-Хиллз, Карцер-Вей")
-      
-      # загрузка картинки
-      image_path = os.path.join('static', 'img', 'text separator.png')
-      pdf.drawImage(image_path, 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
-      
-      if PublicDocumentAndNotificationsResolution.query.count() == 0:
-        record = 0     
-      else:
-        last_record = PublicDocumentAndNotificationsResolution.query.order_by(PublicDocumentAndNotificationsResolution.id.desc()).first()
-        record = last_record.id
-      
-      num_resolution = increment_number_with_leading_zeros(record)
-      
-      pdf.drawString(150 * mm, 200 * mm, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
-      pdf.drawString(30 * mm, 200 * mm, f"Doc. No: {num_resolution}")
 
-      pdf.setFont("TimesNewRoman-Bold", 14)
-      pdf.setFont("TimesNewRoman", 12)
+      draw_text(pdf, 50, 235, "UNITED STATES DEPARTMENT OF JUSTICE", font="TimesNewRoman-Bold", size=14)
+      draw_text(pdf, 70, 230, "прокуратура штата Сан-Андреас", font="TimesNewRoman-Bold", size=14)
+      draw_text(pdf, 60, 225, "90001, г. Лос-Сантос, Рокфорд-Хиллз, Карцер-Вей")
 
-      # Рисуем текст постановления
-      pdf.drawString(15 * mm, 190 * mm, f"Я, {current_user.nikname}, являюсь Прокурором штата San Andreas пользуясь своими правами, данными мне")
-      pdf.drawString(15 * mm, 185 * mm, "Конституцией и законодательством штата San Andreas, а также инными нормативно-правовых актов")
-      pdf.setFont("TimesNewRoman-Bold", 14)
-      pdf.drawString(80 * mm, 175 * mm, "ПОСТАНОВЛЯЮ:")
-      pdf.setFont("TimesNewRoman", 12)
+      pdf.drawImage(os.path.join('static', 'img', 'text separator.png'), 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
 
-      isParam1 = False
-      isParam2 = False
-      isParam3 = False
-      isParam4 = False
-      isParam5 = False
-      isParam6 = False
+      record = ResolutionNumberCounter.increment(db.session)
+      new_resolution_number = increment_number_with_leading_zeros(record)
+      draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
+      draw_text(pdf, 30, 200, f"Doc. No: {new_resolution_number}")
 
-      num = 1
-      y = 170  # Начальная координата по Y для списка
-      if user:
-        if param1:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Возбудить уголовное дело в отношении сотрудника {user.organ} {nickname} с номером идентификационного ")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"знака {static}, присвоить делу идентификатор {case_number}. Принять дело к собственному производству.")
-          y -= 10
-          num += 1
-          isParam1 = True
-            
-        if param2:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Сотруднику {user.organ} {nickname} с номером идентификационного знака {static}, в течении")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"24-ёх часов надлежит предоставить на почту Прокурора {current_user.nikname} {current_user.discordname}@gov.sa")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"видеофиксацию проведения процессуальных и следственных действий в отношение {nickname_victim}")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"c {arrest_time}, а также иных следственных действий, явившихся предпосылкой произведенного ")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, "задержания, включая момент фиксации предполагаемого нарушения.")
-          y -= 10
-          num += 1
-          isParam2 = True
-            
-        if param3:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Предоставить личное дело сотрудника {user.organ} {nickname} с номером")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"идентификационного знак {static}, включающее в себя: паспортные данные, должность в государственной")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, "структуре. Информация должна быть предоставлена в течение 24-х")
-          y -= 10
-          num += 1
-          isParam3 = True
-            
-        if param4:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Запрет на смену персональных данных сотруднику {user.organ} {nickname}")
-          y -= 10
-          num += 1
-          isParam4 = True
-            
-        if param5:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Сотруднику {user.organ} {nickname} с номером идентификационного знака 58630 запретить")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"увольнение с государственной организации {user.organ}  и перевод в другие государственные")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"фракции на момент расследования по делопроизводству с идентификатором {case_number}")
-          y -= 10
-          num += 1
-          isParam5 = True
-            
-        if param6:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Запрет на ведение службы на время расследования по делопроизводству с индификаинным")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"{case_number} сотруднику {user.organ} {nickname} c номером ОПЗ {static}")
-          y -= 10
-          num += 1
-          isParam6 = True
-          
-      else:
-        if param1:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Возбудить уголовное дело в отношении сотрудника гражаданина {nickname} с номером паспортных")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"данных {static}, присвоить делу идентификатор {case_number}. Принять дело к собственному производству.")
-          y -= 10
-          num += 1
-          isParam1 = True
-          
-        if param2:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Сотруднику гражданина {nickname} с номером паспортных данных {static}, в течении")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"24-ёх часов надлежит предоставить на почту Прокурора {current_user.nikname} {current_user.discordname}@gov.sa")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"видеофиксацию проведения процессуальных и следственных действий в отношение {nickname_victim}")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"c {arrest_time}, а также иных следственных действий, явившихся предпосылкой произведенного ")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, "задержания, включая момент фиксации предполагаемого нарушения.")
-          y -= 10
-          num += 1
-          isParam2 = True
-            
-        if param3:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Предоставить личное дело сотрудника гражданина {nickname} с номером")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, f"паспортных данных {static}, включающее в себя: паспортные данные, должность в государственной")
-          y -= 5
-          pdf.drawString(15 * mm, y * mm, "структуре. Информация должна быть предоставлена в течение 24-х часов")
-          y -= 10
-          num += 1
-          isParam3 = True
-            
-        if param4:
-          pdf.drawString(15 * mm, y * mm, f"{num}. Запрет на смену персональных данных сотруднику гражданина {nickname}")
-          y -= 10
-          num += 1
-          isParam4 = True
+      draw_text(pdf, 15, 190, f"Я, {current_user.nikname}, являюсь Прокурором штата San Andreas, пользуясь правами, данными мне Конституцией")
+      draw_text(pdf, 15, 185, "и законодательством штата San Andreas, а также иными нормативно-правовыми актами,")
+      draw_text(pdf, 15, 180, "в связи с необходимостью обеспечения законности и правопорядка в рамках своих полномочий,")
+      draw_text(pdf, 80, 170, "ПОСТАНОВЛЯЮ:")
 
-      # Завершаем документ
-      pdf.drawString(15 * mm, y * mm, "Настоящее постановление вступает в законную силу с момента его подписания и публикации")
-      y -= 5
-      pdf.drawString(15 * mm, y * mm, "на портале штата San Andreas.")
-      sing_font_path = os.path.join('static', 'fonts', 'Updock-Regular.ttf') 
-      pdfmetrics.registerFont(TTFont('Updock', sing_font_path))
+      y, last_page = add_order_details(pdf, custom_text_fields, 160 * mm)
+      generate_signature(pdf, y, current_user, 'resolution', page=last_page)
 
-      # Генерация подписи
-      full_name = current_user.nikname
-      name_parts = full_name.split()
-      first_name = name_parts[0]  # Используем только первое слово в качестве имени
-      last_name_initial = name_parts[1][0] if len(name_parts) > 1 else ''  # Если есть фамилия, берем первую букву
-      signature = f"{first_name} {last_name_initial}."
-
-      y -= 10
-      pdf.setFont("TimesNewRoman-Bold", 14)
-      pdf.drawString(120 * mm, y * mm, "Министерство Юстиций")
-      y -= 5
-      pdf.setFont("TimesNewRoman", 12)
-      pdf.drawString(110 * mm, y * mm, f"Прокурор {full_name} | {current_user.discordname}@gov.sa")
-      
-      y -= 15
-      pdf.setFont("Updock", 32)  
-      pdf.drawString(130 * mm, y * mm, f"{signature}")
-      pdf.setFont("TimesNewRoman", 10)
-      y -= 2
-      pdf.drawString(130 * mm, y * mm, "____________________")
-      y -= 3
-      pdf.drawString(140 * mm, y * mm, "(подпись)")
-
-      y -= 5
-      # Загрузка изображения печати
-      image_path = os.path.join('static', 'img', 'print.png')
-      pdf.drawImage(image_path, 20 * mm, y * mm, width=30 * mm, height=30 * mm)
-      
       pdf.showPage()
       pdf.save()
       buffer.seek(0)
-      
-      curr_user = Users.query.filter_by(static=current_user.static).first()
+
+      uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
+      session['uid'] = uid
       
       file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
       with open(file_path, 'wb') as f:
-          f.write(buffer.getvalue())
+        f.write(buffer.getvalue())
       
       pdf_document = PDFDocument(
-          user_static=curr_user.static, 
-          user_discordid=curr_user.discordid,
-          uid=uid,
-          content=file_path,
-          created_at=datetime.now()
+        user_static=current_user.static, 
+        user_discordid=current_user.discordid,
+        uid=uid,
+        content=file_path,
+        created_at=datetime.now()
       )
       db.session.add(pdf_document)
       db.session.commit()
       
-      status = 'moder'
-      send_to_bot_new_resolution(uid=uid, nickname=curr_user.nikname, static=curr_user.static, discordid=curr_user.discordid, status=status, number_resolution=num_resolution)
-      
-      if not user:
-        new_resolution = PublicDocumentAndNotificationsResolution(
-          uid=uid, 
-          nickname_attorney=current_user.nikname,
-          static_attorney=current_user.static,
-          discord_attorney=current_user.discordid,
-          nickname_accused = nickname,
-          static_accused = static,
-          param_limit1=isParam1,
-          param_limit2=isParam2,
-          param_limit3=isParam3,
-          param_limit4=isParam4,
-          param_limit5=isParam5,
-          param_limit6=isParam6,
-          param_limit2_nickmane=nickname_victim, 
-          param_limit2_time=arrest_time,
-          param_limit1_case=case_number, 
-          number_resolution = num_resolution
-          ) 
-      elif user:
-        new_resolution = PublicDocumentAndNotificationsResolution(
-          uid=uid, 
-          nickname_attorney=current_user.nikname,
-          static_attorney=current_user.static,
-          discord_attorney=current_user.discordid,
-          nickname_accused = nickname,
-          static_accused = static,
-          discord_accused = user.discordid,
-          param_limit1=isParam1,
-          param_limit2=isParam2,
-          param_limit3=isParam3,
-          param_limit4=isParam4,
-          param_limit5=isParam5,
-          param_limit6=isParam6,
-          param_limit2_nickmane=nickname_victim, 
-          param_limit2_time=arrest_time,
-          param_limit1_case=case_number,
-          number_resolution = num_resolution
-          )
-        
-      db.session.add(new_resolution)
+      from __init__ import CustomResolutionTheUser
+      custom_fields_json = json.dumps(custom_text_fields)
+      resolution = CustomResolutionTheUser(
+        author_id=current_user.id, 
+        current_uid=uid,
+        custom_fields=custom_fields_json
+      )
+      db.session.add(resolution)
       db.session.commit()
 
-    elif typeDoc == 'Agenda':
-      pass
-
+      status = 'moder'
+      send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status=status, number_resolution=new_resolution_number)
+    
     else:
       flash('Неверный формат. Вы должны выбрать какой нибуть тип документации!')
       return redirect(url_for('main.doc'))
-  else:
-    flash('Неверный формат. Проверьте правильность заполнения формы!')
-    return redirect(url_for('main.doc'))
-  
+    
   return redirect(url_for('main.doc'))
 
 @main.route('/resolution', methods=['POST', 'GET'])
 def resolution():
-  from __init__ import PDFDocument, PublicDocumentAndNotificationsResolution, PublicDocumentAndNotificationsOrder, Users, db
-  from form import FormModerationResolution
-  
-  uid = request.args.get('uid')
-  if not uid:
+    from __init__ import PDFDocument, ResolutionTheUser, OrderTheUser, Users, CustomResolutionTheUser, db
+    from form import FormModerationResolution
+
+    # Получаем UID и проверяем наличие /moderation
+    uid = request.args.get('uid')
+    if not uid:
       return "No UID provided", 400
-  
-  uid_parts = uid.split('/')
-  if len(uid_parts) > 1 and uid_parts[1] == 'moderation':
-    send_to_bot_permission_none(False)
-    uid = uid_parts[0]
 
+    uid_parts = uid.split('/')
+    base_uid = uid_parts[0]
+    is_moderation_link = len(uid_parts) > 1 and uid_parts[1] == 'moderation'
 
-  pdf_doc = PDFDocument.query.filter_by(uid=uid).first()
-  if pdf_doc:
-      if not os.path.exists(pdf_doc.content):
-          return "PDF file not found on server", 404
+    # Получаем PDF и проверяем его наличие
+    pdf_doc = PDFDocument.query.filter_by(uid=base_uid).first()
+    if not pdf_doc or not os.path.exists(pdf_doc.content):
+      text_error = "PDF not found or invalid UID"
+      return render_template('api/404.html', text_error=text_error)
 
-      moder_resolution = PublicDocumentAndNotificationsResolution.query.filter_by(uid=uid).first()
-      form = FormModerationResolution()
+    # Получаем записи для модерации и проверяем их
+    moder_resolution = ResolutionTheUser.query.filter_by(current_uid=base_uid).first()
+    moder_order = OrderTheUser.query.filter_by(current_uid=base_uid).first()
+    moder_custom_resolution = CustomResolutionTheUser.query.filter_by(current_uid=base_uid).first()
+    if not moder_resolution and not moder_order and not moder_custom_resolution:
+      return "Moderation records not found", 404
 
-      if form.validate_on_submit():
-          if form.success.data:
-              moder_resolution.is_modertation = True
-              moderation = True
-              reason = 'None'
-              send_to_bot_information_resolution(moder_resolution.discord_attorney, current_user.discordid, moderation, reason, uid)
-              db.session.commit()
-              return redirect(url_for('main.resolution', uid=uid))
+    form = FormModerationResolution()
 
-          elif form.rejected.data:
-              reason = form.reason.data
-              moderation = False
-              send_to_bot_information_resolution(moder_resolution.discord_attorney, current_user.discordid, moderation, reason, uid)
-              return redirect(url_for('main.doc'))
+    # Проверка на статус модерации
+    if moder_order and moder_order.is_modertation:
+      return render_template('preview_resolution.html', pdf_path=pdf_doc.content, uid=uid)
 
-      # Проверка модерационного статуса
-      if moder_resolution:
-        if moder_resolution.is_modertation:
-          return render_template('prewiew_resolution.html', pdf_path=pdf_doc.content, uid=uid)
-      
-      # Если модерация еще не завершена, показываем страницу модерации
-      if 'moderation' in request.args.get('uid'):
+    if moder_resolution and moder_resolution.is_modertation:
+      return render_template('preview_resolution.html', pdf_path=pdf_doc.content, uid=uid)
+    
+    if moder_custom_resolution and moder_custom_resolution.is_modertation:
+       return render_template('preview_resolution.html', pdf_path=pdf_doc.content, uid=uid)
+
+    if is_moderation_link:
         if not current_user.is_authenticated:
           flash('Для модерации постановлений требуется войти в аккаунт!')
           send_to_bot_permission_none(True)
           return redirect(url_for('main.index'))
-        
+
         user = Users.query.get(current_user.id)
-        rankuser_value = int(user.rankuser) if user.rankuser.isdigit() else 0
-        if user.organ == 'GOV' and rankuser_value >= 11 and rankuser_value != 12:
-          send_to_bot_permission_none(False)
-          return render_template('temporary_page.html', pdf_path=pdf_doc.content, form=form, uid=uid)
-        
-        else: 
-          flash('У вас отсутсвуют права на модерацию постановлений!')
-          send_to_bot_permission_none(True)
+        if not user:
+          flash('User not found!')
           return redirect(url_for('main.index'))
 
-  else:
-      text_error = "PDF not found or invalid UID"
-      return render_template('api/404.html', text_error=text_error)
-      
-  return "Unexpected error", 500
+        rankuser_value = int(user.rankuser) if user.rankuser.isdigit() else 0
 
+        def handle_moderation(moder_obj, min_rank, is_order, is_resolution, template_name):
+            if user.organ == 'GOV' and min_rank <= rankuser_value != 12:
+                send_to_bot_permission_none(False)
+
+                if form.validate_on_submit():
+                    moderation = form.success.data
+                    reason = 'None' if form.success.data else form.reason.data
+                    send_to_bot_information_resolution(moder_obj.discord_attorney, current_user.discordid, moderation, reason, base_uid)
+
+                    if form.success.data: 
+                      if is_order and current_user.organ == 'GOV' and (current_user.rankuser == '18' or current_user.rankuser == '21'):
+                        pdf_path = os.path.join(pdf_doc.content)
+                        generate_signature_order(pdf_path, current_user)
+                        moder_obj.is_modertation = True
+                        db.session.commit()
+
+                      elif is_resolution:
+                        moder_obj.is_modertation = True
+                        db.session.commit()
+
+                      else:
+                        flash('Вы неможе подписывать данные документы!')
+                        return redirect(url_for('main.doc'))
+                    else:
+                      if is_order:
+                          file_path = os.path.join(pdf_doc.content)
+                          os.remove(file_path)
+
+                          db.session.delete(moder_obj)
+                          db.session.delete(pdf_doc)
+                          db.session.commit()
+                          
+                      else:
+                          moder_obj.is_modertation = False
+                      db.session.commit()
+
+                    return redirect(url_for('main.doc' if form.rejected.data else 'main.resolution', uid=base_uid))
+                return render_template(template_name, pdf_path=pdf_doc.content, form=form, uid=uid)
+
+            flash('У вас отсутствуют права на модерацию постановлений!')
+            send_to_bot_permission_none(True)
+            return redirect(url_for('main.index'))
+
+        if moder_resolution and rankuser_value >= 11:
+          return handle_moderation(moder_resolution, 11, is_order=False, is_resolution=True, template_name='temporary_page.html')
+        elif moder_order and rankuser_value >= 18:
+          return handle_moderation(moder_order, 18, is_order=True, is_resolution=False, template_name='temporary_page.html')
+        elif moder_custom_resolution and rankuser_value >= 11:
+           return handle_moderation(moder_custom_resolution, 11, is_order=False, is_resolution=True, template_name='temporary_page.html')
+
+    # Если is_moderation=False, и отсутствует доступ к /moderation
+    if not is_moderation_link:
+      return redirect(url_for('main.resolution', uid=f"{base_uid}/moderation"))
+
+    return "Unexpected error", 500
 
 def user_is_moder(f):
     @wraps(f)
@@ -1528,260 +1833,134 @@ def edit_doc():
 
 @main.route('/edit_resolution', methods=['GET', 'POST'])
 def edit_resolution():
-  from __init__ import PublicDocumentAndNotificationsResolution, Users, db
+  from __init__ import ResolutionTheUser, Users, db
   from form import FormEditResolution
   
   uid = request.args.get('uid')
   
   form = FormEditResolution()
   if request.method == 'POST':
-    doc = PublicDocumentAndNotificationsResolution.query.filter_by(uid=uid).first()
+    if not is_send_allowed():
+      return redirect(url_for('main.doc'))
+
+    doc = ResolutionTheUser.query.filter_by(uid=uid).first()
     nickname_victim = form.param1.data
     nickname_accused = form.param2.data
     static_accused = form.param3.data
     time_arrest = form.param4.data
     del_item = form.param5.data
-    
+    del_item_list = [int(x) for x in del_item.replace(',', ' ').split() if x.isdigit()]
+
+    selected_static_accused = static_accused if static_accused != '' else doc.static_accused
+    selected_nickname_accused = nickname_accused if nickname_accused != '' else doc.nickname_accused
+    selected_nickname_victim = nickname_victim if nickname_victim != '' else doc.victim_nickname
+    selected_time_arrest = time_arrest if time_arrest != '' else doc.time_arrest
+
+    user = Users.query.filter_by(static=selected_static_accused)
+
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
     pdf.setTitle("Постановление")
 
-    # Путь к шрифту
-    font_path = os.path.join('static', 'fonts', 'times.ttf')
-    pdfmetrics.registerFont(TTFont('TimesNewRoman', font_path))  # Убедитесь, что файл находится в static/fonts
-    pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))  # Полужирный шрифт
-
-    # Использование шрифта
-    pdf.setFont("TimesNewRoman", 12)
+    # Регистрация шрифтов
+    pdfmetrics.registerFont(TTFont('TimesNewRoman', os.path.join('static', 'fonts', 'times.ttf')))
+    pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))
     
-    # загрузка картинки
-    image_path = os.path.join('static', 'img', 'DepOfJustice.png')
-    pdf.drawImage(image_path, 50 * mm, 245 * mm, width=100 * mm, height=50 * mm)
-    
-    # Рисуем заголовок и основную информацию
+    # Заголовок и логотип
+    pdf.drawImage(os.path.join('static', 'img', 'DepOfJustice.png'), 50 * mm, 245 * mm, width=100 * mm, height=50 * mm)
     pdf.setFont("TimesNewRoman-Bold", 14)
     pdf.drawString(50 * mm, 235 * mm, "UNITED STATES DEPARTMENT OF JUSTICE")
-    pdf.drawString(70 * mm, 230 * mm, "прокуратура штата Сан-Андреас")
+    pdf.drawString(70 * mm, 230 * mm, "Прокуратура штата Сан-Андреас")
     pdf.setFont("TimesNewRoman", 12)
     pdf.drawString(60 * mm, 225 * mm, "90001, г. Лос-Сантос, Рокфорд-Хиллз, Карцер-Вей")
-    
-    # загрузка картинки
-    image_path = os.path.join('static', 'img', 'text separator.png')
-    pdf.drawImage(image_path, 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
-    
-    pdf.drawString(150 * mm, 200 * mm, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
-    pdf.drawString(30 * mm, 200 * mm, f"Doc. No: { doc.number_resolution }")
+    pdf.drawImage(os.path.join('static', 'img', 'text separator.png'), 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
 
-    pdf.setFont("TimesNewRoman-Bold", 14)
-    pdf.setFont("TimesNewRoman", 12)
+    # Номер документа и дата
+    draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
+    draw_text(pdf, 30, 200, f"Doc. No: {doc.number_resolution if doc else ''}")
 
-    # Рисуем текст постановления
-    pdf.drawString(15 * mm, 190 * mm, f"Я, {current_user.nikname}, являюсь Прокурором штата San Andreas пользуясь своими правами, данными мне")
-    pdf.drawString(15 * mm, 185 * mm, "Конституцией и законодательством штата San Andreas, а также инными нормативно-правовых актов")
-    pdf.setFont("TimesNewRoman-Bold", 14)
-    pdf.drawString(80 * mm, 175 * mm, "ПОСТАНОВЛЯЮ:")
-    pdf.setFont("TimesNewRoman", 12)
-    
-    isParam1 = False
-    isParam2 = False
-    isParam3 = False
-    isParam4 = False
-    isParam5 = False
-    isParam6 = False
-    
-    selected_static_accused = static_accused if static_accused != '' else doc.static_accused
-    selected_nickname_accused = nickname_accused if nickname_accused != '' else doc.nickname_accused
-    selected_nickname_victim = nickname_victim if nickname_victim != '' else doc.param_limit2_nickmane
-    selected_time_arrest = time_arrest if time_arrest != '' else doc.param_limit2_time
-    
-    user_accused = Users.query.filter_by(static=selected_static_accused).first()
-    
+    # Основной текст постановления
+    draw_text(pdf, 15, 190, f"Я, {current_user.nikname}, являюсь Прокурором штата San Andreas, пользуясь правами,")
+    draw_text(pdf, 15, 185, "данными мне Конституцией и законодательством штата San Andreas, а также иными нормативно-правовыми актами,")
+    draw_text(pdf, 15, 180, "в связи с необходимостью обеспечения законности и правопорядка в рамках своих полномочий,")
+    draw_text(pdf, 80, 175, "ПОСТАНОВЛЯЮ:")
+
+    y = 170
     num = 1
-    y = 170    
-    if user_accused:
-      if doc.param_limit1:
-        pdf.drawString(15 * mm, y * mm, f"{num}. Возбудить уголовное дело в отношении сотрудника {user_accused.organ} {selected_nickname_accused} с номером идентификационного")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"знака {selected_static_accused}, присвоить делу идентификатор {doc.param_limit1_case}. Принять дело к собственному производству.")
-        y -= 10
-        num += 1
-        isParam1 = True
-          
-      if doc.param_limit2:
-        pdf.drawString(15 * mm, y * mm, f"{num}. Сотруднику {user_accused.organ} {selected_nickname_accused} с номером идентификационного знака {selected_static_accused}, в течении")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"24-ёх часов надлежит предоставить на почту Прокурора {current_user.nikname} {current_user.discordname}@gov.sa")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"видеофиксацию проведения процессуальных и следственных действий в отношение {selected_nickname_victim}")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"c {selected_time_arrest}, а также иных следственных действий, явившихся предпосылкой произведенного ")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, "задержания, включая момент фиксации предполагаемого нарушения.")
-          
-        y -= 10
-        num += 1
-        isParam2 = True
-          
-      if doc.param_limit3:
-        pdf.drawString(15 * mm, y * mm, f"{num}. Предоставить личное дело сотрудника {user_accused.organ} { selected_nickname_accused} с номером")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"паспортных данных {selected_static_accused}, включающее в себя: паспортные данные, должность в государственной")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, "структуре. Информация должна быть предоставлена в течение 24-х")
-        y -= 10
-        num += 1
-        isParam3 = True
-          
-      if doc.param_limit4:
-        pdf.drawString(15 * mm, y * mm, f"{num}. Запрет на смену персональных данных сотруднику {user_accused.organ} { selected_nickname_accused}")
-        y -= 10
-        num += 1
-        isParam4 = True
-          
-      if doc.param_limit5:
-        pdf.drawString(15 * mm, y * mm, f"{num}. Сотруднику { selected_nickname_accused} с номером паспортных данных  {selected_static_accused} запретить")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"увольнение с государственной организации {user_accused.organ}  и перевод в другие государственные")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"фракции на момент расследования по делопроизводству под номером {doc.param_limit1_case}")
-        y -= 10
-        num += 1
-        isParam5 = True
-          
-      if doc.param_limit6:
-        pdf.drawString(15 * mm, y * mm, f"{num}. Запрет на ведение службы на время расследования по делопроизводству под номером")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"{doc.param_limit1_case} сотруднику {user_accused.organ} { selected_nickname_accused} c номером ОПЗ {selected_static_accused}")
-        y -= 10
-        num += 1
-        isParam6 = True
-        
-    else:
-      if doc.param_limit1:
-        pdf.drawString(15 * mm, y * mm, f"{num}. Возбудить уголовное дело в отношении гражданина {selected_nickname_accused} с номером паспортных")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"данных {selected_static_accused}, присвоить делу идентификатор {doc.param_limit1_case}. Принять дело к собственному производству.")
-        y -= 10
-        num += 1
-        isParam1 = True
-          
-      if doc.param_limit2:
-        pdf.drawString(15 * mm, y * mm, f"{num}. Гражданину {selected_nickname_accused} с номером паспортных данных {selected_static_accused}, в течении")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"24-ёх часов надлежит предоставить на почту Прокурора {current_user.nikname} {current_user.discordname}@gov.sa")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"видеофиксацию проведения процессуальных и следственных действий в отношение {selected_nickname_victim}")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"c {selected_time_arrest}, а также иных следственных действий, явившихся предпосылкой произведенного ")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, "задержания, включая момент фиксации предполагаемого нарушения.")
-          
-        y -= 10
-        num += 1
-        isParam2 = True
-          
-      if doc.param_limit3:
-        pdf.drawString(15 * mm, y * mm, f"{num}. Предоставить личное дело гражданина { selected_nickname_accused} с номером")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, f"паспортных данных {selected_static_accused}, включающее в себя: паспортные данные, должность в государственной")
-        y -= 5
-        pdf.drawString(15 * mm, y * mm, "структуре. Информация должна быть предоставлена в течение 24-х")
-        y -= 10
-        num += 1
-        isParam3 = True
-          
-      if doc.param_limit4:
-        pdf.drawString(15 * mm, y * mm, f"{num}. Запрет на смену персональных данных гражданина { selected_nickname_accused}")
-        y -= 10
-        num += 1
-        isParam4 = True
-        
-      # Завершаем документ
-      pdf.drawString(15 * mm, y * mm, "Настоящее постановление вступает в законную силу с момента его подписания и публикации")
+
+    if doc.param_limit1 and 1 not in del_item_list:
+      text = (f"{num}. Возбудить уголовное дело в отношении {'сотрудника ' + user.organ if user else 'гражданина'} "
+              f"{selected_nickname_accused}, с номером паспортные данные {selected_static_accused}. Присвоить делу идентификатор {doc.number_case} и принять его к производству прокуратурой штата.")
+      y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
-      pdf.drawString(15 * mm, y * mm, "на портале штата San Andreas.")
-      
-      sing_font_path = os.path.join('static', 'fonts', 'Updock-Regular.ttf') 
-      pdfmetrics.registerFont(TTFont('Updock', sing_font_path))
+      num += 1
 
-      # Генерация подписи
-      full_name = current_user.nikname
-      name_parts = full_name.split()
-      first_name = name_parts[0]  # Используем только первое слово в качестве имени
-      last_name_initial = name_parts[1][0] if len(name_parts) > 1 else ''  # Если есть фамилия, берем первую букву
-      signature = f"{first_name} {last_name_initial}."
-
-      y -= 10
-      pdf.setFont("TimesNewRoman-Bold", 14)
-      pdf.drawString(120 * mm, y * mm, "Министерство Юстиций")
+    if doc.param_limit2 and 2 not in del_item_list:
+      text = (f"{num}. Обязать {'сотрудника ' + user.organ if user else 'гражданина'} {selected_nickname_accused}, с номером паспортные данные {selected_static_accused}, "
+              f"в течение 24 часов предоставить на почту Прокурора {current_user.nikname} ({current_user.discordname}@gov.sa) видеозапись процессуальных действий, проведённых в отношении {selected_nickname_victim}, время провдение ареста {selected_time_arrest}. "
+              f"Запись должна содержать момент ареста и фиксировать предполагаемое нарушение.")
+      y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
-      pdf.setFont("TimesNewRoman", 12)
-      pdf.drawString(110 * mm, y * mm, f"Прокурор {full_name} | {current_user.discordname}@gov.sa")
-      
-      y -= 15
-      pdf.setFont("Updock", 32)  
-      pdf.drawString(130 * mm, y * mm, f"{signature}")
-      pdf.setFont("TimesNewRoman", 10)
-      y -= 2
-      pdf.drawString(130 * mm, y * mm, "____________________")
-      y -= 3
-      pdf.drawString(140 * mm, y * mm, "(подпись)")
+      num += 1
 
+    if doc.param_limit3 and 3 not in del_item_list:
+      text = (f"{num}. Предоставить личное дело {'сотрудника ' + user.organ if user else 'гражданина'} {selected_nickname_accused}, "
+              f"с номером паспортные данные {selected_static_accused}, включающее электронную почту, должность. Срок предоставления информации — 24 часа.")
+      y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
-      # Загрузка изображения печати
-      image_path = os.path.join('static', 'img', 'print.png')
-      pdf.drawImage(image_path, 20 * mm, y * mm, width=30 * mm, height=30 * mm)
-      
-      pdf.showPage()
-      pdf.save()
-      buffer.seek(0)
-      
-      curr_user = Users.query.filter_by(static=current_user.static).first()
-      
-      global file_path
-      file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
-      with open(file_path, 'wb') as f:
-          f.write(buffer.getvalue())
-          print('uuuuu')
-      
-      status = 'edit'
-      send_to_bot_new_resolution(uid=uid, nickname=curr_user.nikname, static=curr_user.static, discordid=curr_user.discordid, status=status, number_resolution=doc.number_resolution)
-      
-      if not user_accused:
-          doc.nickname_accused = selected_nickname_accused
-          doc.static_accused = selected_static_accused
-          doc.param_limit1=isParam1
-          doc.param_limit2=isParam2
-          doc.param_limit3=isParam3
-          doc.param_limit4=isParam4
-          doc.param_limit5=isParam5
-          doc.param_limit6=isParam6
-          doc.param_limit2_nickmane=selected_nickname_victim
-          doc.param_limit2_time=selected_time_arrest
+      num += 1
 
-      elif user_accused:
-        doc.nickname_accused = selected_nickname_accused
-        doc.static_accused = selected_static_accused
-        doc.discord_accused = user_accused.discordid
-        doc.param_limit1=isParam1
-        doc.param_limit2=isParam2
-        doc.param_limit3=isParam3
-        doc.param_limit4=isParam4
-        doc.param_limit5=isParam5
-        doc.param_limit6=isParam6
-        doc.param_limit2_nickmane=nickname_victim
-        doc.param_limit2_time=selected_time_arrest
+    if doc.param_limit4 and 4 not in del_item_list:
+      text = f"{num}. Ввести запрет на смену персональных данных {'сотрудника ' + user.organ if user else 'гражданина'} {selected_nickname_accused}, с номером паспортные данные {selected_static_accused}."
+      y = draw_multiline_text(pdf, text, 15, y)
+      y -= 5
+      num += 1
 
-      db.session.commit()
+    if doc.param_limit5 and user and user.action != 'Dismissal' and 5 not in del_item_list:
+      text = (f"{num}. Ввести запрет на увольнение сотрудника {user.organ} {selected_nickname_accused} с номером паспортные данные {selected_static_accused} "
+              f"и на перевод в другие государственные структуры на период расследования по делу с идентификатором {doc.number_case}.")
+      y = draw_multiline_text(pdf, text, 15, y)
+      y -= 5
+      num += 1
+
+    if doc.param_limit6 and user and user.action != 'Dismissal' and 6 not in del_item_list:
+      text = f"{num}. Временно отстранить сотрудника {user.organ} {selected_nickname_accused}, с номером паспортные данные {selected_static_accused}, от исполнения служебных обязанностей на время расследования по делу с идентификатором {doc.number_case}."
+      y = draw_multiline_text(pdf, text, 15, y)
+      y -= 5
+      num += 1
     
-      return redirect(url_for('main.index'))
+    generate_signature(pdf, y, current_user, 'resolution')
+    y -= 5
+
+    pdf.showPage()
+    pdf.save()
+    buffer.seek(0)
+
+    status = 'edit'
+    send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status=status, number_resolution=doc.number_resolution)
+    
+    doc.nickname_accused = selected_nickname_accused
+    doc.static_accused = selected_static_accused
+    doc.discord_accused = user.discordid if user else None
+    doc.initiation_case=None if 1 not in del_item_list else doc.initiation_case
+    doc.provide_video=None if 2 not in del_item_list else doc.provide_video
+    doc.provide_personal_file=None if 3 not in del_item_list else doc.provide_personal_file
+    doc.changing_personal_data=None if 4 not in del_item_list else doc.changing_personal_data
+    doc.dismissal_employee=None if 5 not in del_item_list else doc.dismissal_employee
+    doc.temporarily_suspend=None if 6 not in del_item_list else doc.temporarily_suspend
+    doc.victim_nickname=nickname_victim
+    doc.time_arrest=selected_time_arrest
+
+    db.session.commit()
+    
+    return redirect(url_for('main.index'))
 
 @main.route('/get_prosecution_office_content')
 def get_prosecution_office_content():
-  from __init__ import PublicDocumentAndNotificationsResolution
+  from __init__ import ResolutionTheUser
   is_visibily_attoney = True
 
-  action_users = PublicDocumentAndNotificationsResolution.query.filter_by(is_modertation=True).all()
+  action_users = ResolutionTheUser.query.filter_by(is_modertation=True).all()
   
   return render_template(
     'main/main-doc-attomey.html', 

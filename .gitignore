@@ -1,9 +1,9 @@
 
-start.py
+/start.py
 /__pycache__
 /python/__pycache__
 /myvenv
 /python/config.json
 /static/uploads
 /python/cogs/__pycache__
-message_data.json
+/message_data.json
