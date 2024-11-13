@@ -16,25 +16,30 @@
     {% if isk.is_archived == False %}
     {% if status and status != "Judge" %}
     <button class="iskbutton"> <span>Подать ходатайство</span></button>
-    <button class="iskbutton"> <span>Привлечь свидетеля</span></button>
+    <button class="iskbutton" onclick="openModalisk('Modalsvid')"> <span>Привлечь свидетеля</span></button>
     {% endif %}
     {% if status == "prosecutor" %}
     {% if isk.judge and not isk.prosecutor %}
-    <button class="iskbutton" onclick="openModalpd()"> <span>Возбудить дело</span></button>
+    <button class="iskbutton" onclick="openModalisk('Modalprokdelo')"> <span>Возбудить дело</span></button>
     <button class="iskbutton"> <span>Сдать дело</span></button> {% endif %}
     {% endif %}
     {% if status == "Judge" %}
     {% if not isk.judge %}
-    <button class="iskbutton" onclick="openModalci()"> <span>Принять к производству</span></button>
-    <button class="iskbutton" onclick="openModalck()"> <span>Отказать</span></button> {% endif %}
-    <button class="iskbutton"> <span>Назначить заседание</span></button>
+    <button class="iskbutton" onclick="openModalisk('Modalot')"> <span>Принять к производству</span></button>
+    <button class="iskbutton" onclick="openModalisk('Modalotk')"> <span>Отказать</span></button> {% endif %}
+    <button class="iskbutton" onclick="openModalisk('Modalzasn')"> <span>Назначить заседание</span></button>
     <button class="iskbutton"> <span>Перенести заседение</span></button>
     <button class="iskbutton"> <span>Написать определение</span></button>
     {% endif %} {% endif %}
 </div>    
 </div>
+
 <div class="iskcontainer">
 <div class="main-isk">
+    <div class="adressisktext">
+        <p>Кому: Окружному суду штата Сан Андреас</p>
+        <p>От:{{ isk.created }}</p>
+    </div>
     <h2>Исковое заявление №{{ "%03d" | format(isk.id) }}</h2>
     <small>Подан: {{ isk.create_at }}</small>
     <div class="isktext">
@@ -50,6 +55,7 @@
     <p>Контактные данные: {{ isk.phone }}.</p>
     <p>Номер банковской карты: {{ isk.cardn }}</p>
 </div>
+
 {% if replies %}
 {% for reply in replies %}
 <div class="main-isk">
@@ -125,13 +131,67 @@
     <p>{{ reply.replyik['prok'] }}</p>
     </div>
     {% endif %}
+
+    {% if reply.type_document == "opredelenie" %}
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Great_Seal_of_the_United_States_%28obverse%29.svg/1200px-Great_Seal_of_the_United_States_%28obverse%29.svg.png" alt="Герб США" class="seal">
+    <h3>Окружной Суд Штата Сан Андреас</h3>
+    <small>{{ isk.created }} VS {{ isk.__repr__() }}</small>
+    <br>
+    <br>
+    <img src="https://i.imgur.com/oumkght.png">
+    <br>
+    <p>No. SC-{{ "%03d" | format(isk.id) }}</p>
+    <p>ОПРЕДЕЛЕНИЕ No. SC-{{ "%03d" | format(isk.id) }}-{{ reply.replyik['№_opredelenie'] }}</p>
+    {% if reply.replyik['action'] == "accept" %}<p>ОБ ПРИНЯТИИ ХОДАТАЙСТВА К ПРОИЗОВДСТВУ СУДА.</p>{% endif %}
+    {% if reply.replyik['action'] == "partaccept" %}<p>ОБ ЧАСТИЧНОМ ПРИНЯТИИ ХОДАТАЙСТВА К ПРОИЗОВДСТВУ СУДА.</p>{% endif %}
+    {% if reply.replyik['action'] == "decline" %}<p>ОБ ОТКЛОНЕНИИ ХОДАТАЙСТВА.</p>{% endif %}
+    <br>
+    <img src="https://i.imgur.com/oumkght.png">
+    <br>
+    <div class="isktext">
+    <h4>ОБСТОЯТЕЛЬСТВА</h4>
+    <p>{{ isk.create_at }} гражданин {{ reply.author }} обратился в Окружной суд Штата Сан Андреас с ходатайством №{{ reply.replyik['№_hodataistva'] }} об {{ reply.replyik['hodataistvoo'] }}.</p>
+    <br> {% if reply.replyik['motivirovka'] %}
+    <h4>РАССМОТРЕНИЕ</h4>
+    <p>{{ reply.replyik['motivirovka'] }}</p> {% endif %}
+    <br>
+    <h4>ЗАКЛЮЧЕНИЕ</h4>
+    {% if reply.replyik['action'] == "accept" %}<p>Суд постановляет удовлетворить ходатайство {{ reply.author }}.</p>{% endif %}
+    {% if reply.replyik['action'] == "partaccept" %}<p>Суд постановляет удовлетворить частично ходатайство {{ reply.author }}.</p>{% endif %}
+    {% if reply.replyik['action'] == "decline" %}<p>Суд постановляет отклонить ходатайство {{ reply.author }}.</p>{% endif %}
+    </div>
+    {% endif %}
+
+    <!--ходАтайства-->
+
+    {% if reply.type_document == "hodataistvo" %}
+    <div class="adressisktext">
+        <p>Кому: Окружному суду штата Сан Андреас</p>
+        <p>От:{{ reply.author }}</p>
+    </div>
+    {% if reply.replyik['type_hodataistva'] == "svidetelhod" %}
+    <h3>Ходатайство №{{ reply.replyik['№_hodataistva'] }} об привлечении свидетеля</h3>
+    <br>
+    <br>
+    <div class="isktext">
+        Я, {{ reply.author }}, ходатайствую о привлечении в качестве свидетеля {{ reply.replyik['namesvidetela'] }}.
+    Привлечение указанного свидетеля необходимо для обеспечения объективного и всестороннего рассмотрения дела, поскольку его показания могут способствовать установлению фактических обстоятельств,
+    имеющих непосредственное значение для разрешения рассматриваемого дела.
+    </div>
+    {% if reply.replyik['accepted'] == False and status == "Judge" %}
+    <button id="hodrasm" data-hodataistva="{{ reply.id }}" onclick="openModaliskhod()">Рассмотреть</button>
+    {% endif %}
+    {% endif %}
+    
+
+    {% endif %}
 </div>
 {% endfor %} {% endif %}
 </div>
 </div>
 <div id="Modalot" class="modalci">
     <div class="modalci-content">
-        <span class="close-btn" onclick="closeModalci()">&times;</span>
+        <span class="close-btn" onclick="closeModalisk('Modalot')">&times;</span>
         <h2 id="modalHeader">Принятие иска</h2>
         {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}
@@ -159,9 +219,60 @@
     </div>
 </div>
 
+<div id="Modalsvid" class="modalci">
+    <div class="modalci-content">
+        <span class="close-btn" onclick="closeModalisk('Modalsvid')">&times;</span>
+        <h2 id="modalHeader">Привлечение свидетеля</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class=flashes>
+                {% for category, message in messages %}
+                  <li class="{{ category }} errorli">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+        <form id="isksvForm" method="POST" action="{{ url_for('main.isk') }}">
+            <input type="hidden" name="typeopr" value="svidetelhod">
+            <label for="namesvidetela">Имя свидетеля:</label>
+            <input type="text" id="namesvidetela" name="namesvidetela">
+            <input type="submit" value="Отправить">                
+        </form>
+        <div id="responseMessage"></div>
+    </div>
+</div>
+
+<div id="Modalzasn" class="modalci">
+    <div class="modalci-content">
+        <span class="close-btn" onclick="closeModalisk('Modalsvid')">&times;</span>
+        <h2 id="modalHeader">Назначение заседания</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class=flashes>
+                {% for category, message in messages %}
+                  <li class="{{ category }} errorli">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+        <form id="iskzasnForm" method="POST" action="{{ url_for('main.isk') }}">
+            <input type="hidden" name="typeopr" value="zasn">
+            <label for="datezas">Дата:</label>
+            <input type="datetime-local" id="datezas" name="datezas">
+            <label for="iskmethod">Тип заседания:</label>
+            <select id="iskmethod" name="iskmethod">
+                <option value="Opened">Открытое</option>
+                <option value="Closed">Закрытое</option>
+            </select>
+            <input type="submit" value="Отправить">                
+        </form>
+        <div id="responseMessage"></div>
+    </div>
+</div>
+
 <div id="Modalotk" class="modalci">
     <div class="modalci-content">
-        <span class="close-btn" onclick="closeModalck()">&times;</span>
+        <span class="close-btn" onclick="closeModalisk('Modalotk')">&times;</span>
         <h2 id="modalHeader">Отказ в иске</h2>
         {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}
@@ -187,9 +298,75 @@
     </div>
 </div>
 
+<div id="Modalhodrasm" class="modalci">
+    <div class="modalci-content">
+        <span class="close-btn" onclick="closeModalisk('Modalhodrasm')">&times;</span>
+        <h2 id="modalHeader">Рассмотрение ходатайства</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class=flashes>
+                {% for category, message in messages %}
+                  <li class="{{ category }} errorli">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+        <form id="iskhodForm" method="POST" action="{{ url_for('main.isk') }}">
+            <div class="elnt_container">
+                <label for="more-infohod">Мотивиционная часть</label>
+                <input id="more_infohod" type="checkbox" onclick="toggleMotivirovka()"/>
+            </div>
+            <div id="motivirovkahod" style="display: none;">
+            <textarea name="motivirovkahod" id="motivirovkahod" cols="30" rows="10"></textarea>
+            </div>
+            <label for="hodataistvoo">Ходатайство об:</label>
+            <input type="text" id="hodataistvoo" name="hodataistvoo">
+            <label for="options">Выберите пункт:</label>
+            <select id="actions" name="actions">
+                <option value="accept">Принять</option>
+                <option value="decline">Отказать</option>
+                <option value="partaccept">Принять частично</option>
+            </select>
+
+            <div class="elnt_container">
+                <label for="otvodhod">Отвод</label>
+                <input id="otvodhod" type="checkbox" onclick="toggleoption('otvodhod', 'otvodselect')"/>
+            </div>
+            <div id="otvodselect" style="display: none;">
+                <select id="otvodselecti" name="otvodselecti">
+                    {% for defend in isk.defendant %}
+                    <option value="defendant-{{ defend }}">Ответчик {{ defend }}</option> {% endfor %}
+                    {% if isk.otherme %}
+                    <option value="otherme-{{ value }}"> {% for index, value in isk.otherme.items() %} {{ index }}: {{ value }}</option> {% endfor %}{% endif %}
+                    <option value="judge-{{ isk.judge }}">Судья {{ isk.judge }}</option>
+                    {% if isk.prosecutor %}<option value="prosecutor-{{ isk.prosecutor }}">Прокурор {{ isk.prosecutor }}</option>{% endif %}
+                </select>
+            </div>
+
+            <div class="elnt_container">
+                <label for="newme">Привлечь</label>
+                <input id="newme" type="checkbox" onclick="toggleoption('newme', 'newmeselect')"/>
+            </div>
+            <div id="newmeselect" style="display: none;">
+                <select id="newmeselecti" name="newmeselecti">
+
+                    <option value="svidetel">Свидетель</option>
+                    <option value="expert">Эксперт</option>
+                </select>
+                <input type="text" id="newmename" name="newmename">
+            </div>
+
+            <input type="hidden" name="typeopr" value="hodataistvorasm">
+            <input type="hidden" id="hodid-input" name="hodid" value="">
+            <input type="submit" value="Отправить">                
+        </form>
+        <div id="responseMessage"></div>
+    </div>
+</div>
+
 <div id="Modalprokdelo" class="modalci">
     <div class="modalci-content">
-        <span class="close-btn" onclick="closeModalpd()">&times;</span>
+        <span class="close-btn" onclick="closeModalisk('Modalprokdelo')">&times;</span>
         <h2 id="modalHeader">Принятие иска</h2>
         {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}
@@ -210,23 +387,19 @@
 </div>
 <div id="district-container"></div>
 <script>
-    function openModalpd() {
-            document.getElementById("Modalprokdelo").style.display = "flex";
+    function openModalisk(modalid) {
+            document.getElementById(modalid).style.display = "flex";
         }
-    function closeModalpd() {
-        document.getElementById("Modalprokdelo").style.display = "none";
-    }
-    function openModalci() {
-            document.getElementById("Modalot").style.display = "flex";
+
+    function openModaliskhod() {
+            document.getElementById("Modalhodrasm").style.display = "flex";
+            var button = document.getElementById("hodrasm");
+            let hodid = button.getAttribute("data-hodataistva");
+            console.log("hodataistvaValue:", hodid);
+            document.getElementById("hodid-input").value = hodid;
         }
-    function closeModalci() {
-        document.getElementById("Modalot").style.display = "none";
-    }
-    function openModalck() {
-            document.getElementById("Modalotk").style.display = "flex";
-        }
-    function closeModalck() {
-        document.getElementById("Modalotk").style.display = "none";
+    function closeModalisk(modalid) {
+        document.getElementById(modalid).style.display = "none";
     }
     document.getElementById('more_infot').addEventListener('change', function() {
     if (!this.checked) {
@@ -235,5 +408,30 @@
         document.getElementById('motivirovkaot').style.display = 'block';
     }
 });
+    document.getElementById('more_info').addEventListener('change', function() {
+    if (!this.checked) {
+        document.getElementById('motivirovka').style.display = 'none';
+    } else {
+        document.getElementById('motivirovka').style.display = 'block';
+    }
+});
+function toggleMotivirovka() {
+        var checkbox = document.getElementById("more_infohod");
+        var textAreaDiv = document.getElementById("motivirovkahod");
+        if (checkbox.checked) {
+            textAreaDiv.style.display = "block";
+        } else {
+            textAreaDiv.style.display = "none";
+        }
+    }
+function toggleoption(checkboxid, optionid) {
+    var checkbox = document.getElementById(checkboxid);
+    var textAreaDiv = document.getElementById(optionid);
+    if (checkbox.checked) {
+        textAreaDiv.style.display = "block";
+    } else {
+        textAreaDiv.style.display = "none";
+    }
+}
 
 </script>

@@ -43,6 +43,13 @@ def setup_logging():
 
 setup_logging()
 """
+
+def givenewmerole(newmerole):
+  if newmerole == "svidetel":
+    return "Свидетель"
+  elif newmerole == "expert":
+    return "Эксперт"
+
 def is_send_allowed(wait_seconds=30):
     """Проверяет, прошло ли достаточно времени с последней отправки и возвращает оставшееся время."""
     last_sent_time = session.get('last_sent_time')
@@ -60,6 +67,20 @@ def is_send_allowed(wait_seconds=30):
     # Обновляем временную метку, если отправка разрешена
     session['last_sent_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     return True
+
+def check_isk_status(user, isk):
+  status = None
+  if user.nikname == isk.created:
+      status = "Created"
+  elif user.nikname == isk.judge or (isk.judge is None and 13 <= int(user.curr_rank) <= 15):
+      status = "Judge"
+  elif user.organ == "GOV" and int(user.curr_rank) == 9:
+      status = "prosecutor"
+  elif user.nikname in isk.defendant:
+      status = "defendant"
+  elif user.nikname == isk.lawerc or user.nikname == isk.lawerd:
+      status = "lawer"
+  return status
 
 def draw_text(pdf, x, y, text, font="TimesNewRoman", size=12):
   pdf.setFont(font, size)
@@ -383,15 +404,14 @@ def isk():
         if self.otherme:
           return '\n'.join([f"{key}: {value}" for key, value in self.otherme.items()])
   if request.method == "POST":
+    iskuid = session.get('iskuid')
+    ids = session.get('id')
+    iskt = session.get('type')
     typeopr = request.form.get("typeopr")
+
     if typeopr == "prinatie":
-      iskuid = session.get('iskuid')
-      ids = session.get('id')
-      iskt = session.get('type')
-      print(f'{ids}{iskt}')
       motivirovka = request.form.get('motivirovkat')
       investigation = request.form.get('investigation')
-      print(f'{iskuid} {motivirovka} {investigation}')
       if motivirovka:
         text = {
         "motivirovka": motivirovka,
@@ -401,9 +421,7 @@ def isk():
         text = {
         "investigation": investigation
         }
-      replto = repltoisks(uid=iskuid, author=current_user.nikname, replyik=text, type_document="acceptisk")
-      db.session.add(replto)
-      db.session.commit()
+      type_doc = "acceptisk"
       if iskt == "district":
         isktype = iskdis
       elif iskt == "supreme":
@@ -411,18 +429,13 @@ def isk():
       db.session.query(isktype).filter_by(uid=iskuid).update({
         "judge": current_user.nikname
       })
-      return redirect(url_for('main.isk', id=ids, type=iskt))
+
     elif typeopr == "otkaz":
-      iskuid = session.get('iskuid')
-      ids = session.get('id')
-      iskt = session.get('type')
       motivirovka = request.form.get('motivirovkat')
       text = {
          "motivirovka": motivirovka
       }
-      replto = repltoisks(uid=iskuid, author=current_user.nikname, replyik=text, type_document="otkazisk")
-      db.session.add(replto)
-      db.session.commit()
+      type_doc = "otkazisk"
       if iskt == "district":
         isktype = iskdis
       elif iskt == "supreme":
@@ -431,17 +444,12 @@ def isk():
         "judge": current_user.nikname,
         "is_archived": True
       })
-      return redirect(url_for('main.isk', id=ids, type=iskt))
+
     elif typeopr == "prokdelo":
-      iskuid = session.get('iskuid')
-      ids = session.get('id')
-      iskt = session.get('type')
       text = {
         "prok": current_user.nikname
       }
-      replto = repltoisks(uid=iskuid, author=current_user.nikname, replyik=text, type_document="prokdelo")
-      db.session.add(replto)
-      db.session.commit()
+      type_doc = "prokdelo"
       if iskt == "district":
         isktype = iskdis
       elif iskt == "supreme":
@@ -449,38 +457,97 @@ def isk():
       db.session.query(isktype).filter_by(uid=iskuid).update({
         "prosecutor": current_user.nikname
       })
-      return redirect(url_for('main.isk', id=ids, type=iskt))
+
     elif typeopr == "svidetelhod":
-      iskuid = session.get('iskuid')
-      ids = session.get('id')
-      iskt = session.get('type')
-      count = db.session.query(repltoisks).filter(repltoisks.type_document == "hodataistvo").count()
+      count = db.session.query(repltoisks).filter(repltoisks.type_document == "hodataistvo", repltoisks.uid == iskuid).count()
       namesvidetela = request.form.get('namesvidetela')
+      from datetime import datetime
+      type_doc = "hodataistvo"
       text = {
         "namesvidetela": namesvidetela,
         "type_hodataistva": "svidetelhod",
         "№_hodataistva": count + 1,
         "accepted": False
       }
-      replto = repltoisks(uid=iskuid, author=current_user.nikname, replyik=text, type_document="hodataistvo")
-      db.session.add(replto)
-      db.session.commit()
+
+    elif typeopr == "hodataistvorasm":
+      hodataistvoid = request.form.get('hodid')
+      motivirovkahod = request.form.get('motivirovkahod')
+      hodataistvoo = request.form.get('hodataistvoo')
+      newmerole = request.form.get('newmeselecti')
+      newmename = request.form.get('newmename')
+      actions = request.form.get('actions')
+      otvodselecti = request.form.get('otvodselecti')
+
+      from sqlalchemy import or_, and_
+      from sqlalchemy.orm.attributes import flag_modified
+      count = db.session.query(repltoisks).filter(and_(or_(repltoisks.type_document == "acceptisk", repltoisks.type_document == "opredelenie"), repltoisks.uid == iskuid)).count()
+      hodata = repltoisks.query.filter(repltoisks.id == hodataistvoid).first()
+      type_doc = "opredelenie"
+      if hodata and isinstance(hodata.replyik, dict):
+        hodata.replyik["accepted"] = True
+        flag_modified(hodata, "replyik")
+        pass
+      text = {
+        "№_hodataistva": hodata.replyik['№_hodataistva'],
+        "№_opredelenie": count + 1,
+        "type_opredelenie": "hodataistvorasm",
+        "hodataistvoo": hodataistvoo
+      }
+      if actions == "accept": text['action'] = "accept"
+      elif actions == "decline": text['action'] = "decline"
+      elif actions == "partaccept": text['partaccept'] = "partaccept"
+      
+      if motivirovkahod: text['motivirovka'] = motivirovkahod
+      if actions != "decline":
+        if iskt == "district":
+            isktype = iskdis
+        elif iskt == "supreme":
+          isktype = isksup
+        iskr = isktype.query.filter_by(id=ids).first_or_404()
+        if newmerole and newmename:
+          text['newmem'] = True
+          if iskr.otherme is None:
+            iskr.otherme = {}
+          newmerole = givenewmerole(newmerole)
+          # Теперь безопасно добавляем новое значение в словарь
+          iskr.otherme[newmerole] = newmename
+          flag_modified(iskr, "otherme")
+        if otvodselecti:
+          otvodrole, otvodname = otvodselecti.split("-", 1)
+          text['otvodmem'] = otvodname
+          if otvodrole != "otherme" and otvodrole != "defendant":
+            setattr(iskr, otvodrole, "N/A")
+            flag_modified(iskr, otvodrole)
+          elif otvodrole == "otherme" or otvodrole == "defendant":
+            dictionary = getattr(iskr, otvodrole)
+            dictionary.remove(otvodname)
+            flag_modified(iskr, otvodrole)
+
+
+
+    elif typeopr == "zasn":
+      datezas = request.form.get('datezas')
+      iskmethod = request.form.get('iskmethod')
+      from sqlalchemy import or_, and_
+      count = db.session.query(repltoisks).filter(and_(or_(repltoisks.type_document == "acceptisk", repltoisks.type_document == "opredelenie"), repltoisks.uid == iskuid)).count()
+      text = {
+        "№_opredelenie": count + 1,
+        "type_opredelenie": "zasedanie",
+        "datezas": datezas,
+        "iskmethod": iskmethod
+      }
+    replto = repltoisks(uid=iskuid, author=current_user.nikname, replyik=text, type_document=type_doc)
+    db.session.add(replto)
+    db.session.commit()
+    return redirect(url_for('main.isk', id=ids, type=iskt))
        
   if type == "district":
     isk = iskdis.query.filter_by(id=id).first_or_404()
     replies = repltoisks.query.filter_by(uid=isk.uid).all()
     otherme = othermem(isk)
     if current_user.is_authenticated:
-      if current_user.nikname == isk.created:
-        status = "Created"
-      elif current_user.organ == "GOV" and 13 <= int(current_user.rankuser) <= 15:
-        status = "Judge"
-      elif current_user.organ == "GOV" and int(current_user.rankuser) == 9:
-        status = "prosecutor"
-      elif current_user.nikname in isk.defendant:
-        status = "defendant"
-      elif current_user.nikname == isk.lawerc or current_user.nikname == isk.lawerd:
-        status = "lawer"
+      status = check_isk_status(current_user, isk)
     session['iskuid'] = isk.uid
     session['id'] = id
     session['type'] = type
@@ -491,8 +558,8 @@ def isk():
     return render_template('isk.html', isk=isk)
 @main.route('/get_news/<int:news_id>', methods=['GET'])
 def get_news(news_id):
-    from __init__ import news
-    news_item = news.query.get_or_404(news_id)
+    from __init__ import News
+    news_item = News.query.get_or_404(news_id)
     return jsonify({
         'id': news_item.id,
         'headernews': news_item.headernews,

@@ -34,7 +34,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_AS_ASCII'] = False
 app.config['WTF_CSRF_ENABLED'] = True
 app.config['DEBUG'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:arnetik1@localhost:3306/site'
 app.register_blueprint(main)
 
 db = SQLAlchemy(app)
@@ -235,7 +235,7 @@ class iskdis(db.Model):
     lawerd = db.Column(db.String(45), nullable=True)
 
     otherme = db.Column(db.PickleType, nullable=True)
-    create_at = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    create_at = db.Column(db.DateTime, nullable=False, default=datetime.now().strftime("%Y-%m-%d %H:%M"))
     is_archived = db.Column(db.Boolean, default=False)
 
 class isksup(db.Model):
