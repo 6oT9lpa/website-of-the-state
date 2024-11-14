@@ -506,10 +506,11 @@ def isk():
           isktype = isksup
         iskr = isktype.query.filter_by(id=ids).first_or_404()
         if newmerole and newmename:
-          text['newmem'] = True
           if iskr.otherme is None:
             iskr.otherme = {}
           newmerole = givenewmerole(newmerole)
+          text['newmemrole'] = newmerole
+          text['newmemname'] = newmename
           # Теперь безопасно добавляем новое значение в словарь
           iskr.otherme[newmerole] = newmename
           flag_modified(iskr, "otherme")
