@@ -1,8 +1,7 @@
 let bg = document.querySelector('.background');
 
-// Функция для добавления анимации появления
 const showElement = (element) => {
-    element.style.display = 'block'
+    element.style.display = 'block';
     element.style.transform = 'translateX(20px)';
     setTimeout(() => {
         element.classList.add('fade-in');
@@ -11,7 +10,6 @@ const showElement = (element) => {
     }, 10);
 };
 
-// Функция для добавления анимации исчезновения
 const hideElement = (element) => {
     element.classList.remove('fade-in');
     element.style.transform = 'translateX(-20px)';
@@ -20,13 +18,6 @@ const hideElement = (element) => {
         element.style.display = 'none'
     }, 300);
 };
-
-// паралакс эффект на background
-window.addEventListener('mousemove', function(e) {
-    let x = e.clientX / window.innerWidth;
-    let y = e.clientY / window.innerHeight;  
-    bg.style.transform = 'translate(-' + x * 50 + 'px, -' + y * 50 + 'px)';
-});
 
 document.addEventListener('DOMContentLoaded', function() {
     const modalButtons = document.querySelectorAll('.modal-button');
@@ -39,29 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const input_checkbox2 = document.getElementById('input_checkbox2');
     const caseInput = document.getElementById('caseInput');
     const access_message = document.querySelector('#access-message');
-
-    document.getElementById('load-prosecution-office').addEventListener('click', function(event) {
-        event.preventDefault();
-
-        fetch('/get_prosecution_office_content')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Ошибка сети');
-                }
-                return response.text();
-            })
-            .then(data => {
-                const attorneyContent = document.getElementById('attorney-content');
-                if (attorneyContent) {
-                    attorneyContent.innerHTML = data;
-                    attorneyContent.classList.add('fade-in');
-                    document.getElementById('load-prosecution-office').classList.add('active-button');
-                } else {
-                    console.error('Элемент с id "attorney-content" не найден.');
-                }
-            })
-            .catch(error => console.error('Ошибка загрузки контента:', error));
-    });
 
     if (checkbox1 && input_checkbox1) {
         checkbox1.addEventListener('change', function() {
@@ -95,18 +63,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
             if (isAuthenticated && isPermission) { 
                 modalElem.classList.add('active');
-                overlay.classList.add('active');
+                document.querySelectorAll('#overlay').forEach(o => {
+                    o.classList.add('active');
+                });
                 body.style.position = 'fixed'; 
                 body.style.width = '100%'; 
             }
             else{
-                access_message.classList.add('hidden'); // Изначально скрываем
+                access_message.classList.add('hidden'); 
                 access_message.style.display = 'block'; 
                 access_message.style.transform = 'translateY(30px)';
                 setTimeout(() => {
                     access_message.style.transform = 'translateY(0px)';
                     access_message.classList.add('show');
-                    access_message.classList.remove('hidden'); // Убираем класс hidden после показа
+                    access_message.classList.remove('hidden'); 
                 }, 10); 
             }
         });
@@ -142,14 +112,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const activeModal = document.querySelector('.modal.active');
         if (activeModal) {
             activeModal.classList.remove('active');
-            overlay.classList.remove('active');
+            document.querySelectorAll('#overlay').forEach(o => {
+                o.classList.remove('active');
+            });
             body.style.position = ''; 
             body.style.width = '';
         }
     }
 }); 
 
-// анимации для option
 function toggleOptions() {
     const options = document.getElementById("options");
     options.classList.toggle("hidden");
@@ -160,7 +131,7 @@ function toggleOptions() {
     } else {
         options.style.display = "block";
         setTimeout(() => {
-            options.style.opacity = "1"; // Анимация появления
+            options.style.opacity = "1";
         }, 100);
     }
 }
@@ -668,13 +639,12 @@ if (isAuthenticated && isPermission) {
         if (wrapperAgenda.classList.contains('hidden-wrapper')) {
         }
     });
+
+    document.getElementById('resolutionForm').addEventListener('submit', function() {
+        document.getElementById('btn').disabled = true;
+        document.getElementById('loadingText').style.display = 'inline';
+    });
 }
-
-document.getElementById('resolutionForm').addEventListener('submit', function() {
-    document.getElementById('btn').disabled = true;
-    document.getElementById('loadingText').style.display = 'inline';
-});
-
 
 const showElementButton = (element) => {
     element.style.display = 'flex';
@@ -684,7 +654,6 @@ const showElementButton = (element) => {
     }, 10);
 };
 
-// Функция для добавления анимации исчезновения
 const hideElementButton = (element) => {
     element.classList.remove('show-custom');
     element.classList.add('hidden-custom');

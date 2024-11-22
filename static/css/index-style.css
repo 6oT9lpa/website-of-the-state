@@ -2,7 +2,7 @@ body
 {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: linear-gradient(to bottom, #1D1D1E, #3E3E3E, #333333); 
+    background: #1D1D1E; 
     background-repeat: no-repeat; 
     background-attachment: fixed;
     display: flex;
@@ -87,7 +87,6 @@ nav a {
     display: flex;
     justify-content: center;
     padding: 15px 0;
-    z-index: 1;
 }
 
 .nav-button {
@@ -138,6 +137,7 @@ nav a {
 }
 
 footer {
+    padding: 100px 0 0;
     color: white;
     text-align: center;
     margin-top: auto;

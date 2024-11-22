@@ -15,19 +15,7 @@
     {% block main %}
         {% include 'main/main.html' %}
     {% endblock %}
-
-    {% with messages = get_flashed_messages() %}
-        {% if messages %} 
-            <div id="access-message" class='access-message'>
-                <span class="modal-close-error">&times;</span>
-                <p><strong>Внимание!</strong> {{ messages[0] }}<p>
-                {% if not current_user.is_authenticated %} 
-                    <br>
-                    <a class='alert-button' href="{{ url_for('main.auth') }}">Войти в аккаунт</a>
-                {% endif %}
-            </div> <script src="{{ url_for('static', filename='js/script-error.js') }}" ></script>
-        {% endif %}
-    {% endwith %}
+    
     <main> 
         {% with messages = get_flashed_messages() %}
             {% if messages %} 
@@ -71,15 +59,12 @@ document.getElementById("weazelnewsbutton").addEventListener("click", function(e
 });
 
 function toggleNewsSection(button, sectionClass) {
-
-            // Сбрасываем активное состояние для кнопок и скрываем все секции
             var buttons = document.querySelectorAll("#cityhallnewsbutton, #leadernewsbutton, #weazelnewsbutton");
             var sections = document.querySelectorAll(".city_hallnews, .leadernewsy, .weazelnewsy");
 
             buttons.forEach(btn => btn.classList.remove("active"));
             sections.forEach(section => section.style.display = "none");
 
-            // Показываем выбранную секцию и активируем кнопку
             var newsDiv = document.querySelector(sectionClass);
             if (newsDiv) {
                 newsDiv.style.display = "grid";
@@ -154,15 +139,6 @@ function toggleNewsSection(button, sectionClass) {
                 closeModal();
             }
         }
-        //var link = document.getElementById('crnewbutton');
-        //link.onclick = function() {
-        //    document.getElementById("Modalcn").style.display = 'block';
-        //}
-        //var span = document.getElementsByClassName('close-btn')[0];
-        // Закрываем модальное окно при клике на крестик
-        //span.onclick = function() {
-        //    document.getElementById("Modalcn").style.display = 'none';
-        //}
         function openModalcn() {
             document.getElementById("Modalcn").style.display = "flex";
         }

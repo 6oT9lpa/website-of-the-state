@@ -13,7 +13,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 from textwrap import wrap
 from PyPDF2 import PdfReader, PdfWriter
-import random, string, redis, json, os, re, shutil, logging, json
+from pdf2image import convert_from_path
+import random, string, redis, json, os, re, shutil, logging, json, pickle
 from logging import handlers
 
 """
@@ -51,35 +52,67 @@ def givenewmerole(newmerole):
     return "Эксперт"
 
 def is_send_allowed(wait_seconds=30):
-    """Проверяет, прошло ли достаточно времени с последней отправки и возвращает оставшееся время."""
-    last_sent_time = session.get('last_sent_time')
+  """Проверяет, прошло ли достаточно времени с последней отправки и возвращает оставшееся время."""
+  last_sent_time = session.get('last_sent_time')
+  
+  if last_sent_time:
+    last_sent_time = datetime.strptime(last_sent_time, '%Y-%m-%d %H:%M:%S')
+    remaining_time = (last_sent_time + timedelta(seconds=wait_seconds)) - datetime.now()
     
-    if last_sent_time:
-        last_sent_time = datetime.strptime(last_sent_time, '%Y-%m-%d %H:%M:%S')
-        remaining_time = (last_sent_time + timedelta(seconds=wait_seconds)) - datetime.now()
-        
-        if remaining_time.total_seconds() > 0:
-            # Вычисляем оставшиеся секунды и выводим сообщение
-            seconds_left = int(remaining_time.total_seconds())
-            flash(f"Пожалуйста, подождите {seconds_left} секунд перед повторной отправкой.")
-            return False
+    if remaining_time.total_seconds() > 0:
+      # Вычисляем оставшиеся секунды и выводим сообщение
+      seconds_left = int(remaining_time.total_seconds())
+      flash(f"Пожалуйста, подождите {seconds_left} секунд перед повторной отправкой.")
+      return False
 
-    # Обновляем временную метку, если отправка разрешена
-    session['last_sent_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    return True
+  # Обновляем временную метку, если отправка разрешена
+  session['last_sent_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+  return True
 
-def check_isk_status(user, isk):
-  status = None
-  if user.nikname == isk.created:
-      status = "Created"
-  elif user.nikname == isk.judge or (isk.judge is None and 13 <= int(user.curr_rank) <= 15):
-      status = "Judge"
-  elif user.organ == "GOV" and int(user.curr_rank) == 9:
-      status = "prosecutor"
-  elif user.nikname in isk.defendant:
-      status = "defendant"
-  elif user.nikname == isk.lawerc or user.nikname == isk.lawerd:
-      status = "lawer"
+def check_isk_status(isk):
+  """ Функция для проверки статуса пользователя в контексте иска. """
+  status = None 
+
+  defenda_data = pickle.loads(isk.defendant)
+  if not isinstance(defenda_data, list):
+    raise ValueError("Данные должны быть списком строк.")
+  
+  result = []
+  for item in defenda_data:
+    try:
+      nickname, static = item.rsplit(' ', 1) 
+      if not static.isdigit():
+        raise ValueError("Номер должен быть числом.")
+      
+      result.append({'nickname': nickname.strip(), 'static': int(static)})
+
+    except ValueError as e:
+      print(f"Ошибка обработки строки '{item}': {e}")
+
+  if not current_user.is_authenticated and \
+    current_user.static == isk.created:
+    status = "Created"
+    
+  elif current_user.is_authenticated and \
+   any(current_user.static == defenda['static'] for defenda in result):
+    status = 'Defenda'
+
+  elif current_user.is_authenticated and current_user.user_type == 'user' and \
+    (current_user.id == isk.judge or (not isk.judge and current_user.curr_rank in [13, 15, 21])):
+    status = 'Judge'
+
+  elif current_user.is_authenticated and \
+    isk.prosecutor and current_user.id == isk.prosecutor and not current_user.is_guest:
+    status = 'Prosecutor'
+
+  elif current_user.is_authenticated and \
+    isk.lawerc and current_user.id == isk.lawerc:
+    status = 'Lawerc'
+
+  elif current_user.is_authenticated and \
+    isk.lawerd and current_user.id == isk.lawerd:
+    status = 'Lawerd'
+
   return status
 
 def draw_text(pdf, x, y, text, font="TimesNewRoman", size=12):
@@ -97,7 +130,6 @@ def draw_multiline_text(pdf, text, x, y, max_width=95, font="TimesNewRoman", siz
   return y
 
 def generate_signature(pdf, y, current_user, state, page=1):
-    # Устанавливаем шрифт для подписи
     sing_font_path = os.path.join('static', 'fonts', 'Updock-Regular.ttf') 
     pdfmetrics.registerFont(TTFont('Updock', sing_font_path))
     pdf.setFont("Updock", 32)
@@ -266,15 +298,14 @@ main = Blueprint('main', __name__)
 def check_user_action(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-      from __init__ import Users
-      if current_user.is_authenticated:
-          user = Users.query.get(current_user.id)
-          if user and user.action == 'Dismissal':
-              logout_user()
-              return redirect(url_for('main.index'))
-      return f(*args, **kwargs)
+        if current_user.is_authenticated:
+          if current_user.user_type == 'user' and current_user.action == 'Dismissal':
+            logout_user()
+            return redirect(url_for('main.index'))
+
+        return f(*args, **kwargs)
     return decorated_function
-  
+
 def user_permission_moderation(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -296,6 +327,7 @@ def user_permission_moderation(f):
         return redirect(url_for('main.index'))
 
     return decorated_function
+
 CLIENT_ID = '63202ab8a29f3f1'
 def upload_image_to_imgur(image):
     import requests
@@ -311,6 +343,7 @@ def upload_image_to_imgur(image):
         return data['data']['link']
     else:
         return None
+    
 # главная страница
 @main.route('/', methods=['POST', 'GET'])
 def index():
@@ -367,195 +400,234 @@ def index():
     
   return render_template('index.html', city_hallnews=city_hallnews, leadernews=leadernews, weazelnewsn=weazelnewsn, has_access=has_access, form=form)
 
-@main.route('/iskapplications', methods=['POST', 'GET'])
-def iskapplications():
-  from __init__ import iskdis, isksup, PermissionUsers, Users, db
-  supreme = isksup.query.all()
-  district = iskdis.query.all()
-  authent = False
+@main.route('/authentication-guest', methods=['GET'])
+def auth_guest():
+  from form import GuestForm
+  next_url = request.args.get('/')
   if current_user.is_authenticated:
-    authent = True
-  if request.method == "POST":
-    created = request.form.get('created')
-    if not created:
-      created = current_user.nikname
-    isnt = request.form.get('isnt')
-    defenda = request.form.get('defenda')
-    descri = request.form.get('descri')
-    phonen = request.form.get('phonen')
-    cardn = request.form.get('cardn')
-    claims = request.form.getlist('claims[]')
-    defenda_list = [name.strip() for name in defenda.split(',')] if defenda else []
-    if isnt == "district":
-      isk = iskdis(discription=descri, claims=claims, phone=phonen, cardn=cardn, created=created, defendant=defenda_list, createdds="1234")
-      db.session.add(isk)
-      db.session.commit()
-    return redirect(url_for('main.iskapplications'))
-  return render_template('applic.html', district=district, supreme=supreme, authent=authent)
-   
-@main.route('/isk', methods=['POST', 'GET'])
-def isk():
-  from __init__ import iskdis, isksup, PermissionUsers, Users, db, repltoisks
-  import time
-  id = request.args.get('id')
-  type = request.args.get('type')
-  status = None
-  def othermem(self):
-        if self.otherme:
-          return '\n'.join([f"{key}: {value}" for key, value in self.otherme.items()])
-  if request.method == "POST":
-    iskuid = session.get('iskuid')
-    ids = session.get('id')
-    iskt = session.get('type')
-    typeopr = request.form.get("typeopr")
+    return redirect(next_url or url_for('main.index'))
+  
+  form = GuestForm()
+  
+  return render_template('auth_guest.html', form=form)
 
-    if typeopr == "prinatie":
-      motivirovka = request.form.get('motivirovkat')
-      investigation = request.form.get('investigation')
-      if motivirovka:
-        text = {
-        "motivirovka": motivirovka,
-        "investigation": investigation
-        }
-      else:
-        text = {
-        "investigation": investigation
-        }
-      type_doc = "acceptisk"
-      if iskt == "district":
-        isktype = iskdis
-      elif iskt == "supreme":
-        isktype = isksup
-      db.session.query(isktype).filter_by(uid=iskuid).update({
-        "judge": current_user.nikname
-      })
+@main.route('/create-guest', methods=['POST', 'GET'])
+def create_guest():
+  from __init__ import db, guestUsers, Users
+  from form import GuestForm
+  if request.method != "POST":
+    flash('Вы не можете зайти на данную страницу!', 'error')
+    return redirect(url_for('main.auth_guest', next=request.args.get('next')))
 
-    elif typeopr == "otkaz":
-      motivirovka = request.form.get('motivirovkat')
-      text = {
-         "motivirovka": motivirovka
-      }
-      type_doc = "otkazisk"
-      if iskt == "district":
-        isktype = iskdis
-      elif iskt == "supreme":
-        isktype = isksup
-      db.session.query(isktype).filter_by(uid=iskuid).update({
-        "judge": current_user.nikname,
-        "is_archived": True
-      })
+  next_url = request.args.get('next')
+  if not next_url: 
+    next_url = url_for('main.index')
+  
+  form = GuestForm()
+  nickname = form.nickname.data
+  static = form.static.data
+  discord = form.discord.data
+  password = form.password.data
 
-    elif typeopr == "prokdelo":
-      text = {
-        "prok": current_user.nikname
-      }
-      type_doc = "prokdelo"
-      if iskt == "district":
-        isktype = iskdis
-      elif iskt == "supreme":
-        isktype = isksup
-      db.session.query(isktype).filter_by(uid=iskuid).update({
-        "prosecutor": current_user.nikname
-      })
-
-    elif typeopr == "svidetelhod":
-      count = db.session.query(repltoisks).filter(repltoisks.type_document == "hodataistvo", repltoisks.uid == iskuid).count()
-      namesvidetela = request.form.get('namesvidetela')
-      from datetime import datetime
-      type_doc = "hodataistvo"
-      text = {
-        "namesvidetela": namesvidetela,
-        "type_hodataistva": "svidetelhod",
-        "№_hodataistva": count + 1,
-        "accepted": False
-      }
-
-    elif typeopr == "hodataistvorasm":
-      hodataistvoid = request.form.get('hodid')
-      motivirovkahod = request.form.get('motivirovkahod')
-      hodataistvoo = request.form.get('hodataistvoo')
-      newmerole = request.form.get('newmeselecti')
-      newmename = request.form.get('newmename')
-      actions = request.form.get('actions')
-      otvodselecti = request.form.get('otvodselecti')
-
-      from sqlalchemy import or_, and_
-      from sqlalchemy.orm.attributes import flag_modified
-      count = db.session.query(repltoisks).filter(and_(or_(repltoisks.type_document == "acceptisk", repltoisks.type_document == "opredelenie"), repltoisks.uid == iskuid)).count()
-      hodata = repltoisks.query.filter(repltoisks.id == hodataistvoid).first()
-      type_doc = "opredelenie"
-      if hodata and isinstance(hodata.replyik, dict):
-        hodata.replyik["accepted"] = True
-        flag_modified(hodata, "replyik")
-        pass
-      text = {
-        "№_hodataistva": hodata.replyik['№_hodataistva'],
-        "№_opredelenie": count + 1,
-        "type_opredelenie": "hodataistvorasm",
-        "hodataistvoo": hodataistvoo
-      }
-      if actions == "accept": text['action'] = "accept"
-      elif actions == "decline": text['action'] = "decline"
-      elif actions == "partaccept": text['partaccept'] = "partaccept"
-      
-      if motivirovkahod: text['motivirovka'] = motivirovkahod
-      if actions != "decline":
-        if iskt == "district":
-            isktype = iskdis
-        elif iskt == "supreme":
-          isktype = isksup
-        iskr = isktype.query.filter_by(id=ids).first_or_404()
-        if newmerole and newmename:
-          text['newmem'] = True
-          if iskr.otherme is None:
-            iskr.otherme = {}
-          newmerole = givenewmerole(newmerole)
-          # Теперь безопасно добавляем новое значение в словарь
-          iskr.otherme[newmerole] = newmename
-          flag_modified(iskr, "otherme")
-        if otvodselecti:
-          otvodrole, otvodname = otvodselecti.split("-", 1)
-          text['otvodmem'] = otvodname
-          if otvodrole != "otherme" and otvodrole != "defendant":
-            setattr(iskr, otvodrole, "N/A")
-            flag_modified(iskr, otvodrole)
-          elif otvodrole == "otherme" or otvodrole == "defendant":
-            dictionary = getattr(iskr, otvodrole)
-            dictionary.remove(otvodname)
-            flag_modified(iskr, otvodrole)
-
-
-
-    elif typeopr == "zasn":
-      datezas = request.form.get('datezas')
-      iskmethod = request.form.get('iskmethod')
-      from sqlalchemy import or_, and_
-      count = db.session.query(repltoisks).filter(and_(or_(repltoisks.type_document == "acceptisk", repltoisks.type_document == "opredelenie"), repltoisks.uid == iskuid)).count()
-      text = {
-        "№_opredelenie": count + 1,
-        "type_opredelenie": "zasedanie",
-        "datezas": datezas,
-        "iskmethod": iskmethod
-      }
-    replto = repltoisks(uid=iskuid, author=current_user.nikname, replyik=text, type_document=type_doc)
-    db.session.add(replto)
+  if not all([nickname, static, discord, password]):
+    flash('Поля должны быть заполнены!')
+    return redirect(url_for('main.auth_guest'))
+  
+  user = Users.query.filter_by(static=static).first()
+  guest = guestUsers.query.filter_by(static=static).first()
+  if user or guest:
+    flash('Этот static уже зарегистрирован!')
+    return redirect(url_for('main.auth_guest'))
+  
+  hashed_password = generate_password_hash(password)
+  try:
+    new_guest = guestUsers(
+      nickname=nickname,
+      static=static,
+      discord_id=discord,
+      password=hashed_password
+    )
+    db.session.add(new_guest)
     db.session.commit()
-    return redirect(url_for('main.isk', id=ids, type=iskt))
-       
-  if type == "district":
-    isk = iskdis.query.filter_by(id=id).first_or_404()
-    replies = repltoisks.query.filter_by(uid=isk.uid).all()
-    otherme = othermem(isk)
-    if current_user.is_authenticated:
-      status = check_isk_status(current_user, isk)
-    session['iskuid'] = isk.uid
-    session['id'] = id
-    session['type'] = type
-    return render_template('isk.html', isk=isk, otherme=otherme, status=status, replies=replies)
-  elif type == "supreme":
-    isk = isksup.query.filter_by(id=id).first_or_404()
-    session['iskuid'] = isk.uid
-    return render_template('isk.html', isk=isk)
+  except SQLAlchemyError as e:
+    logging.error(f'Ошибка в guestUsers: {str(e)}')
+  
+  return redirect(next_url)
+     
+@main.route('/get-claim-district-content', methods=['GET'])
+def get_claim_district_content():
+  from __init__ import iskdis, Users, guestUsers, db
+  district = iskdis.query.all()
+  last_entry = db.session.query(iskdis).order_by(iskdis.id.desc()).first()
+  last_id = last_entry.id if last_entry else None
+
+  return render_template('main/main-state-district.html', district=district, last_id=last_id, Users=Users, guestUsers=guestUsers)
+
+@main.route('/get-claim-supreme-content', methods=['GET'])
+def get_claim_supreme_content():
+  from __init__ import isksup
+  supreme = isksup.query.all()
+  
+  return render_template('main/main-state-supreme.html', supreme=supreme)
+
+@main.route('/create-claim-state', methods=['POST'])
+def create_claim():
+  from __init__ import iskdis, isksup, db, claimsStatement
+
+  if not current_user.is_authenticated:
+    flash('Вы не вошли в акаунт!')
+    return redirect(url_for('main.auth'))
+
+  try:
+    defendants = request.form.getlist('defenda[]')
+    phone_plaintiff = request.form.get('phone-plaintiff')
+    card_plaintiff = request.form.get('card-plaintiff') 
+    claims = request.form.getlist('claims[]')
+    description = request.form.get('description') 
+    court_type = request.form.get('district') or request.form.get('supreme') 
+
+
+    claim = claimsStatement()
+    db.session.add(claim)
+    db.session.flush()  
+
+    if court_type == "district":
+      district_claim = iskdis(
+        current_uid=claim.uid,
+        discription=description,
+        claims=pickle.dumps(claims), 
+        phone=phone_plaintiff,
+        cardn=card_plaintiff,
+        created=current_user.static,
+        defendant=pickle.dumps(defendants)
+      )
+      db.session.add(district_claim)
+
+    db.session.commit()
+
+    return redirect(url_for('main.doc'))
+
+  except Exception as e:
+    db.session.rollback()
+    flash(f'Ошибка {str(e)}')
+    return redirect(url_for('main.doc'))
+
+@main.route('/complaint', methods=['GET'])
+def claim_state():
+  from __init__ import iskdis, isksup, repltoisks, Users, guestUsers, claimsStatement, courtOrder
+
+  uid = request.args.get('uid')
+  if not uid:
+    return "No UID provided", 400
+  
+  claim_statement_district = iskdis.query.filter_by(current_uid=uid).first()
+  claim_statement_supreme = isksup.query.filter_by(current_uid=uid).first()
+
+  if not claim_statement_district and not claim_statement_supreme:
+    return render_template('api/404.html')
+
+  def othermem(self):
+    if self.otherme:
+      return '\n'.join([f"{key}: {value}" for key, value in self.otherme.items()])
+
+  if claim_statement_district:
+    status = check_isk_status(claim_statement_district)
+
+    orders_data = courtOrder.query.filter_by(current_uid=uid).all()
+
+    defendant_data = pickle.loads(claim_statement_district.defendant)
+    createat = claimsStatement.query.filter_by(uid=claim_statement_district.current_uid).first()
+    claims_data = pickle.loads(claim_statement_district.claims)
+
+    create_at_datetime = createat.create_at
+    current_date = datetime.now()
+
+    if create_at_datetime.date() == current_date.date():
+      display_date = f"Сегодня, {create_at_datetime.strftime('%H:%M')}"
+    elif create_at_datetime.date() == (current_date - timedelta(days=1)).date():
+      display_date = f"Вчера, {create_at_datetime.strftime('%H:%M')}"
+    else:
+      display_date = create_at_datetime.strftime('%Y-%m-%d %H:%M')
+
+    return render_template(
+      'complaint.html',
+      district=claim_statement_district,
+      Users=Users,
+      guestUsers=guestUsers,
+      createat=display_date,
+      defendant=defendant_data,
+      claims=claims_data,
+      status=status,
+      orders_data=orders_data
+    )
+  
+  elif claim_statement_supreme:
+    pass
+
+  else:
+    flash('Данный иск удален или поврежден!')
+    return redirect(url_for('main.doc'))
+  
+@main.route('/create_court_order', methods=['POST'])
+def courtOrder():
+  from __init__ import courtOrder, db, iskdis
+
+  uid = request.form.get('uid')
+  print(uid)
+  if not uid:
+    return "No UID provided", 400
+  
+  if not is_send_allowed():
+    return redirect(url_for('main.claim_state', uid=uid))
+
+  if not current_user.is_authenticated and current_user.type_user != 'user' and \
+    not current_user.curr_rank in [13, 15, 21]:
+    flash('Вы не судья, вследствие не можете создать определение!')
+    return redirect(url_for('main.claim_state', uid=uid))
+  
+  ruling = request.form.getlist('decision')
+  findings = request.form.get('findings')
+  consideration = request.form.get('consideration') 
+  action = request.form.get('action')
+
+  print(ruling, findings, consideration, action)
+
+  if not all([findings, consideration, action]):
+    flash('Все поля должны быть заполнены!')
+    return redirect(url_for('main.claim_state', uid=uid))
+  
+  complaint = iskdis.query.filter_by(current_uid=uid).first()
+  if action == 'accept':
+    complaint.status = 'Accepted'
+  
+  elif action == 'reject':
+    complaint.status = 'Rejectioned'
+
+  elif action == 'hold':
+    complaint.status = 'LeftMoved'
+
+  else:
+    flash('Вы не выбрали действи енад исковым заявлением!')
+    return redirect(url_for('main.claim_state', uid=uid))
+
+  try:
+    new_order = courtOrder(
+      current_uid = uid,
+      author_id = current_user.id,
+      findings = findings,
+      consideration = consideration,
+      ruling =  ruling
+    )
+    db.session.add(new_order)
+    db.session.commit()
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    print(f'Ошибка {str(e)}')
+    return redirect(url_for('main.claim_state', uid=uid))
+
+  return redirect(url_for('main.claim_state', uid=uid))
+
 @main.route('/get_news/<int:news_id>', methods=['GET'])
 def get_news(news_id):
     from __init__ import News
@@ -571,81 +643,50 @@ def get_news(news_id):
 # Логирование
 @main.route('/auth', methods=['POST', 'GET'])
 def auth():
-  from __init__ import db, Users
+  from __init__ import db, Users, guestUsers
   form = FormAuthPush()
-  formfp = Formforgetpassword1()
-  formfp2 = Formforgetpassword2()
-
   next_url = request.args.get('next')
 
   if current_user.is_authenticated:
-      return redirect(next_url or url_for('main.profile'))
+    return redirect(next_url or url_for('main.profile'))
 
-  if form.validate_on_submit():
-    static = Users.query.filter_by(static=form.static.data).first()
+  if form.validate_on_submit():  
+    user = Users.query.filter_by(static=form.static.data).first()
+    guest = guestUsers.query.filter_by(static=form.static.data).first()
 
-    if static:
-        if static.action == 'Dismissal':
-            logout_user()  # Закрываем сессию логирования
-            flash("Отказано в доступе: вы не состоите во фракции.")
-            return redirect(url_for('main.auth'))
-        
-        # Проверяем пароль, если действие не 'Dismissal'
-        if check_password_hash(static.password, form.password.data):
-            login_user(static)
+    if user:
+      if user.action == 'Dismissal':
+        flash("Отказано в доступе: вы не состоите во фракции.")
+        return redirect(url_for('main.auth'))
 
-            next_url = request.args.get('next')
-            if next_url:
-                return redirect(next_url)
-            else:
-                  return redirect(url_for('main.profile'))
+      if check_password_hash(user.password, form.password.data):
+        login_user(user)
+        return redirect(url_for('main.profile'))
+      else:
+        flash("Неверный static или password!")
+        return redirect(url_for('main.auth'))
+
+    if guest:
+        if check_password_hash(guest.password, form.password.data):
+          login_user(guest)
+          return redirect(url_for('main.profile'))
         else:
-              flash("Неверный static или password!")
-    else:
-          flash("Пользователь не найден!")
-    #Забыл пароль(Введите статик)
-  if 'staticfp' in request.form:
-    def generate_non_repeating_8_digit_number():
-      number = [random.randint(1, 9)]
-      for _ in range(5):
-          number.append(random.choice([d for d in range(10) if d != number[-1]]))
-      return int(''.join(map(str, number)))
-    from flask import jsonify
-    code = generate_non_repeating_8_digit_number()
-    staticfp = formfp.staticfp.data
-    userfp = Users.query.filter_by(static=staticfp).first()
-    if userfp:
-      session['codefp'] = code
-      session['staticfp'] = staticfp
-      send_to_bot_changepass(code, userfp.discordid)
-    else:
-      return jsonify(message='Пользователь не найден!'), 400
-    #Забыл пароль(Введите код)
-  if 'codefp' in request.form and 'new_password' in request.form:
-    codefp2 = int(formfp2.codefp.data)
-    new_password = generate_password_hash(formfp2.new_password.data)
-    codefp = session.get('codefp')
-    staticfp = session.get('staticfp')
-    from flask import jsonify
-    if codefp2 == codefp:
-      db.session.query(Users).filter_by(static=staticfp).update({
-         "password": new_password
-      })
-      return jsonify(message='Пароль изменен!'), 200
-    else:
-      session.pop('codefp', None)
-      session.pop('staticfp', None)
-      return jsonify(redirect_url=url_for('main.index')), 400
+          flash("Неверный static или password!")
+          return redirect(url_for('main.auth'))
 
-  return render_template('auth.html', form=form, formfp=formfp, formfp2=formfp2)
+    flash("Пользователь не найден!")
+    return redirect(url_for('main.auth'))
 
-# перенаправление на страницу
+  return render_template('auth.html', form=form)
+
 @main.after_request
 def redirect_login(response):
-    if response.status_code == 401:
-      if not current_user.is_authenticated:
-        return redirect(url_for('main.auth') + '?next=' + request.url)
-        
+    if response.status_code == 401:  
+        if not current_user.is_authenticated:
+            next_url = request.args.get('next')
+            if not next_url:
+                next_url = url_for('main.index')
+            return redirect(url_for('main.auth', next=next_url)) 
     return response
 
 # Обработка КА функций.
@@ -826,7 +867,7 @@ def process_new_invite(static, discord_id, discord_name, form, reason):
 def process_dismissal(user, form, reason):
   from __init__ import db, ActionUsers
   """Обрабатывает увольнение пользователя."""
-
+  
   permission_current = current_user.permissions[0]
   permission_user = user.permissions[0]
   if permission_user and (permission_user.admin or permission_user.tech) \
@@ -1102,42 +1143,27 @@ def logout():
   return redirect(url_for('main.index'))
 
 # профиль
-@main.route('/profile', methods=['GET', 'POST'])
+@main.route('/profile', methods=['GET'])
 @check_user_action
 @login_required
 def profile():
-  from __init__ import Users, db
-  from flask import jsonify
-  nickname = current_user.nikname
-  organ = current_user.organ
-  rank = current_user.curr_rank
-  color = color_organ(organ)
-  form = Formchangepassword()
-  if 'oldpass' in request.form and 'newpass' in request.form:
-    usercp = db.session.query(Users).filter_by(nikname=nickname, organ=organ).first()
-    old_password = form.oldpass.data
-    new_password = form.newpass.data
-    if old_password == new_password:
-      return jsonify(message='Новый пароль не может быть старым!'), 400
-    stored_password_hash = usercp.password
-    if check_password_hash(stored_password_hash, old_password):
-      new_password_hash = generate_password_hash(new_password)
-      db.session.query(Users).filter_by(nikname=nickname, organ=organ).update({
-          "password": new_password_hash
-        })
-      db.session.commit()
-      #send_to_bot_changepass(new_password, usercp.discordid, usercp.static)
-      return jsonify(message='Пароль успешно изменен!'), 200
-    else:
-       return jsonify(message='Вы ввели неверный старый пароль!'), 400
-  pass
-  filename = "./python/name-ranks.json"
-  ranks = read_ranks(filename)
-  rank_name = get_rank_info(ranks, organ, rank)
-  YW = current_user.YW
-  SW = current_user.SW
-      
-  return render_template('profile.html', nickname=nickname, organ=organ, rank=rank, rank_name=rank_name, color=color, YW=YW, SW=SW, form=form)
+  from __init__ import Users, guestUsers
+  is_guest = current_user.user_type == 'guest'
+
+  if not is_guest:
+    organ = current_user.organ
+    rank = current_user.curr_rank
+    color = color_organ(organ)
+
+    filename = "./python/name-ranks.json"
+    ranks = read_ranks(filename)
+    rank_name = get_rank_info(ranks, organ, rank)
+
+    return render_template('profile.html', rank_name=rank_name, color=color, current_user=current_user, is_guest=is_guest)
+  else:
+    return render_template('profile.html', current_user=current_user, is_guest=is_guest)
+
+  
 
 @main.route('/doc')
 def doc():
@@ -2011,7 +2037,7 @@ def edit_resolution():
 
 @main.route('/get_prosecution_office_content')
 def get_prosecution_office_content():
-  from __init__ import ResolutionTheUser
+  from __init__ import ResolutionTheUser, Users
   is_visibily_attoney = True
 
   action_users = ResolutionTheUser.query.filter_by(is_modertation=True).all()
@@ -2019,4 +2045,4 @@ def get_prosecution_office_content():
   return render_template(
     'main/main-doc-attomey.html', 
     is_visibily_attoney=is_visibily_attoney, 
-    action_users=action_users)
+    action_users=action_users, Users=Users)

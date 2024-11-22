@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, SubmitField, SelectField, PasswordField, BooleanField, RadioField, TextAreaField, HiddenField
-from wtforms.validators import DataRequired, length,  Regexp, ValidationError
+from wtforms.validators import DataRequired, length, EqualTo
 
 # форма ка
 class FormAuditPush(FlaskForm):
@@ -109,3 +109,17 @@ class Formnews(FlaskForm):
         FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only!')
     ])
     submit = SubmitField(label='отправить', validators=[DataRequired()], render_kw={'id': 'FormBtn'})
+
+class GuestForm(FlaskForm):
+    nickname = StringField('Никнейм', validators=[DataRequired()], render_kw={"placeholder": "Введите ник"})
+    static = StringField('Статик', validators=[DataRequired()], render_kw={"placeholder": "Введите статик"})
+    discord = StringField('Discord ID', validators=[DataRequired()], render_kw={"placeholder": "Введите discordID"})
+    password = PasswordField('Пароль', validators=[DataRequired()], render_kw={"placeholder": "Введите пароль"})
+    confirm_password = PasswordField(
+        'Повторите пароль',
+        validators=[DataRequired(), EqualTo('password', message='Пароли должны совпадать')], render_kw={"placeholder": "Повторите пароль"}
+    )
+    submit = SubmitField('Отправить')
+
+
+    

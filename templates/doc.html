@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index-style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ka-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animation-bg.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/doc-style.css') }}">
     <title>Majestic State</title>
 </head>
@@ -23,6 +24,16 @@
             {% endif %}
         </div>
 
+        <div id="judicial-content">
+            {% if is_visibily_judicial %}
+                {% block judicial %}
+                    {% include 'main/main-doc-judicial.html' %}
+                {% endblock %}
+                {% block modal_judicial %}
+                    {% include 'main/main-doc-modal.html' %}
+                {% endblock %}
+            {% endif %}
+        </div>
 
         {% with messages = get_flashed_messages() %}
             {% if messages %} 
@@ -47,11 +58,23 @@
     {% block footer %}
         {% include 'footer/footer.html' %}
     {% endblock %}
-    <div class="background"></div>
+
+    <div class="lines">
+        {% for i in range(40) %}
+          <div class="line"></div>
+        {% endfor %}
+    </div>
+    <div class="overlay" id='overlay'></div>
+
     <script>
         var isAuthenticated = {{ is_authenticated | tojson }};
         var isPermission = {{ is_permission  | tojson }};
     </script>
+
     <script src="{{ url_for('static', filename='js/script-doc.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script-attomey.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script-judicial.js') }}"></script>
+
+    
 </body>
 </html>

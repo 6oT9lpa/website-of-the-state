@@ -1,5 +1,5 @@
 <div id="isk-container">
-<button class="backbtn" onclick="window.location.href='http://26.45.155.104:8000/iskapplications'">Назад</button>
+<button class="backbtn" onclick="window.location.href='http://26.120.213.68:8000/iskapplications'">Назад</button>
 <div class="sosisk">
 <div class="sub-isk">
     {% if isk.judge %}<p>Судья: {{ isk.judge }}</p>{% endif %}
@@ -47,7 +47,7 @@
     <br>
     <br>
     <p>Исковые требования:</p>
-    {% for claim in isk.claims %}
+    {% for claim in claims %}
     <p>{{ loop.index }}. {{ claim }}</p>
     {% endfor %}
     <br>
