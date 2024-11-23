@@ -15,121 +15,34 @@
                 <div class="profile-info">
                     <div class="profile-info-row">
                         <div class="profile-info-label"><p>NIK NAME</p></div>
-                        <div class="profile-info-value"><p>{{ nickname }}</p></div>
+                        <div class="profile-info-value"><p>{{ current_user.nikname if not is_guest else current_user.nickname }}</p></div>
                     </div>
-                    <div class="profile-info-row">
-                        <div class="profile-info-label"><p>RANK</p></div>
-                        <div class="profile-info-value"><p>{{ rank }} | {{ rank_name }}</p></div>
-                    </div>
-                    <div class="profile-info-row">
-                        <div class="profile-info-label"><p>ORGAN</p></div>
-                        <div class="profile-info-value"><p>{{ organ }}</p></div>
-                    </div>
-                    <div class="profile-info-row">
-                        <div class="profile-info-label"><p>WARNS</p></div>
-                        <div class="profile-info-value"><p><SW>{{ SW }}/3</SW> <YW>{{ YW }}/2</YW></p></div>
-                    </div>
-                    <a class="profile-audit" href="#">me audit</a>
+                    {% if not is_guest %}
+                        <div class="profile-info-row">
+                            <div class="profile-info-label"><p>RANK</p></div>
+                            <div class="profile-info-value"><p>{{ current_user.curr_rank }} | {{ rank_name }}</p></div>
+                        </div>
+                        <div class="profile-info-row">
+                            <div class="profile-info-label"><p>ORGAN</p></div>
+                            <div class="profile-info-value"><p>{{ current_user.organ }}</p></div>
+                        </div>
+                        <div class="profile-info-row">
+                            <div class="profile-info-label"><p>WARNS</p></div>
+                            <div class="profile-info-value"><p><SW>{{ current_user.SW }}/3</SW> <YW>{{ current_user.YW }}/2</YW></p></div>
+                        </div>
+                        <a class="profile-audit" href="#">me audit</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-    <div class="MessangerWindow">
-        <div class="MessangerHeader">
-            <div style="background-color:{{ color }} !important;" class="organ">
-                {{ organ }}
-            </div>
-            <div class="MessageUser">
-                {{ nickname }}
-            </div>
-
-            <div class="CloseBtn">
-                <span class="modal-close">&times;</span>
-            </div>
-            
+    {% if not is_guest %}
+        <div class="notifications">
+            <div class="notification warning">Вы вызваны в суд</div>
+            <div class="notification danger">У вас запрет на увольнение</div>
+            <div class="notification danger">У вас судебный штраф</div>
+            <button class="more-btn">see more</button>
         </div>
-        <div class="MessangerContent" style="display: none;">
-
-            <div class="MessangerAside">
-                <div class="ChatUsers">
-                    <div class="User">Naum Goodman</div>
-                </div>
-            </div>
-
-            <div class="MessangerChatWindow">
-                <div class="ChatSection">
-                </div>
-            </div>
-        </div>
-        
-    </div>
-
-    <div class="notifications">
-        <div class="notification warning">Вы вызваны в суд</div>
-        <div class="notification danger">У вас запрет на увольнение</div>
-        <div class="notification danger">У вас судебный штраф</div>
-        <button class="more-btn">see more</button>
-    </div>
+    {% endif %}
 </div>
-<div id="passwordModal" class="modalcp">
-    <div class="modalcp-content">
-        <span class="close">&times;</span>
-        <form id="passwordForm" method="POST" action="{{ url_for('main.profile') }}">
-            {{ form.hidden_tag() }}
-            <div id="inputformcn">{{ form.oldpass.label }} {{ form.oldpass }}</div><br><br>
-            <div id="inputformcn">{{ form.newpass.label }} {{ form.newpass }}</div><br><br>
-            {{ form.submit(class="subbtn") }}
-        </form>
-        <div id="responseMessage"></div>
-    </div>
-</div>
-<script>
-    var modal = document.getElementById('passwordModal');
-    var span = document.getElementsByClassName('close')[0];
-    var form = modal.querySelector('form');
-    window.onload = function() {
-            if (window.location.hash === '#changepassword') {
-                modal.style.display = 'flex';
-        }
-    };
 
-        // Закрываем модальное окно при клике на крестик
-    span.onclick = function() {
-        modal.style.display = 'none';
-    }
-    document.getElementById('passwordForm').addEventListener('submit', function(event) {
-        event.preventDefault();  // Предотвращаем стандартное поведение формы
-
-        console.log('Submitting form...');  // Выводим сообщение в консоль для отладки
-
-        fetch(this.action, {
-            method: 'POST',
-            body: new FormData(this)
-        }).then(response => {
-        console.log('Response status:', response.status);  // Выводим статус ответа
-        return response.json().then(data => ({ status: response.status, body: data }));
-        }).then(obj => {
-            console.log('Response body:', obj.body);  // Выводим тело ответа
-            const responseMessage = document.getElementById('responseMessage');
-            if (obj.status === 200) {
-                responseMessage.textContent = 'Пароль изменен';
-                responseMessage.style.color = 'green';
-            } else {
-                responseMessage.textContent = obj.body.message;
-                responseMessage.style.color = 'red';
-            }
-        }).catch(error => {
-            console.error('Error:', error);
-            const responseMessage = document.getElementById('responseMessage');
-            responseMessage.textContent = 'Произошла ошибка при отправке запроса';
-            responseMessage.style.color = 'red';
-        });
-        document.getElementById('passwordForm').reset();
-    });
-        // Закрываем модальное окно при клике вне его
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = 'none';
-        }
-    }
-</script>

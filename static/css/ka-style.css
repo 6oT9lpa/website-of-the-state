@@ -189,7 +189,7 @@ main
     justify-content: center;
 }
 
-.line
+.line-z
 {
     background-color: #af3d5f;
     width: calc(100% + 40px);
@@ -227,7 +227,6 @@ main
     justify-content: center;
 }
 
-
 .rank
 {
     display: flex;
@@ -241,6 +240,7 @@ main
 }
 
 .form-input label {
+    width: 170px;
     margin-bottom: 5px;
 }
 .form-input input {
@@ -314,11 +314,6 @@ main
 .action:hover::after {
     transform: translateY(-50%) rotate(180deg);
 }
-
-.action:hover{
-
-}
-
 
 .nikname
 {
