@@ -83,12 +83,15 @@ class guestUsers(db.Model, UserMixin):
     @property
     def is_guest(self):
         return True
+    
+    permissions = db.relationship('PermissionUsers', back_populates='guest_user')
 
 class PermissionUsers(db.Model, UserMixin):
     __tablename__ = 'permission'
 
     id = db.Column(db.Integer, primary_key=True, default=get_next_id_permission)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True)
+    guest_id = db.Column(db.Integer, db.ForeignKey('guest_users.id'), unique=True)
 
     tech = db.Column(db.Boolean, default=False)
     admin = db.Column(db.Boolean, default=False)
@@ -96,7 +99,10 @@ class PermissionUsers(db.Model, UserMixin):
     high_staff = db.Column(db.Boolean, default=False)
     creation_doc = db.Column(db.Boolean, default=False)
     create_news = db.Column(db.Boolean, default=False)
+    lawyer = db.Column(db.Boolean, default=False)
+
     user = db.relationship('Users', back_populates='permissions')
+    guest_user = db.relationship('guestUsers', back_populates='permissions')
 
 class ActionUsers(db.Model, UserMixin):
     __tablename__ = 'action_user' 

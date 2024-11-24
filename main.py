@@ -472,7 +472,7 @@ def get_claim_supreme_content():
 
 @main.route('/create-claim-state', methods=['POST'])
 def create_claim():
-  from __init__ import iskdis, isksup, db, claimsStatement
+  from __init__ import iskdis, isksup, db, claimsStatement, Users, guestUsers
 
   if not current_user.is_authenticated:
     flash('Вы не вошли в акаунт!')
@@ -486,6 +486,39 @@ def create_claim():
     description = request.form.get('description') 
     court_type = request.form.get('district') or request.form.get('supreme') 
 
+    lower = request.form.ger('lower')
+
+    static = lower.rsplit(' ', 1) 
+    if not static.isdigit():
+      flash('Неверный формат. Вы не правильно ввели статик представителя')
+      return redirect(url_for('main.doc'))
+    
+    user_lower = Users.query.filter_by(static=static).first()
+    guest_lower = guestUsers.query.filter_by(static=static).first()
+
+    if not user_lower and not guest_lower:
+      flash('Представитель не является частным или государственным адвокатом')
+      return redirect(url_for('main.doc'))
+
+    if user_lower:
+      permission = user_lower.permissions
+      if not permission or not permission.lawyer:
+        flash('Представитель не является адвокатом')
+        return redirect(url_for('main.doc'))
+
+    if guest_lower and not user_lower:
+      permission = guest_lower.permissions
+      if not permission or not permission.lawyer:
+        flash('Представитель не является частным адвокатом')
+        return redirect(url_for('main.doc'))
+        
+    if not all([phone_plaintiff, card_plaintiff, description]):
+      flash('Неверный формат. Поля должны быть заполнены')
+      return redirect(url_for('main.doc'))
+    
+    if not defendants or not claims:
+      flash('Неверный формат. Поля должны быть заполнены')
+      return redirect(url_for('main.doc'))
 
     claim = claimsStatement()
     db.session.add(claim)
@@ -499,7 +532,8 @@ def create_claim():
         phone=phone_plaintiff,
         cardn=card_plaintiff,
         created=current_user.static,
-        defendant=pickle.dumps(defendants)
+        defendant=pickle.dumps(defendants),
+        lawerc= user_lower.id if user_lower else guest_lower.id
       )
       db.session.add(district_claim)
 

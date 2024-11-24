@@ -552,6 +552,8 @@ iframe {
 .group
 {
     display: flex;
+    gap: 10px;
+    display: flex;
     justify-content: center;
 }
 
