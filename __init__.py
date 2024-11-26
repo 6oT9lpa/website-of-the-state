@@ -4,7 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, LoginManager
 from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
-import logging, string, random, uuid
+import logging, uuid
+from cryptography.fernet import Fernet
 
 from main import main
 
@@ -16,6 +17,8 @@ app.config['JSON_AS_ASCII'] = False
 app.config['WTF_CSRF_ENABLED'] = True
 app.config['DEBUG'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
+app.config['FERNET_KEY'] = b'RZP6DxiYrL_hz7fX1IN0v4YAtfMwwz5Gp53JRVvLw6M='
+cipher = Fernet(app.config['FERNET_KEY'])
 app.register_blueprint(main)
 
 db = SQLAlchemy(app)

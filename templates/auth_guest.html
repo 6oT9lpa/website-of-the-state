@@ -12,58 +12,100 @@
     <div class="circle-4"></div>
     <div class="circle-3"></div>
 
+    
     <div class='register-contanier'>
+        {% if session.get('isVerification') %}
+        <div class='header-container'>
+            <h4>Авторизация</h4>
+            <p>код был отправлен в личные сообщения Discord</p>
+        </div>
+        <div class='line-reg'></div>
+        <div class='main-contanier'>
+            <form id="form" method="POST" action="/validate-verification-code">
+                <div class='container-form'>
+                    <div class='form-control'>
+                        <label for='nickname'>Код авторизации</label>
+                        <div class='form-input-modal'>
+                            <input class='form-input' placeholder='Введите код'/>
+                        </div>
+                        <span class="text-danger" id="is-invalid"></span>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {% endif %}
+
+        {% if not session.get('isVerification') %}
         <div class='header-container'>
             <h4>Регистрация</h4>
             <p>получение доступа к аккаунту</p>
         </div>
         <div class='line-reg'></div>
         <div class='main-contanier'>
-            <form id="form-modal-district" method="POST" action="/create-guest">
+            <form id="form" method="POST" action="/create-guest">
                 {{ form.hidden_tag() }}
                 <div class='container-form'>
                     <div class='form-control'>
                         <label for='nickname'>Ваш никнейм</label>
                         <div class='form-input-modal'>
-                            {{ form.nickname(class="form-input") }}
+                            {{ form.nickname(class="form-input", id='nickname') }}
                         </div>
-                        <span class="text-danger" id="nickname-error"></span>
+                        <span class="text-danger" id="is-invalid"></span>
                     </div>
                     <div class='form-control'>
                         <label for='static'>Ваш статик</label>
                         <div class='form-input-modal'>
-                            {{ form.static(class="form-input") }}
+                            {{ form.static(class="form-input", id='static') }}
                         </div>
-                        <span class="text-danger" id="static-error"></span>
+                        <span class="text-danger" id="is-invalid"></span>
                     </div>
                     <div class='form-control'>
                         <label for='discord'>Ваш дискорд ID</label>
                         <div class='form-input-modal'>
-                            {{ form.discord(class="form-input") }}
+                            {{ form.discord(class="form-input", id='discord') }}
                         </div>
-                        <span class="text-danger" id="discord-error"></span>
+                        <span class="text-danger" id="is-invalid"></span>
                     </div>
                     <div class='form-control'>
                         <label for='password'>Ваш пароль</label>
                         <div class='form-input-modal'>
-                            {{ form.password(class="form-input") }}
+                            {{ form.password(class="form-input", id='password') }}
                         </div>
-                        <span class="text-danger" id="password-error"></span>
+                        <span class="text-danger" id="is-invalid"></span>
                     </div>
                     <div class='form-control'>
-                        <label for='confirm_password'>Повторите пароль</label>
+                        <label for='confirm-password'>Повторите пароль</label>
                         <div class='form-input-modal'>
-                            {{ form.confirm_password(class="form-input") }}
+                            {{ form.confirm_password(class="form-input", id='confirm-password') }}
                         </div>
-                        <span class="text-danger" id="confirm-password-error"></span>
-                    </div>
+                        <span class="text-danger"></span>
+                    </div>                    
                 </div>
                 <div class='submit-btn-contanier'>
-                    {{ form.submit(class="submit-button") }}     
+                    {{ form.submit(class="submit-button", id='submit-button') }}     
                 </div> 
             </form>            
         </div>
+        {% endif %}
     </div>
+    {% if isVerification %}
+        <div class='modal-verification'>
+            <div class='header-modal-verification'>
+                <h4>Авторизация</h4>
+                <p>код был отправлен в личные сообщения Discord</p>
+            </div>
+            <div class='container-modal-verification'>
+                <div class='form-control'>
+                    <label for='nickname'>Код авторизации</label>
+                    <div class='form-input-modal'>
+                        <input class='form-input' placeholder='Введите код'/>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 
     {% with messages = get_flashed_messages() %}
             {% if messages %} 
@@ -78,6 +120,11 @@
         {% endif %}
     {% endwith %}
 
+    {% if isVerification %}
+        <div class='overlay'></div>
+    {% endif %}
+
     <script src="{{ url_for('static', filename='js/script-error.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script-auth.js') }}"></script>
 </body>
 </html>

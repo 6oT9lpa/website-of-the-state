@@ -14,8 +14,10 @@ from io import BytesIO
 from textwrap import wrap
 from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_path
+from cryptography.fernet import Fernet
 import random, string, redis, json, os, re, shutil, logging, json, pickle
 from logging import handlers
+import base64, random
 
 """
 def setup_logging():
@@ -89,7 +91,7 @@ def check_isk_status(isk):
     except ValueError as e:
       print(f"Ошибка обработки строки '{item}': {e}")
 
-  if not current_user.is_authenticated and \
+  if current_user.is_authenticated and \
     current_user.static == isk.created:
     status = "Created"
     
@@ -407,13 +409,15 @@ def auth_guest():
   if current_user.is_authenticated:
     return redirect(next_url or url_for('main.index'))
   
+  isVerification = False
+  session['isVerification'] = isVerification
+
   form = GuestForm()
-  
   return render_template('auth_guest.html', form=form)
 
 @main.route('/create-guest', methods=['POST', 'GET'])
 def create_guest():
-  from __init__ import db, guestUsers, Users
+  from __init__ import db, guestUsers, Users, cipher
   from form import GuestForm
   if request.method != "POST":
     flash('Вы не можете зайти на данную страницу!', 'error')
@@ -428,31 +432,50 @@ def create_guest():
   static = form.static.data
   discord = form.discord.data
   password = form.password.data
+  confirm_password = form.confirm_password.data
 
   if not all([nickname, static, discord, password]):
     flash('Поля должны быть заполнены!')
     return redirect(url_for('main.auth_guest'))
   
-  user = Users.query.filter_by(static=static).first()
+  if not (17 <= len(discord) <= 21):
+    flash('Неверный формат. Вы должны вставить свой Discrod ID!')
+    return redirect(url_for('main.auth_guest'))
+  
+  if password != confirm_password:
+    flash('Ошибка в валидации Пароля. Пароли не совпадают!')
+    return redirect(url_for('main.auth_guest'))
+  
+  if not (1 <= len(static) <= 7):
+    flash('Неверный формат. Вы должны вставить свой static!')
+    return redirect(url_for('main.auth_guest'))
+  
   guest = guestUsers.query.filter_by(static=static).first()
-  if user or guest:
-    flash('Этот static уже зарегистрирован!')
+  if guest:
+    flash('Ошибка взаимодействия. Этот static уже зарегистрирован!')
     return redirect(url_for('main.auth_guest'))
   
   hashed_password = generate_password_hash(password)
-  try:
-    new_guest = guestUsers(
-      nickname=nickname,
-      static=static,
-      discord_id=discord,
-      password=hashed_password
-    )
-    db.session.add(new_guest)
-    db.session.commit()
-  except SQLAlchemyError as e:
-    logging.error(f'Ошибка в guestUsers: {str(e)}')
+  session['nickname'] = cipher.encrypt(nickname.encode()).decode()
+  session['static'] = cipher.encrypt(str(static).encode()).decode()
+  session['discord'] = cipher.encrypt(str(discord).encode()).decode()
+  session['password'] = cipher.encrypt(str(hashed_password).encode()).decode()
+
+  def send_verification_code(discord, code):
+    message = {
+      'discord': discord,
+      'code': code
+    }
+    redis_client.publish('verification_code', json.dumps(message))
+
+  verification_code = random.randint(100000, 999999)
+  session['verification_code'] = cipher.encrypt(str(verification_code).encode()).decode()
+  send_verification_code(discord, verification_code)
+
+  isVerification = True
+  session['isVerification'] = isVerification
+  return redirect(url_for('main.auth_guest'))
   
-  return redirect(next_url)
      
 @main.route('/get-claim-district-content', methods=['GET'])
 def get_claim_district_content():
@@ -460,6 +483,9 @@ def get_claim_district_content():
   district = iskdis.query.all()
   last_entry = db.session.query(iskdis).order_by(iskdis.id.desc()).first()
   last_id = last_entry.id if last_entry else None
+
+  if not current_user.is_authenticated:
+    flash('Вам нужно авторизоваться, прежде чем составлять обращение')
 
   return render_template('main/main-state-district.html', district=district, last_id=last_id, Users=Users, guestUsers=guestUsers)
 
@@ -485,33 +511,34 @@ def create_claim():
     claims = request.form.getlist('claims[]')
     description = request.form.get('description') 
     court_type = request.form.get('district') or request.form.get('supreme') 
-
-    lower = request.form.ger('lower')
-
-    static = lower.rsplit(' ', 1) 
-    if not static.isdigit():
-      flash('Неверный формат. Вы не правильно ввели статик представителя')
-      return redirect(url_for('main.doc'))
     
-    user_lower = Users.query.filter_by(static=static).first()
-    guest_lower = guestUsers.query.filter_by(static=static).first()
+    lower = request.form.get('lower')
 
-    if not user_lower and not guest_lower:
-      flash('Представитель не является частным или государственным адвокатом')
-      return redirect(url_for('main.doc'))
+    static = None
+    if lower:
+      static = lower.split(' ', 1)[1] if ' ' in lower else None
+    
 
-    if user_lower:
-      permission = user_lower.permissions
-      if not permission or not permission.lawyer:
-        flash('Представитель не является адвокатом')
+    if static != None and lower:
+      user_lower = Users.query.filter_by(static=static).first()
+      guest_lower = guestUsers.query.filter_by(static=static).first()
+
+      if not user_lower and not guest_lower:
+        flash('Представитель не является частным или государственным адвокатом')
         return redirect(url_for('main.doc'))
 
-    if guest_lower and not user_lower:
-      permission = guest_lower.permissions
-      if not permission or not permission.lawyer:
-        flash('Представитель не является частным адвокатом')
-        return redirect(url_for('main.doc'))
-        
+      if user_lower:
+        permission = user_lower.permissions
+        if not permission or not permission.lawyer:
+          flash('Представитель не является адвокатом')
+          return redirect(url_for('main.doc'))
+
+      if guest_lower and not user_lower:
+        permission = guest_lower.permissions
+        if not permission or not permission.lawyer:
+          flash('Представитель не является частным адвокатом')
+          return redirect(url_for('main.doc'))
+          
     if not all([phone_plaintiff, card_plaintiff, description]):
       flash('Неверный формат. Поля должны быть заполнены')
       return redirect(url_for('main.doc'))
@@ -533,7 +560,7 @@ def create_claim():
         cardn=card_plaintiff,
         created=current_user.static,
         defendant=pickle.dumps(defendants),
-        lawerc= user_lower.id if user_lower else guest_lower.id
+        lawerc= None if static == None else (user_lower.id if user_lower else guest_lower.id)
       )
       db.session.add(district_claim)
 
@@ -543,7 +570,7 @@ def create_claim():
 
   except Exception as e:
     db.session.rollback()
-    flash(f'Ошибка {str(e)}')
+    print(f'Ошибка {str(e)}')
     return redirect(url_for('main.doc'))
 
 @main.route('/complaint', methods=['GET'])

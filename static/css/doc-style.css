@@ -370,12 +370,11 @@ main{
     flex-direction: column;
 }
 
-.text-danger
-{
+.text-danger {
     text-align: center;
     color: var(--error-color);
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 10px;
+    font-weight: 600;
 }
 
 .form-input
@@ -902,6 +901,15 @@ span#btn-modal-close:hover {
     border-radius: 10px;
     border: #0c0c0c solid 2px;
     box-shadow: inset #0c0c0c 0 0 5px 2px;
+    transition: all .5s ease-in-out;
+}
+
+.personal-info {
+    width: 510px;
+}
+
+.form-input-modal.error {
+    background: #e81c5a8c;
 }
 
 .form-input-modal input {
@@ -1059,6 +1067,8 @@ span#btn-modal-close:hover {
     display: flex;
     justify-content: end;
 }
+
+
 
 @media (max-width: 480px) { 
     .modal-content {

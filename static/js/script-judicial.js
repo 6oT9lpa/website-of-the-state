@@ -163,6 +163,180 @@ document.addEventListener('DOMContentLoaded', () => {
         const modalDistrict = document.getElementById('modal-district-content');
         const createButton = document.getElementById('create-btn-district');
         const closeModalBtn = document.getElementById('btn-modal-close');
+        const defendant = document.getElementById('defendant');
+        const phone = document.getElementById('phone');
+        const card = document.getElementById('card');
+        const lawyer = document.getElementById('lawyer');
+        const claim = document.getElementById('claim');
+        const accessMessage = document.querySelector('#access-message');
+        const closeButton = document.querySelector('.modal-close-error');
+
+        function showAccessMessage() {
+            if (accessMessage) {
+                accessMessage.classList.add('hidden'); 
+
+                setTimeout(() => {
+                    accessMessage.style.display = 'block';
+                    accessMessage.style.transform = 'translateY(30px)';
+
+                    setTimeout(() => {
+                        accessMessage.style.transform = 'translateY(0px)';
+                        accessMessage.classList.add('show');
+                        accessMessage.classList.remove('hidden');
+                    }, 10);
+                }, 200); 
+            }
+        }
+        function closeModalError() {
+            if (accessMessage) {
+                accessMessage.classList.remove('show');
+                accessMessage.style.transform = 'translateY(-30px)';
+                accessMessage.classList.add('hidden');
+
+                setTimeout(() => {
+                    accessMessage.style.display = 'none'; 
+                }, 500); 
+            }
+        }
+
+        createButton?.addEventListener('click', showAccessMessage);
+        closeButton?.addEventListener('click', closeModalError);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModalError();
+            }
+        });
+
+        function showError(input, message) {
+            const formControl = input.parentElement; 
+            const errorSpan = formControl.parentElement.querySelector('#is-invalid'); 
+            if (errorSpan) {
+                errorSpan.innerText = message;
+                formControl.className = 'form-input-modal error'; 
+            } else {
+                console.error("Error span with id='is-invalid' not found in parent element");
+            }
+        }
+        
+        function clearError(input) {
+            const formControl = input.parentElement; 
+            const errorSpan = formControl.parentElement.querySelector('#is-invalid'); 
+            if (errorSpan) {
+                errorSpan.innerText = ''; 
+                formControl.className = 'form-input-modal'; 
+            }
+        }
+
+        const ModalValidationListeners = {
+            defendant: (event) => validateDefendantForm(event.target),
+            phone: (event) => validatePhoneForm(event.target),
+            lawyer: (event) => validateLawyerForm(event.target),
+            card: (event) => validateCardForm(event.target),
+            claim: (event) => validateClaimForm(event.target)
+        };
+        
+        function addModalValidationListener(field) {
+            const listener = ModalValidationListeners[field.id];
+            if (listener) {
+                field.addEventListener('input', listener);
+            }
+        }
+        
+        function removeModalValidationListener(field) {
+            const listener = ModalValidationListeners[field.id];
+            if (listener) {
+                field.removeEventListener('input', listener);
+            }
+        }        
+
+        function enableModalFields(fields) {
+            fields.forEach(field => {
+                if (field) {
+                    field.removeAttribute('disabled');
+                    field.setAttribute('required', 'true');
+                    addModalValidationListener(field); 
+                }
+            });
+        }
+        
+        function disableModalFields(fields) {
+            fields.forEach(field => {
+                if (field) { 
+                    field.value = '';
+                    clearError(field);
+                    field.setAttribute('disabled', 'true');
+                    field.removeAttribute('required');
+                    removeModalValidationListener(field); 
+                }
+            });
+        }        
+
+        function validateClaimForm(input) {
+            if (!input || input.value.trim() === '') { 
+                showError(input, 'Поле не может быть пустым');
+                return false;
+            }
+
+            clearError(input);
+            return true;
+        }
+        
+        function validateDefendantForm(input) {
+            if (!input || input.value.trim() === '') {
+                showError(input, 'Поле не может быть пустым');
+                return false;
+            }
+            
+            const pattern = /^[A-Z][a-z]+ [A-Z][a-z]+ \d{1,7}$/;
+            const value = input.value.trim();
+        
+            if (!pattern.test(value)) {
+                showError(input, 'Введите данные в формате "Nick Name static"');
+                return false;
+            }
+
+            clearError(input);
+            return true;
+        }
+
+        function validateLawyerForm(input) {
+            if (!input || input.value.trim() === '') {
+                showError(input, 'Поле не может быть пустым');
+                return false;
+            }
+            
+            const pattern = /^[A-Z][a-z]+ [A-Z][a-z]+ \d{1,7}$/;
+            const value = input.value.trim();
+        
+            if (!pattern.test(value)) {
+                showError(input, 'Введите данные в формате "Nick Name static"');
+                return false;
+            }
+
+            clearError(input);
+            return true;
+        }
+
+        function validatePhoneForm(input) {
+            if (!input || input.value.trim() === '') { 
+                showError(input, 'Поле не может быть пустым');
+                return false;
+            }
+
+            clearError(input);
+            return true;
+        }
+
+        function validateCardForm(input) {
+            if (!input || input.value.trim() === '') { 
+                showError(input, 'Поле не может быть пустым');
+                return false;
+            }
+
+            clearError(input);
+            return true;
+        }
 
         if (createButton && modalDistrict) {
             createButton.addEventListener('click', showModal);
@@ -173,6 +347,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('#overlay').forEach(o => {
                     o.classList.add('active');
                 });
+
+                enableModalFields([defendant, phone, lawyer, card, claim])
                 
                 setTimeout(() => {
                     modalDistrict.classList.remove('hidden-modal-district')
@@ -210,15 +386,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     counter--; 
                     if (counter === 1) {
                         deleteButton.style.display = "none"; 
-                        groupDefendaDiv.classList.remove('active-grid')
+                        groupDefendaDiv.classList.remove('active-grid');
                     }
                 }
-                });
+            });
             btnGroupDefenda.appendChild(deleteButton);
 
-            addDefendaButton.parentElement.appendChild(deleteButton);
             addDefendaButton.addEventListener("click", function(e) {
-                groupDefendaDiv.classList.add('active-grid')
+                groupDefendaDiv.classList.add('active-grid');
 
                 const newContentDiv = document.createElement("div");
                 newContentDiv.classList.add("content-defenda");
@@ -233,15 +408,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const newInput = document.createElement("input");
                 newInput.type = "text";
-                newInput.id = `defenda_${counter}`;
+                newInput.id = `defendant`;
                 newInput.name = "defenda[]";
                 newInput.placeholder = "Введите ник";
+
+                enableModalFields([newInput]);
 
                 newFormInputDiv.appendChild(newInput);
 
                 const newSpan = document.createElement("span");
                 newSpan.classList.add("text-danger");
-                newSpan.id = `defendant-invalid-${counter}`;
+                newSpan.id = 'is-invalid';
 
                 newContentDiv.appendChild(newLabel);
                 newContentDiv.appendChild(newFormInputDiv);
@@ -256,6 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteButton.style.display = "inline-block";
                 }
             });
+
 
             let claimCounter = 1;
 
@@ -299,15 +477,17 @@ document.addEventListener('DOMContentLoaded', () => {
         
                 const newInput = document.createElement("input");
                 newInput.type = "text";
-                newInput.id = `claims_${claimCounter}`;
+                newInput.id = `claim`;
                 newInput.name = "claims[]";
                 newInput.placeholder = "Введите требование";
+
+                enableModalFields([newInput])
         
                 newFormInputDiv.appendChild(newInput);
 
                 const newSpan = document.createElement("span");
                 newSpan.classList.add("text-danger");
-                newSpan.id = `claim-invalid-${claimCounter}`;
+                newSpan.id = `is-invalid`;
 
                 newClaimDiv.appendChild(newLabel);
                 newClaimDiv.appendChild(newFormInputDiv);
@@ -322,6 +502,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteClaimButton.style.display = "inline-block";
                 }
             });
+
+            
         } else {
             setTimeout(initializeModalEvent, 100); 
         }

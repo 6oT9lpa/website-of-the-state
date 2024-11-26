@@ -1,3 +1,9 @@
+:root {
+    --success-color: #0cb854;
+    --error-color: #ee1f09;
+  }
+
+
 body {
     background: #171717; 
     background-repeat: no-repeat; 
@@ -7,7 +13,8 @@ body {
     align-items: center;
     justify-content: center !important;
     min-height: 100vh;
-    font-family: sans-serif
+    font-family: sans-serif;
+    overflow: hidden;
 }
 
 .circle-1 {
@@ -257,6 +264,7 @@ footer {
     border-radius: 10px;
     border: #0c0c0c solid 2px;
     box-shadow: inset #0c0c0c 0 0 5px 2px;
+    transition: all .5s ease-in-out;
 }
 
 .form-input-modal input {
@@ -351,7 +359,18 @@ footer {
     opacity: 0;
 }
 
-/* Адаптивная верстка */
+.text-danger {
+    text-align: center;
+    color: var(--error-color);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.form-input-modal.error {
+    background: #e81c5a8c;
+}
+
+
 @media (max-width: 768px) {
     .circle-1 {
         width: 200px;

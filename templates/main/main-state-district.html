@@ -7,7 +7,6 @@
             <div class='breaker-entey'>
                 <div class='ico-header-jud'>
                     <img width="25" height="25" src="https://img.icons8.com/external-konkapp-detailed-outline-konkapp/64/FA5252/external-gavel-law-and-justice-konkapp-detailed-outline-konkapp.png" alt="external-gavel-law-and-justice-konkapp-detailed-outline-konkapp"/>
-
                 </div>
                 <a class='precedents-btn btn-court'><h4>Judiciary | Сборник прецедентов Окружного Суда</h4></a>
             </div>
@@ -54,6 +53,7 @@
 </div>
 <div class="overlay overlay-main" id='overlay'></div>
 
+{% if current_user.is_authenticated %}
 <div class='modal-district-content hidden-modal-district' id='modal-district-content' style='display: none;'>
     <div class='header-modal'>
         <div class='text-header'>
@@ -73,7 +73,7 @@
                             <div class='content-defenda'>
                                 <label for="defenda">Ответчик.</label>
                                 <div class='form-input-modal' id='defendant-input'>
-                                    <input type="text" id="defenda" name="defenda[]" placeholder='Введите ник'>
+                                    <input type="text" id="defendant" name="defenda[]" placeholder='Введите ник'>
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
@@ -88,26 +88,24 @@
                         <div class='form-control'>
                             <label for="phone">Номер телефона.</label>
                             <div class='form-input-modal' id='phone-plaintiff'>
-                                <input type="text" id="phone-plaintiff" name="phone-plaintiff" placeholder='Введите номер телефона'>
+                                <input type="text" id="phone" name="phone-plaintiff" placeholder='Введите номер телефона'>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
-                    </div>
-                    <div class='personal-info group-contaniner-modal'>
                         <div class='form-control'>
                             <label for="phone">Представитель.</label>
                             <div class='form-input-modal' id='lower'>
-                                <input type="text" id="lower" name="lower" placeholder='Введите ник и статик(необязательно)'>
+                                <input type="text" id="lawyer" name="lower" placeholder='Введите ник и статик(необязательно)'>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
                     </div>
                 </div>
-                <div class='personal-info group-contaniner-modal'>
+                <div class='group-contaniner-modal'>
                     <div class='form-control'>
                         <label for="card">Номер личного счета.</label>
                         <div class='form-input-modal' id='card-plaintiff'>
-                            <input type="text" id="card-plaintiff" name="card-plaintiff" placeholder='Введите карту'>
+                            <input type="text" id="card" name="card-plaintiff" placeholder='Введите карту'>
                         </div>
                         <span class="text-danger" id="is-invalid"></span>
                     </div>
@@ -118,7 +116,7 @@
                             <div class='content-claim'>
                                 <label for="claims">Исковое требование.</label>
                                 <div class='form-input-modal' id='claim-input'>
-                                    <input type="text" id="claims" name="claims[]" placeholder='Введите требование'>
+                                    <input type="text" id="claim" name="claims[]" placeholder='Введите требование'>
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
@@ -145,3 +143,5 @@
         </form>
     </div>
 </div>
+
+{% endif %}

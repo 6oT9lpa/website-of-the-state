@@ -1,35 +1,39 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const access_message = document.querySelector('#access-message');
-    
-    if (access_message) {
-        access_message.classList.add('hidden'); // Изначально скрываем
+    const accessMessage = document.querySelector('#access-message');
+
+    if (accessMessage) {
+        accessMessage.classList.add('hidden'); 
+
         setTimeout(() => {
-            access_message.style.display = 'block'; 
-            access_message.style.transform = 'translateY(30px)';
+            accessMessage.style.display = 'block';
+            accessMessage.style.transform = 'translateY(30px)';
+
             setTimeout(() => {
-                access_message.style.transform = 'translateY(0px)';
-                access_message.classList.add('show');
-                access_message.classList.remove('hidden');
-            }, 10); 
+                accessMessage.style.transform = 'translateY(0px)';
+                accessMessage.classList.add('show');
+                accessMessage.classList.remove('hidden');
+            }, 10);
         }, 200); 
     }
 
-    document.querySelector('.modal-close-error')?.addEventListener('click', closeModal_error);
+    const closeButton = document.querySelector('.modal-close-error');
+    closeButton?.addEventListener('click', closeModalError);
 
-    function closeModal_error() {
-        if (access_message) {
-            access_message.classList.remove('show');
-            access_message.style.transform = 'translateY(-30px)';
-            access_message.classList.add('hidden');
+    function closeModalError() {
+        if (accessMessage) {
+            accessMessage.classList.remove('show');
+            accessMessage.style.transform = 'translateY(-30px)'; 
+            accessMessage.classList.add('hidden');
+
             setTimeout(() => {
-                access_message.style.display = 'none'; 
+                accessMessage.style.display = 'none'; 
             }, 500); 
         }
     }
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            closeModal_error();
+            closeModalError();
         }
     });
 });
