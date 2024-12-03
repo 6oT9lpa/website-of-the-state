@@ -301,15 +301,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function validateLawyerForm(input) {
-            if (!input || input.value.trim() === '') {
-                showError(input, 'Поле не может быть пустым');
-                return false;
-            }
             
             const pattern = /^[A-Z][a-z]+ [A-Z][a-z]+ \d{1,7}$/;
             const value = input.value.trim();
         
-            if (!pattern.test(value)) {
+            if (value.trim() && !pattern.test(value)) {
                 showError(input, 'Введите данные в формате "Nick Name static"');
                 return false;
             }

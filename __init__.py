@@ -16,7 +16,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_AS_ASCII'] = False
 app.config['WTF_CSRF_ENABLED'] = True
 app.config['DEBUG'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:arnetik1@localhost:3306/site'
 app.config['FERNET_KEY'] = b'RZP6DxiYrL_hz7fX1IN0v4YAtfMwwz5Gp53JRVvLw6M='
 cipher = Fernet(app.config['FERNET_KEY'])
 app.register_blueprint(main)
@@ -309,8 +309,10 @@ class repltoisks(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     current_uid = db.Column(db.String(16), db.ForeignKey('court_claims.uid'), nullable=False)
     author_id = db.Column(db.String(45), nullable=False)
+    type_doc = db.Column(db.String(55), nullable=False)
 
     replyik = db.Column(db.PickleType, nullable=False)
+    create_at = db.Column(db.DateTime, nullable=False, default=datetime.now())
 
     current_claim = db.relationship('claimsStatement', back_populates='reply')
 

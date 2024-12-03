@@ -74,13 +74,9 @@ def is_send_allowed(wait_seconds=30):
 def check_isk_status(isk):
   """ Функция для проверки статуса пользователя в контексте иска. """
   status = None 
-
-  defenda_data = pickle.loads(isk.defendant)
-  if not isinstance(defenda_data, list):
-    raise ValueError("Данные должны быть списком строк.")
   
   result = []
-  for item in defenda_data:
+  for item in isk.defendant:
     try:
       nickname, static = item.rsplit(' ', 1) 
       if not static.isdigit():
@@ -91,29 +87,23 @@ def check_isk_status(isk):
     except ValueError as e:
       print(f"Ошибка обработки строки '{item}': {e}")
 
-  if current_user.is_authenticated and \
-    current_user.static == isk.created:
-    status = "Created"
-    
-  elif current_user.is_authenticated and \
-   any(current_user.static == defenda['static'] for defenda in result):
-    status = 'Defenda'
+  if current_user.is_authenticated:
+    if current_user.static == isk.created:
+      status = "Created"
+    elif any(current_user.static == defenda['static'] for defenda in result):
+      status = 'Defenda'
 
-  elif current_user.is_authenticated and current_user.user_type == 'user' and \
-    (current_user.id == isk.judge or (not isk.judge and current_user.curr_rank in [13, 15, 21])):
-    status = 'Judge'
+    elif current_user.user_type == 'user' and (current_user.id == isk.judge or (not isk.judge and current_user.curr_rank in [13, 15, 21])):
+      status = 'Judge'
 
-  elif current_user.is_authenticated and \
-    isk.prosecutor and current_user.id == isk.prosecutor and not current_user.is_guest:
-    status = 'Prosecutor'
+    elif isk.prosecutor and current_user.id == isk.prosecutor and not current_user.is_guest:
+      status = 'Prosecutor'
 
-  elif current_user.is_authenticated and \
-    isk.lawerc and current_user.id == isk.lawerc:
-    status = 'Lawerc'
+    elif isk.lawerc and current_user.id == isk.lawerc:
+      status = 'Lawerc'
 
-  elif current_user.is_authenticated and \
-    isk.lawerd and current_user.id == isk.lawerd:
-    status = 'Lawerd'
+    elif isk.lawerd and current_user.id == isk.lawerd:
+      status = 'Lawerd'
 
   return status
 
@@ -605,11 +595,11 @@ def create_claim():
       district_claim = iskdis(
         current_uid=claim.uid,
         discription=description,
-        claims=pickle.dumps(claims), 
+        claims=claims, 
         phone=phone_plaintiff,
         cardn=card_plaintiff,
         created=current_user.static,
-        defendant=pickle.dumps(defendants),
+        defendant=defendants,
         lawerc= None if static == None else (user_lower.id if user_lower else guest_lower.id)
       )
       db.session.add(district_claim)
@@ -623,16 +613,104 @@ def create_claim():
     print(f'Ошибка {str(e)}')
     return redirect(url_for('main.doc'))
 
-@main.route('/complaint', methods=['GET'])
+@main.route('/complaint', methods=['GET', 'POST'])
 def claim_state():
-  from __init__ import iskdis, isksup, repltoisks, Users, guestUsers, claimsStatement, courtOrder
+  from __init__ import iskdis, isksup, repltoisks, Users, guestUsers, claimsStatement, courtOrder, db
 
+  if request.method == "POST":
+    typeopr = request.form.get('typeopr') 
+    uid = session.get('cur_uid')
+    if typeopr == "hodataistvo":
+      hodataistv_do = repltoisks.query.filter_by(current_uid=uid, type_doc="hodataistvo").count()
+      type_hodataistva = request.form.get('type_hodataistva')
+      if type_hodataistva == "freeform":
+        texthod = request.form.get('texthod')
+        replyik = {
+          "№_hodataistva": hodataistv_do + 1,
+          "type_hodataistva": "freeform",
+          "texthod": texthod
+        }
+      elif type_hodataistva == "svidetel":
+        svidetelname = request.form.get('svidetelname')
+        replyik = {
+          "№_hodataistva": hodataistv_do + 1,
+          "type_hodataistva": "svidetel",
+          "svidetelname": svidetelname
+        }
+      elif type_hodataistva == "expert":
+        experttype = request.form.get('experttype')
+        replyik = {
+          "№_hodataistva": hodataistv_do + 1,
+          "type_hodataistva": "expert",
+          "experttype": experttype
+        }
+      elif type_hodataistva == "otvod":
+        otvodselect = request.form.get('otvodselecti')
+        replyik = {
+          "№_hodataistva": hodataistv_do + 1,
+          "type_hodataistva": "otvod",
+          "otvodselect": otvodselect
+        }
+      newhod = repltoisks(current_uid=uid, author_id=current_user.id, type_doc="hodataistvo", replyik=replyik)
+      db.session.add(newhod)
+    elif typeopr == "hodataistvorasm":
+      if not current_user.is_authenticated and current_user.type_user != 'user' and \
+        not current_user.curr_rank in [13, 15, 21]:
+        flash('Вы не судья, вследствие не можете создать определение!')
+        return redirect(url_for('main.claim_state', uid=uid))
+      accepted = request.form.get('accepted')
+      if accepted == True:
+        ruling = request.form.getlist('decision')
+        findings = request.form.get('findings')
+        consideration = request.form.get('consideration') 
+        action = request.form.get('action')
+        otvodsel = request.form.get('otvodsel')
+        changedateinv = request.form.get('newdateinv')
+        expertt = request.form.get('expertt')
+        svidetel = request.form.get('svidetel')
+
+        print(ruling, findings, consideration, action)
+
+        if not all([findings, consideration, action]):
+          flash('Все поля должны быть заполнены!')
+          return redirect(url_for('main.claim_state', uid=uid))
+        
+        if otvodsel:
+          complaint = iskdis.query.filter_by(current_uid=uid).first()
+          otvodsp = otvodsel.split('-')
+
+          otvodrole = otvodsp[0].strip()  
+          otvodnick = otvodsp[1].strip()  
+          otvodstatic = otvodsp.split(' ', 1)[1] if otvodsp.split(' ', 1)[1].isdigit() else None
+          if otvodrole == "defendant":
+            del complaint.defendant[otvodnick]
+          elif otvodrole == "otherme":
+            del complaint.otherme[otvodnick]
+          elif otvodrole == "judge":
+            complaint.judge = None
+          db.session.commit()
+
+        new_order = courtOrder(
+        current_uid = uid,
+        author_id = current_user.id,
+        findings = findings,
+        consideration = consideration,
+        ruling =  ruling
+        )
+        db.session.add(new_order)
+    db.session.commit()
+    response = make_response(redirect(url_for('main.claim_state', uid=uid))) 
+    response.status_code = 200 
+    return response
+  
   uid = request.args.get('uid')
   if not uid:
     return "No UID provided", 400
+  session['cur_uid'] = uid
   
   claim_statement_district = iskdis.query.filter_by(current_uid=uid).first()
   claim_statement_supreme = isksup.query.filter_by(current_uid=uid).first()
+  repltoisk = repltoisks.query.filter_by(current_uid=uid).all()
 
   if not claim_statement_district and not claim_statement_supreme:
     return render_template('api/404.html')
@@ -641,14 +719,14 @@ def claim_state():
     if self.otherme:
       return '\n'.join([f"{key}: {value}" for key, value in self.otherme.items()])
 
+
   if claim_statement_district:
     status = check_isk_status(claim_statement_district)
+    isk = claim_statement_district
 
     orders_data = courtOrder.query.filter_by(current_uid=uid).all()
 
-    defendant_data = pickle.loads(claim_statement_district.defendant)
     createat = claimsStatement.query.filter_by(uid=claim_statement_district.current_uid).first()
-    claims_data = pickle.loads(claim_statement_district.claims)
 
     create_at_datetime = createat.create_at
     current_date = datetime.now()
@@ -666,10 +744,12 @@ def claim_state():
       Users=Users,
       guestUsers=guestUsers,
       createat=display_date,
-      defendant=defendant_data,
-      claims=claims_data,
+      defendant=isk.defendant,
+      claims=isk.claims,
       status=status,
-      orders_data=orders_data
+      orders_data=orders_data,
+      isk=isk,
+      repltoisk=repltoisk
     )
   
   elif claim_statement_supreme:

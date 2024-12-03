@@ -304,6 +304,8 @@ class ka_cog(commands.Cog):
                     await inter.response.send_message("У вас нет прав для использования этой команды.", ephemeral=True)
             else:
                 await inter.response.send_message("Игрок не в отделе!", ephemeral=True)
+        else:
+            await inter.response.send_message("У вас нет прав!", ephemeral=True)
 
     @commands.slash_command()
     async def unwarn(inter: disnake.ApplicationCommandInteraction, member: disnake.Member, warning_type: warn_variants, reason_type: str):

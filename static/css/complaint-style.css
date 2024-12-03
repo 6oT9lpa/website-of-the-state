@@ -164,6 +164,31 @@ body {
     flex-direction: column;
 } 
 
+.modalci {
+    display: none; /* Скрыто по умолчанию */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+    justify-content: center;
+    align-items: center;
+}
+.modalci-content {
+    background-color: #3c3b3bd6;
+    margin: 15% auto;
+    margin-top: 10rem;
+    padding: 20px;
+    width: 100%;
+    max-width: 600px;
+    min-height: 200px;
+    color: white;
+    box-shadow: 0 0 20px 10px #262626c2;
+    border-radius: 10px;
+}
+
 .description-content h4 {
     margin-top: 10px;
 }
@@ -253,6 +278,12 @@ a.accept-judge {
 .modal-processing-complaint.hidden-modal-district {
     opacity: 0;
     position: absolute;
+    left: 50%;
+}
+.modal-processing-hodataistvo {
+    display: none;
+    z-index: 100;
+    position: fixed;
     left: 50%;
 }
 
@@ -388,4 +419,13 @@ a.accept-judge {
 
 .main-content-order p  {
     font-size: 14px;
+}
+
+.hodataistvo-complaint {
+    display: flex;
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    gap: 25px;
+    justify-content: space-between;
 }
