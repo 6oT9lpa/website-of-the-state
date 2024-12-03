@@ -21,15 +21,20 @@
         </div>
         <div class='line-reg'></div>
         <div class='main-contanier'>
-            <form id="form" method="POST" action="/validate-verification-code">
+            <form id="form" method="POST" action="/validate-verificate-code">
                 <div class='container-form'>
                     <div class='form-control'>
-                        <label for='nickname'>Код авторизации</label>
+                        <label for='verify-code'>Код авторизации</label>
                         <div class='form-input-modal'>
-                            <input class='form-input' placeholder='Введите код'/>
+                            <input class='form-input' name='verify-code' placeholder='Введите код'/>
                         </div>
                         <span class="text-danger" id="is-invalid"></span>
                     </div>
+                    <div class='submit-btn-contanier'>
+                        <div class='submit-btn'>
+                            <input type="submit" value="Оставить ответ">   
+                        </div>   
+                    </div> 
                 </div>
             </form>
         </div>
@@ -89,23 +94,7 @@
         </div>
         {% endif %}
     </div>
-    {% if isVerification %}
-        <div class='modal-verification'>
-            <div class='header-modal-verification'>
-                <h4>Авторизация</h4>
-                <p>код был отправлен в личные сообщения Discord</p>
-            </div>
-            <div class='container-modal-verification'>
-                <div class='form-control'>
-                    <label for='nickname'>Код авторизации</label>
-                    <div class='form-input-modal'>
-                        <input class='form-input' placeholder='Введите код'/>
-                    </div>
-                    <span class="text-danger" id="is-invalid"></span>
-                </div>
-            </div>
-        </div>
-    {% endif %}
+    
 
     {% with messages = get_flashed_messages() %}
             {% if messages %} 

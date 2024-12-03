@@ -27,10 +27,15 @@ login_manager = LoginManager(app)
 def generate_uid():
     return str(uuid.uuid4()).replace("-", "")[:16]
 
-# создание бд Users
 def get_next_id_user():
-    last_id = db.session.query(func.max(Users.id)).scalar()
-    return (last_id or 0) + 1
+    last_id_user = db.session.query(func.max(Users.id)).scalar()
+    last_id_guest = db.session.query(func.max(guestUsers.id)).scalar()
+
+    if last_id_user > last_id_guest:
+        return (last_id_user or 0) + 1
+    
+    return (last_id_guest or 0) + 1
+    
 
 def get_next_id_permission():
     last_id = db.session.query(func.max(PermissionUsers.id)).scalar()

@@ -127,6 +127,7 @@ main
 .content {
     display: none;
     min-height: 30rem;
+    border-radius: 15px;
     box-shadow: 0px 0px 25px 5px #292929;;
     box-sizing: border-box;
     opacity: 1;
@@ -135,12 +136,12 @@ main
 }
 
 .history {
-    background: linear-gradient(-29deg, rgb(23 23 23) 0%, rgb(92 23 65) 42%, rgb(49 49 49) 72%, rgb(74 74 74) 100%);
-    animation: gradient 10s infinite linear; 
-    background-size: 400%; 
+    background: linear-gradient(-29deg, #141414 11%, #721c24de 40%, #141414 80%);
+    animation: gradient 30s infinite linear;
+    background-size: 400%;
     width: 400px;
     max-height: 30rem;
-    background-color: #333333;
+    background-color: #141414;
     padding: 20px;
     overflow-y: scroll;
     border-top-left-radius: 15px;
@@ -157,11 +158,12 @@ main
 }
 
 .form {
-    background: linear-gradient(149deg, rgb(23 23 23) 0%, rgb(92 23 65) 42%, rgb(49 49 49) 72%, rgb(74 74 74) 100%);
-    animation: gradient 10s infinite linear; 
-    background-size: 400%; 
+    background: linear-gradient(149deg, #141414 11%, #721c24de 40%, #141414 80%);
+    animation: gradient 30s infinite linear;
+    background-size: 400%;
     width: 400px;
-    background-color: #333;
+    max-height: 30rem;
+    background-color: #141414;
     padding: 20px;
     border-left: #9b3251 solid 2px;
 
@@ -326,4 +328,124 @@ main
 .personal-date
 {
     display: flex;
+}
+
+.form-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.group-contaniner-modal {
+    display: flex;
+    justify-content: center;
+}
+
+.form-input-modal {
+    width: 175px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    background: #1d1b1b;
+    border-radius: 10px;
+    border: #0c0c0c solid 2px;
+    box-shadow: inset #0c0c0c 0 0 5px 2px;
+    transition: all .5s ease-in-out;
+}
+
+.personal-info {
+    width: 510px;
+}
+
+.form-input-modal.error {
+    background: #e81c5a8c;
+}
+
+.form-input-modal input {
+    width: 95%;
+    padding: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 5px;
+    border: #1f1e1e;
+    background: #1f1e1e;
+    color: white;
+}
+
+.form-control {
+    text-align: center;
+    margin-bottom: 15px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.form-control label {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.form-control a {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px;
+    display: flex;
+    justify-content: end;
+    transition: all 0.5s ease-in-out;
+}
+
+.form-control a:hover {
+    color: grey;
+}
+.submit-btn-contanier {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+}
+
+.submit-btn-contanier {
+    display: flex;
+    justify-content: center;
+    padding: 5px;
+}
+
+.submit-btn {
+    padding: 5px 10px;
+    background: #141414;
+    border: #201f1f solid 2px;
+    border-radius: 10px;
+    box-shadow: #1e1e1e 0 0 8px 3px;
+    transition: all 0.3s ease-in-out;
+}
+
+.submit-btn::before {
+    box-shadow: none;
+}
+
+.submit-btn::after {
+    box-shadow: inset #1e1e1e 0 0 8px 3px;
+}
+
+.submit-btn:hover {
+    box-shadow: inset #0e0e0e 0 0 8px 3px;
+    border: #0e0e0e solid 2px; 
+}
+
+.submit-btn:hover,
+.submit-btn:focus {
+    border-color: #0e0e0e;
+    box-shadow: inset #0e0e0e 0 0 8px 3px; 
+}
+
+.submit-btn:focus {
+    outline: none;
+    box-shadow: inset #0e0e0e 0 0 8px 3px, 0 0 10px 2px rgba(0, 0, 0, 0.5); 
+}
+
+
+.submit-btn-contanier input[type="submit"] {
+    padding: 3px 20px;
+    font-size: 14px;
+    background: #141414;
+    border: none;
+    color: white;
+    font-weight: 600;
 }

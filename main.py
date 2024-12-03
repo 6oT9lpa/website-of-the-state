@@ -408,9 +408,11 @@ def auth_guest():
   next_url = request.args.get('/')
   if current_user.is_authenticated:
     return redirect(next_url or url_for('main.index'))
-  
-  isVerification = False
-  session['isVerification'] = isVerification
+
+  if session.get('nickname') and session.get('static') and session.get('discord') and session.get('password'):
+    session['isVerification'] = True
+  else:
+    session['isVerification'] = False
 
   form = GuestForm()
   return render_template('auth_guest.html', form=form)
@@ -475,7 +477,56 @@ def create_guest():
   isVerification = True
   session['isVerification'] = isVerification
   return redirect(url_for('main.auth_guest'))
+
+@main.route('/validate-verificate-code', methods=['POST', 'GET'])
+def validate_code():
+  from __init__ import cipher, guestUsers, db, PermissionUsers
+
+  print(cipher.decrypt(session.get('verification_code').encode()).decode())
+
+  entered_code = request.form.get('verify-code')
+  if entered_code and int(entered_code) == int(cipher.decrypt(session.get('verification_code').encode()).decode()):
+    nickname = cipher.decrypt(session.get('nickname').encode()).decode()
+    static = int(cipher.decrypt(session.get('static').encode()).decode())
+    discord = int(cipher.decrypt(session.get('discord').encode()).decode())
+    password = cipher.decrypt(session.get('password').encode()).decode()
+
+    try:
+      new_guest = guestUsers(
+        nickname=nickname,
+        static=static,
+        discord_id=discord,
+        password=password
+      )
+      new_permission = PermissionUsers( )
+      db.session.add(new_permission)
+      db.session.add(new_guest)
+      db.session.commit()
+
+      session.pop('nickname', None)
+      session.pop('static', None)
+      session.pop('discord', None)
+      session.pop('password', None)
+      session.pop('verification_code', None)
+
+      isVerification = False
+      session['isVerification'] = isVerification
+
+      flash('Пользователь успешно зарегистрирован!')
+      return redirect(url_for('main.index'))
   
+    except SQLAlchemyError as e:
+      db.session.rollback() 
+      print(f'Ошибка при регистрации пользователя: {str(e)}')
+      isVerification = True
+      session['isVerification'] = isVerification
+      return redirect(url_for('main.auth_guest'))
+    
+  else:
+    isVerification = True
+    session['isVerification'] = isVerification
+    flash('Неверный код. Попробуйте снова.', 'error')
+    return redirect(url_for('main.auth_guest'))
      
 @main.route('/get-claim-district-content', methods=['GET'])
 def get_claim_district_content():
@@ -518,7 +569,6 @@ def create_claim():
     if lower:
       static = lower.split(' ', 1)[1] if ' ' in lower else None
     
-
     if static != None and lower:
       user_lower = Users.query.filter_by(static=static).first()
       guest_lower = guestUsers.query.filter_by(static=static).first()
@@ -701,7 +751,6 @@ def get_news(news_id):
         'picture': news_item.picture
     })
 
-# Логирование
 @main.route('/auth', methods=['POST', 'GET'])
 def auth():
   from __init__ import db, Users, guestUsers
@@ -1943,7 +1992,7 @@ def user_is_moder(f):
             flash('UID не указан.')
             return abort(400)
         
-        pdf_doc = PDFDocument.query.filter_by(user_static=current_user.static, uid=uid).first()
+        pdf_doc = PDFDocument.query.filter_by(author_id=current_user.id, uid=uid).first()
 
         if not pdf_doc:
           flash('Вы не можете редактировать это постановление!')
@@ -1974,7 +2023,7 @@ def edit_doc():
 
 @main.route('/edit_resolution', methods=['GET', 'POST'])
 def edit_resolution():
-  from __init__ import ResolutionTheUser, Users, db
+  from __init__ import ResolutionTheUser, Users, db, PDFDocument
   from form import FormEditResolution
   
   uid = request.args.get('uid')
@@ -1984,7 +2033,7 @@ def edit_resolution():
     if not is_send_allowed():
       return redirect(url_for('main.doc'))
 
-    doc = ResolutionTheUser.query.filter_by(uid=uid).first()
+    doc = ResolutionTheUser.query.filter_by(current_uid=uid).first()
     nickname_victim = form.param1.data
     nickname_accused = form.param2.data
     static_accused = form.param3.data
@@ -1992,12 +2041,12 @@ def edit_resolution():
     del_item = form.param5.data
     del_item_list = [int(x) for x in del_item.replace(',', ' ').split() if x.isdigit()]
 
-    selected_static_accused = static_accused if static_accused != '' else doc.static_accused
-    selected_nickname_accused = nickname_accused if nickname_accused != '' else doc.nickname_accused
-    selected_nickname_victim = nickname_victim if nickname_victim != '' else doc.victim_nickname
-    selected_time_arrest = time_arrest if time_arrest != '' else doc.time_arrest
+    static = static_accused if static_accused != '' else doc.static_accused
+    nickname = nickname_accused if nickname_accused != '' else doc.nickname_accused
+    nickname_victim = nickname_victim if nickname_victim != '' else doc.victim_nickname
+    time_arrest = time_arrest if time_arrest != '' else doc.time_arrest
 
-    user = Users.query.filter_by(static=selected_static_accused)
+    user = Users.query.filter_by(static=static).first()
 
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
@@ -2018,54 +2067,54 @@ def edit_resolution():
 
     # Номер документа и дата
     draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
-    draw_text(pdf, 30, 200, f"Doc. No: {doc.number_resolution if doc else ''}")
 
     # Основной текст постановления
-    draw_text(pdf, 15, 190, f"Я, {current_user.nikname}, являюсь Прокурором штата San Andreas, пользуясь правами,")
-    draw_text(pdf, 15, 185, "данными мне Конституцией и законодательством штата San Andreas, а также иными нормативно-правовыми актами,")
+    draw_text(pdf, 15, 190, f"Я, {current_user.nikname}, являюсь Прокурором штата San Andreas, пользуясь правами, данными мне Конституцией")
+    draw_text(pdf, 15, 185, "и законодательством штата San Andreas, а также иными нормативно-правовыми актами,")
     draw_text(pdf, 15, 180, "в связи с необходимостью обеспечения законности и правопорядка в рамках своих полномочий,")
-    draw_text(pdf, 80, 175, "ПОСТАНОВЛЯЮ:")
+    draw_text(pdf, 80, 170, "ПОСТАНОВЛЯЮ:")
 
-    y = 170
+    y = 160
     num = 1
 
-    if doc.param_limit1 and 1 not in del_item_list:
+    print(doc.initiation_case)
+    if doc.initiation_case:
       text = (f"{num}. Возбудить уголовное дело в отношении {'сотрудника ' + user.organ if user else 'гражданина'} "
-              f"{selected_nickname_accused}, с номером паспортные данные {selected_static_accused}. Присвоить делу идентификатор {doc.number_case} и принять его к производству прокуратурой штата.")
+              f"{nickname if nickname != '' else ''}, с номером паспортные данные {static}. Присвоить делу идентификатор {doc.number_case} и принять его к производству прокуратурой штата.")
       y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
       num += 1
 
-    if doc.param_limit2 and 2 not in del_item_list:
-      text = (f"{num}. Обязать {'сотрудника ' + user.organ if user else 'гражданина'} {selected_nickname_accused}, с номером паспортные данные {selected_static_accused}, "
-              f"в течение 24 часов предоставить на почту Прокурора {current_user.nikname} ({current_user.discordname}@gov.sa) видеозапись процессуальных действий, проведённых в отношении {selected_nickname_victim}, время провдение ареста {selected_time_arrest}. "
-              f"Запись должна содержать момент ареста и фиксировать предполагаемое нарушение.")
+    if doc.provide_video:
+      text = (f"{num}. Обязать {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортные данные {static}, "
+              f"в течение 24 часов предоставить на почту Прокурора {current_user.nikname} ({current_user.discordname}@gov.sa) видеозапись процессуальных действий, проведённых в отношении {nickname_victim}, время провдение ареста {time_arrest}. "
+              f"Запись должна содержать момент ареста {time_arrest} и фиксировать предполагаемое нарушение.")
       y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
       num += 1
 
-    if doc.param_limit3 and 3 not in del_item_list:
-      text = (f"{num}. Предоставить личное дело {'сотрудника ' + user.organ if user else 'гражданина'} {selected_nickname_accused}, "
-              f"с номером паспортные данные {selected_static_accused}, включающее электронную почту, должность. Срок предоставления информации — 24 часа.")
+    if doc.provide_personal_file:
+      text = (f"{num}. Предоставить личное дело {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, "
+              f"с номером паспортные данные {static}, включающее электронную почту, должность. Срок предоставления информации — 24 часа.")
       y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
       num += 1
 
-    if doc.param_limit4 and 4 not in del_item_list:
-      text = f"{num}. Ввести запрет на смену персональных данных {'сотрудника ' + user.organ if user else 'гражданина'} {selected_nickname_accused}, с номером паспортные данные {selected_static_accused}."
+    if doc.changing_personal_data:
+      text = f"{num}. Ввести запрет на смену персональных данных {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортные данные {static}."
       y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
       num += 1
 
-    if doc.param_limit5 and user and user.action != 'Dismissal' and 5 not in del_item_list:
-      text = (f"{num}. Ввести запрет на увольнение сотрудника {user.organ} {selected_nickname_accused} с номером паспортные данные {selected_static_accused} "
+    if doc.dismissal_employee and user and user.action != 'Dismissal':
+      text = (f"{num}. Ввести запрет на увольнение сотрудника {user.organ} {nickname if nickname != '' else ''} с номером паспортные данные {static} "
               f"и на перевод в другие государственные структуры на период расследования по делу с идентификатором {doc.number_case}.")
       y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
       num += 1
 
-    if doc.param_limit6 and user and user.action != 'Dismissal' and 6 not in del_item_list:
-      text = f"{num}. Временно отстранить сотрудника {user.organ} {selected_nickname_accused}, с номером паспортные данные {selected_static_accused}, от исполнения служебных обязанностей на время расследования по делу с идентификатором {doc.number_case}."
+    if doc.temporarily_suspend and user and user.action != 'Dismissal':
+      text = f"{num}. Временно отстранить сотрудника {user.organ} {nickname}, с номером паспортные данные {static}, от исполнения служебных обязанностей на время расследования по делу с идентификатором {doc.number_case}."
       y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
       num += 1
@@ -2076,21 +2125,25 @@ def edit_resolution():
     pdf.showPage()
     pdf.save()
     buffer.seek(0)
+    
+    file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
+    with open(file_path, 'wb') as f:
+      f.write(buffer.getvalue())
 
     status = 'edit'
-    send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status=status, number_resolution=doc.number_resolution)
+    send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status=status, number_resolution='123')
     
-    doc.nickname_accused = selected_nickname_accused
-    doc.static_accused = selected_static_accused
+    doc.nickname_accused = nickname
+    doc.static_accused = static
     doc.discord_accused = user.discordid if user else None
-    doc.initiation_case=None if 1 not in del_item_list else doc.initiation_case
-    doc.provide_video=None if 2 not in del_item_list else doc.provide_video
-    doc.provide_personal_file=None if 3 not in del_item_list else doc.provide_personal_file
-    doc.changing_personal_data=None if 4 not in del_item_list else doc.changing_personal_data
-    doc.dismissal_employee=None if 5 not in del_item_list else doc.dismissal_employee
-    doc.temporarily_suspend=None if 6 not in del_item_list else doc.temporarily_suspend
+    doc.initiation_case=None if '1' in del_item_list else doc.initiation_case
+    doc.provide_video=None if '2' in del_item_list else doc.provide_video
+    doc.provide_personal_file=None if '3' in del_item_list else doc.provide_personal_file
+    doc.changing_personal_data=None if '4' in del_item_list else doc.changing_personal_data
+    doc.dismissal_employee=None if '5' in del_item_list else doc.dismissal_employee
+    doc.temporarily_suspend=None if '6' in del_item_list else doc.temporarily_suspend
     doc.victim_nickname=nickname_victim
-    doc.time_arrest=selected_time_arrest
+    doc.time_arrest=time_arrest
 
     db.session.commit()
     

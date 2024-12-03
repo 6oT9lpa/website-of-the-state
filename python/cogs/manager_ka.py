@@ -14,74 +14,81 @@ class ManagerAuditMessage(commands.Cog):
         channel = self.bot.get_channel(self.channel_id)
         if action == "Invite":
             embed = disnake.Embed(
-                title="Кадровый аудит • Принятие",
+                title=f"Кадровый аудит • Принятие  || {nikname_to} #{static_to} ||",
                 color=disnake.Color.green()
             )
-                
-            embed.add_field(name="Принял", value=f"<@{discord_id_from}> | {nikname_from}", inline=True)
-            embed.add_field(name="Принят", value=f"<@{discord_id_to}> | {nikname_to}", inline=True)
-
-            embed.add_field(name="Номер паспорта", value=static_to, inline=False)
-            embed.add_field(name="Действие", value='Принятие во фракцию', inline=False)
-            embed.add_field(name="Причина", value=reason, inline=False)
-            embed.add_field(name="Ранг", value=f"Предыдущий **{prev_rank}** | Текущий  **{curr_rank}**", inline=True)
+            
+            embed.add_field(name=" ", value=f"Сотрудник <@{discord_id_from}> | {nikname_from} принял гражданина <@{discord_id_to}> | {nikname_to} #{static_to}", inline=False)
+            embed.add_field(name="> Имя Фамилия (гражданина)", value=f"```{nikname_to}```", inline=True)
+            embed.add_field(name="> Паспорт (гражданина)", value=f"```{static_to}```", inline=True)
+            embed.add_field(name="> Причина", value=f"```{reason}```", inline=False)
+            embed.add_field(name="> Ранг", value=f"```Принят на {curr_rank}```", inline=False)
             
             current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Дата: {current_datetime}")
-            await channel.send(embed=embed)
+
+            await channel.send(
+                content=f'Сотрудник оформил кадровый аудит <@{discord_id_from}>',
+                embed=embed
+            )
 
         elif action == "Dismissal":
             embed = disnake.Embed(
-                title="Кадровый аудит • Увольнение",
+                title=f"Кадровый аудит • Увольнение || {nikname_to} #{static_to} ||",
                 color=disnake.Color.red()
             )
                 
-            embed.add_field(name="Уволил", value=f"<@{discord_id_from}> | {nikname_from}", inline=True)
-            embed.add_field(name="Уволен", value=f"<@{discord_id_to}> | {nikname_to}", inline=True)
-
-            embed.add_field(name="Номер паспорта", value=static_to, inline=False)
-            embed.add_field(name="Действие", value='Увольнение из фракцию', inline=False)
-            embed.add_field(name="Причина", value=reason, inline=False)
+            embed.add_field(name=" ", value=f"Сотрудник <@{discord_id_from}> | {nikname_from} уволил сотрудника <@{discord_id_to}> | {nikname_to} #{static_to}", inline=False)
+            embed.add_field(name="> Имя Фамилия (сотрудника)", value=f"```{nikname_to}```", inline=True)
+            embed.add_field(name="> Паспорт (сотрудника)", value=f"```{static_to}```", inline=True)
+            embed.add_field(name="> Причина", value=f"```{reason}```", inline=False)
+            embed.add_field(name="> Ранг", value=f"```Уволен с {prev_rank} - предыдущий {curr_rank}```", inline=False)
             
             current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Дата: {current_datetime}")
-            await channel.send(embed=embed)
 
+            await channel.send(
+                content=f'Сотрудник оформил кадровый аудит <@{discord_id_from}>',
+                embed=embed
+            )
         elif action == "Raising":
             embed = disnake.Embed(
-                title="Кадровый аудит • Повышение",
+                title=f"Кадровый аудит • Повышение || {nikname_to} #{static_to} ||",
                 color=disnake.Color.yellow()
             )
                 
-            embed.add_field(name="Повысил", value=f"<@{discord_id_from}> | {nikname_from}", inline=True)
-            embed.add_field(name="Повышен", value=f"<@{discord_id_to}> | {nikname_to}", inline=True)
-
-            embed.add_field(name="Номер паспорта", value=static_to, inline=False)
-            embed.add_field(name="Действие", value='Повышение в должности', inline=False)
-            embed.add_field(name="Причина", value=reason, inline=False)
-            embed.add_field(name="Ранг", value=f"Предыдущий **{prev_rank}** | Текущий  **{curr_rank}**", inline=True)
+            embed.add_field(name=" ", value=f"Сотрудник <@{discord_id_from}> | {nikname_from} повысил сотрудника <@{discord_id_to}> | {nikname_to} #{static_to}", inline=False)
+            embed.add_field(name="> Имя Фамилия (сотрудника)", value=f"```{nikname_to}```", inline=True)
+            embed.add_field(name="> Паспорт (сотрудника)", value=f"```{static_to}```", inline=True)
+            embed.add_field(name="> Причина", value=f"```{reason}```", inline=False)
+            embed.add_field(name="> Ранг", value=f"```Повышен до {curr_rank} - предыдущий {prev_rank}```", inline=False)
             
             current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Дата: {current_datetime}")
-            await channel.send(embed=embed)
+
+            await channel.send(
+                content=f'Сотрудник оформил кадровый аудит <@{discord_id_from}>',
+                embed=embed
+            )
             
         elif action == "Demotion":
             embed = disnake.Embed(
-                title="Кадровый аудит • Понижение",
+                title=f"Кадровый аудит • Понижение || {nikname_to} #{static_to} ||",
                 color=disnake.Color.yellow()
             )
                 
-            embed.add_field(name="Понизил", value=f"<@{discord_id_from}> | {nikname_from}", inline=True)
-            embed.add_field(name="Понижен", value=f"<@{discord_id_to}> | {nikname_to}", inline=True)
-
-            embed.add_field(name="Номер паспорта ", value=static_to, inline=False)
-            embed.add_field(name="Действи", value='Понижение в должности', inline=False)
-            embed.add_field(name="Ранг", value=f"Предыдущий **{prev_rank}** | Текущий  **{curr_rank}**", inline=True)
-            embed.add_field(name="Причина", value=reason, inline=False)
+            embed.add_field(name=" ", value=f"Сотрудник <@{discord_id_from}> | {nikname_from} понизил сотрудника <@{discord_id_to}> | {nikname_to} #{static_to}", inline=False)
+            embed.add_field(name="> Имя Фамилия (сотрудника)", value=f"```{nikname_to}```", inline=True)
+            embed.add_field(name="> Паспорт (сотрудника)", value=f"```{static_to}```", inline=True)
+            embed.add_field(name="> Причина", value=f"```{reason}```", inline=False)
+            embed.add_field(name="> Ранг", value=f"```Понижен до {curr_rank} - предыдущий {prev_rank}```", inline=False)
             
             current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Дата: {current_datetime}")
-            await channel.send(embed=embed)
+            await channel.send(
+                content=f'Сотрудник оформил кадровый аудит <@{discord_id_from}>',
+                embed=embed
+            )
 
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)     
 async def process_ka_messages(manager_audit):

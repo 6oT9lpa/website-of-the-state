@@ -30,7 +30,7 @@ class SendDmMessage(commands.Cog):
 
             # Создаем сообщение с встраиванием
             embed = disnake.Embed(
-                title=f"Пришло новое постановление от **{nickname} {static}** ||<@{discordid}>||",
+                title=f"Пришло новое постановление от прокурора `{nickname} #{static}` ||<@{discordid}>||",
                 description=(
                     "Требуется модерация постановления!\n"
                     "Чтобы начать модерацию, нажмите на кнопку ниже\n\n"
@@ -66,22 +66,28 @@ class SendDmMessage(commands.Cog):
             embed = disnake.Embed(
                 title=f"Вы были приняты во фракцию **{organ}**",
                 description=(
-                    f"Ваш логин от аккаунта: **{static}**\n"
-                    f"Ваш пароль от аккаунта: {password}\n\n"
+                    f"Ваш логин (static) от аккаунта: ```{static}```\n"
+                    f"Ваш пароль от аккаунта: ```{password}```\n\n"
                     "Вам нужно сменить пароль на свой, чтобы повысить безопасность вашего аккаунта."
                 ),
                 color=disnake.Color.green()
             )
             embed.set_footer(text="Если вы считаете, что это ошибочное сообщение, свяжитесь с 6ot9lpa")
 
-            button = Button(
+            button1 = Button(
                 label="Сменить пароль",
                 url="http://26.120.213.68:8000/auth?next=http://26.120.213.68:8000/change_password",
                 style=ButtonStyle.link
             )
+            button2 = Button(
+                label="Перейти на сайт",
+                url="http://26.120.213.68:8000/",
+                style=ButtonStyle.link
+            )
 
             view = View()
-            view.add_item(button)
+            view.add_item(button1)
+            view.add_item(button2)
 
             await user.send(embed=embed, view=view)
             print(f"Сообщение отправлено пользователю {discord_id}")
@@ -97,7 +103,7 @@ class SendDmMessage(commands.Cog):
             embed = disnake.Embed(
                 title=f"Вы были уволены из фракции **{organ}**",
                 description=(
-                    f"Ваш логин от аккаунта: **{static}**\n\n"
+                    f"Ваш логин от аккаунта: ```{static}```\n\n"
                     "Ваш аккаунт был заморожен, так как вы больше не находитесь в данной фракции."
                 ),
                 color=disnake.Color.red()

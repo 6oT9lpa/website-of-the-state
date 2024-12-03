@@ -24,108 +24,60 @@
                     {{ form.action(class="action") }}
                 </div>
                 <h2>Кадровый Аудит</h2>
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                  {% if messages %}
-                    <ul class=flashes>
-                    {% for category, message in messages %}
-                      <li class="{{ category }} errorli">{{ message }}</li>
-                    {% endfor %}
-                    </ul>
-                  {% endif %}
-                {% endwith %}
-                <div class="discord">
-                    <div class="form-input">
-                        <label for="discord-id">DISCORD ID</label>
-                        {% if form.discordID.errors %}
-                            {{ form.discordID(class="discord-id is-valid")}}
-                            {% for error in form.discordID.errors %}
-                                <span class="focus-input100 text-danger">{{ error }}</span>
-                            {% endfor %}
-                            {% else %}
-                            {{ form.discordID(class="discord-id")}}
-                            <span class="symbol-input100">
-                                <i class="fa fa-user" aria-hidden="true"></i>
-                            </span>
-                        {% endif %}
+                <div class='form-container'>
+                    <div class='group-contaniner-modal'>
+                        <div class='form-control'>
+                            <label for="phone">Discord ID</label>
+                            <div class='form-input-modal' id='phone-plaintiff'>
+                                {{ form.discordID(class="discord-id")}}
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                        <div class='form-control'>
+                            <label for="phone">Discord Name</label>
+                            <div class='form-input-modal' id='phone-plaintiff'>
+                                {{ form.discordName(class="discord-id")}}
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
                     </div>
-                    <div class="form-input">
-                        <label for="discord-id">DISCORD NAME</label>
-                        {% if form.discordName.errors %}
-                            {{ form.discordName(class="discord-name is-valid")}}
-                            {% for error in form.discordName.errors %}
-                                <span class="focus-input100 text-danger">{{ error }}</span>
-                            {% endfor %}
-                            {% else %}
-                            {{ form.discordName(class="discord-id")}}
-                            <span class="symbol-input100">
-                                <i class="fa fa-user" aria-hidden="true"></i>
-                            </span>
-                        {% endif %}
+                    <div class='group-contaniner-modal'>
+                        <div class='form-control'>
+                            <label for="phone">Static</label>
+                            <div class='form-input-modal' id='phone-plaintiff'>
+                                {{ form.static(class="")}}
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                        <div class='form-control'>
+                            <label for="phone">NickName</label>
+                            <div class='form-input-modal' id='lower'>
+                                {{ form.nikname(class="")}}
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
                     </div>
-                </div>
-                <div class="game-info">
-                    <div class="form-input">
-                        <label for="static">STATIC</label>
-                        {% if form.static.errors %}
-                            {{ form.static(class="static is-valid")}}
-                            {% for error in form.discordName.errors %}
-                                <span class="focus-input100 text-danger">{{ error }}</span>
-                            {% endfor %}
-                            {% else %}
-                            {{ form.static(class="static")}}
-                            <span class="symbol-input100">
-                                <i class="fa fa-user" aria-hidden="true"></i>
-                            </span>
-                        {% endif %}
+                    <div class='group-contaniner-modal'>
+                        <div class='form-control'>
+                            <label for="phone">Rank</label>
+                            <div class='form-input-modal' id='phone-plaintiff'>
+                                {{ form.rank(class="")}}
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                        <div class='form-control'>
+                            <label for="phone">Reason</label>
+                            <div class='form-input-modal' id='lower'>
+                                {{ form.reason(class="")}}
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
                     </div>
-                    <div class="form-input">
-                        <label for="nikname">NIKNAME</label>
-                        {% if form.nikname.errors %}
-                            {{ form.nikname(class=" is-valid")}}
-                            {% for error in form.nikname.errors %}
-                                <span class="focus-input100 text-danger">{{ error }}</span>
-                            {% endfor %}
-                            {% else %}
-                            {{ form.nikname(class="")}}
-                            <span class="symbol-input100">
-                                <i class="fa fa-user" aria-hidden="true"></i>
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="rank">
-                    <div class="form-input">
-                        <label for="rank">RANK</label>
-                        {% if form.rank.errors %}
-                            {{ form.rank(class=" is-valid")}}
-                            {% for error in form.rank.errors %}
-                                <span class="focus-input100 text-danger">{{ error }}</span>
-                            {% endfor %}
-                            {% else %}
-                            {{ form.rank(class="")}}
-                            <span class="symbol-input100">
-                                <i class="fa fa-user" aria-hidden="true"></i>
-                            </span>
-                        {% endif %}
-                    </div>
-                    <div class="form-input">
-                        <label for="reason">REASON</label>
-                        {% if form.reason.errors %}
-                            {{ form.reason(class="is-valid")}}
-                            {% for error in form.reason.errors %}
-                                <span class="focus-input100 text-danger">{{ error }}</span>
-                            {% endfor %}
-                            {% else %}
-                            {{ form.reason(class="")}}
-                            <span class="symbol-input100">
-                                <i class="fa fa-user" aria-hidden="true"></i>
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-            
-                <div class="form-button-container">
-                    {{ form.submit(class="form-button", href="{{ url_for('main.create_audit')}}") }}
+                </div>        
+                <div class='submit-btn-contanier'>
+                    <div class='submit-btn'>
+                        {{ form.submit() }}
+                    </div>   
                 </div>
             </form>
         </div>

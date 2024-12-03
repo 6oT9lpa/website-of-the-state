@@ -13,31 +13,11 @@
                 <div class="game-info">
                     <div class="form-input">
                         <label for="static">STATIC</label>
-                        {% if form.static.errors %}
-                            {{ form.static(class="static is-valid")}}
-                            {% for error in form.discordName.errors %}
-                                <span class="focus-input100 text-danger">{{ error }}</span>
-                            {% endfor %}
-                            {% else %}
-                            {{ form.static(class="static")}}
-                            <span class="symbol-input100">
-                                <i class="fa fa-user" aria-hidden="true"></i>
-                            </span>
-                        {% endif %}
+                        {{ form.static(class="static")}}
                     </div>
                     <div class="form-input">
                         <label for="nickname">NICKNAME</label>
-                        {% if form.nickname.errors %}
-                            {{ form.nickname(class=" is-valid")}}
-                            {% for error in form.nickname.errors %}
-                                <span class="focus-input100 text-danger">{{ error }}</span>
-                            {% endfor %}
-                            {% else %}
-                            {{ form.nickname(class="")}}
-                            <span class="symbol-input100">
-                                <i class="fa fa-user" aria-hidden="true"></i>
-                            </span>
-                        {% endif %}
+                        {{ form.nickname(class=" is-valid")}}
                     </div>
 
                     <div id="select-box">

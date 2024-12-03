@@ -91,28 +91,24 @@ class ModerationDoc(commands.Cog):
             permission_none = await process_permission_messages()
             if permission_none:
                 try:
-                    # Отправляем сообщение об ошибке в личные сообщения пользователю
                     await interaction.user.send("У вас нет прав на модерацию постановлений.")
                     print(f"Пользователь {interaction.user.id} не имеет прав на модерацию. Сообщение отправлено в ЛС.")
                 except disnake.Forbidden:
-                    # Если не удалось отправить в ЛС, отправляем ответ прямо в чат
                     if not interaction.response.is_done():
                         await interaction.response.send_message(
                             "У вас нет прав на модерацию постановлений, и я не смог отправить вам сообщение в личные сообщения.",
                             ephemeral=True
                         )
                     print(f"Не удалось отправить сообщение в ЛС пользователю {interaction.user.id}. Сообщение отправлено в чат.")
-                
-                # Обновляем статус кнопки и сохраняем изменения
+                ""
                 self.messages[message_id]["is_active"] = False
                 self.save_message_data()
                 await self.update_message_view(message_id)
                 return
 
-            # Обновляем embed, чтобы показать, что пользователь выполняет модерацию
             embed = interaction.message.embeds[0]
             embed.add_field(name="Модерируется", value=f"<@{interaction.user.id}>", inline=False)
-            view.clear_items()  # Удаляем кнопку
+            view.clear_items()
             await interaction.message.edit(embed=embed, view=view)
 
         button.callback = button_callback
@@ -202,7 +198,7 @@ class ModerationDoc(commands.Cog):
                 global embed
                 # Создаем сообщение с встраиванием
                 embed = disnake.Embed(
-                    title=f"Пришло новое постановление **{number_resolution}** от **{nickname} {static}** || <@{discordid}> ||",
+                    title=f"Пришло новое постановление **{number_resolution}** от прокурора `{nickname} #{static}`",
                     description=(
                         "Требуется модерация постановления!\n"
                         "Чтобы начать модерацию, нажмите на кнопку ниже\n\n"
@@ -213,7 +209,7 @@ class ModerationDoc(commands.Cog):
             
             elif status == 'edit':
                 embed = disnake.Embed(
-                    title=f"Пришло измененное постановление **{number_resolution}** от **{nickname} {static}** || <@{discordid}> ||",
+                    title=f"Пришло измененное постановление **{number_resolution}** от прокурора `{nickname} #{static}`",
                     description=(
                         "Требуется модерация постановления!\n"
                         "Чтобы начать модерацию, нажмите на кнопку ниже\n\n"
