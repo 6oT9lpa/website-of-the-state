@@ -346,6 +346,14 @@ def index():
   from __init__ import PermissionUsers, Users, db, News
   from form import Formnews
   import time
+
+  session['isVerification'] = False
+  session.pop('nickname', None)
+  session.pop('static', None)
+  session.pop('discord', None)
+  session.pop('password', None)
+  session.pop('verification_code', None)
+
   form = Formnews()
   city_hallnews = News.query.filter_by(typenews="cityhall").all()
   leadernews = News.query.filter_by(typenews="leaders").all()
@@ -492,9 +500,15 @@ def validate_code():
         discord_id=discord,
         password=password
       )
-      new_permission = PermissionUsers( )
-      db.session.add(new_permission)
       db.session.add(new_guest)
+      db.session.commit()
+
+      guest = guestUsers.query.filter_by(static=static).first()
+
+      new_permission = PermissionUsers( 
+        guest_id = guest.id
+      )
+      db.session.add(new_permission)
       db.session.commit()
 
       session.pop('nickname', None)
