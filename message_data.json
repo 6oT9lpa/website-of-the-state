@@ -172,9 +172,9 @@
             "channel_id": 1286759030257221714,
             "button_label": "\u041c\u043e\u0434\u0435\u0440\u0430\u0446\u0438\u044f",
             "uid": "76999084668978073271273637",
-            "button_url": null,
+            "button_url": "http://26.120.213.68:8000/resolution?uid=76999084668978073271273637/moderation",
             "message_id": "1312819471684997150",
-            "is_active": false
+            "is_active": true
         }
     }
 }

@@ -846,6 +846,18 @@ a.create-btn:hover {
     transition: all 0.5s ease-in-out;
 }
 
+.hidden-modal {
+    opacity: 0;
+    transform: scale(0.7);
+    transition: all 0.5s ease-in-out;
+}
+
+.show-modal {
+    opacity: 1;
+    transform: scale(1);
+    transition: all 0.5s ease-in-out;
+}
+
 .modal-district-content {
     position: absolute;
     top: -85px;
@@ -871,14 +883,14 @@ a.create-btn:hover {
     font-weight: 600;
 }
 
-span#btn-modal-close {
+span.btn-modal-close {
     color: white;
     font-size: 20px;
     font-weight: 900;
     transition: all 0.5s ease-in-out;
 }
 
-span#btn-modal-close:hover {
+span.btn-modal-close:hover {
     color: grey;
 }
 

@@ -17,7 +17,11 @@ from pdf2image import convert_from_path
 from cryptography.fernet import Fernet
 import random, string, redis, json, os, re, shutil, logging, json, pickle
 from logging import handlers
+import sqlalchemy
+from sqlalchemy import func
+from sqlalchemy.types import JSON
 import base64, random
+from pickle import loads
 
 """
 def setup_logging():
@@ -88,15 +92,13 @@ def check_isk_status(isk):
       print(f"Ошибка обработки строки '{item}': {e}")
 
   if current_user.is_authenticated:
-    if current_user.static == isk.created:
-      status = "Created"
-    elif any(current_user.static == defenda['static'] for defenda in result):
+    if any(current_user.static == defenda['static'] for defenda in result):
       status = 'Defenda'
 
     elif current_user.user_type == 'user' and (current_user.id == isk.judge or (not isk.judge and current_user.curr_rank in [13, 15, 21])):
       status = 'Judge'
 
-    elif isk.prosecutor and current_user.id == isk.prosecutor and not current_user.is_guest:
+    elif isk.prosecutor and current_user.id == isk.prosecutor and current_user.user_type == 'user':
       status = 'Prosecutor'
 
     elif isk.lawerc and current_user.id == isk.lawerc:
@@ -334,9 +336,8 @@ def upload_image_to_imgur(image):
         data = response.json()
         return data['data']['link']
     else:
-        return None
+      return None
     
-# главная страница
 @main.route('/', methods=['POST', 'GET'])
 def index():
   from __init__ import PermissionUsers, Users, db, News
@@ -613,100 +614,13 @@ def create_claim():
     print(f'Ошибка {str(e)}')
     return redirect(url_for('main.doc'))
 
-@main.route('/complaint', methods=['GET', 'POST'])
+@main.route('/complaint', methods=['GET'])
 def claim_state():
-  from __init__ import iskdis, isksup, repltoisks, Users, guestUsers, claimsStatement, courtOrder, db
-
-  if request.method == "POST":
-    typeopr = request.form.get('typeopr') 
-    uid = session.get('cur_uid')
-    if typeopr == "hodataistvo":
-      hodataistv_do = repltoisks.query.filter_by(current_uid=uid, type_doc="hodataistvo").count()
-      type_hodataistva = request.form.get('type_hodataistva')
-      if type_hodataistva == "freeform":
-        texthod = request.form.get('texthod')
-        replyik = {
-          "№_hodataistva": hodataistv_do + 1,
-          "type_hodataistva": "freeform",
-          "texthod": texthod
-        }
-      elif type_hodataistva == "svidetel":
-        svidetelname = request.form.get('svidetelname')
-        replyik = {
-          "№_hodataistva": hodataistv_do + 1,
-          "type_hodataistva": "svidetel",
-          "svidetelname": svidetelname
-        }
-      elif type_hodataistva == "expert":
-        experttype = request.form.get('experttype')
-        replyik = {
-          "№_hodataistva": hodataistv_do + 1,
-          "type_hodataistva": "expert",
-          "experttype": experttype
-        }
-      elif type_hodataistva == "otvod":
-        otvodselect = request.form.get('otvodselecti')
-        replyik = {
-          "№_hodataistva": hodataistv_do + 1,
-          "type_hodataistva": "otvod",
-          "otvodselect": otvodselect
-        }
-      newhod = repltoisks(current_uid=uid, author_id=current_user.id, type_doc="hodataistvo", replyik=replyik)
-      db.session.add(newhod)
-    elif typeopr == "hodataistvorasm":
-      if not current_user.is_authenticated and current_user.type_user != 'user' and \
-        not current_user.curr_rank in [13, 15, 21]:
-        flash('Вы не судья, вследствие не можете создать определение!')
-        return redirect(url_for('main.claim_state', uid=uid))
-      accepted = request.form.get('accepted')
-      if accepted == True:
-        ruling = request.form.getlist('decision')
-        findings = request.form.get('findings')
-        consideration = request.form.get('consideration') 
-        action = request.form.get('action')
-        otvodsel = request.form.get('otvodsel')
-        changedateinv = request.form.get('newdateinv')
-        expertt = request.form.get('expertt')
-        svidetel = request.form.get('svidetel')
-
-        print(ruling, findings, consideration, action)
-
-        if not all([findings, consideration, action]):
-          flash('Все поля должны быть заполнены!')
-          return redirect(url_for('main.claim_state', uid=uid))
-        
-        if otvodsel:
-          complaint = iskdis.query.filter_by(current_uid=uid).first()
-          otvodsp = otvodsel.split('-')
-
-          otvodrole = otvodsp[0].strip()  
-          otvodnick = otvodsp[1].strip()  
-          otvodstatic = otvodsp.split(' ', 1)[1] if otvodsp.split(' ', 1)[1].isdigit() else None
-          if otvodrole == "defendant":
-            del complaint.defendant[otvodnick]
-          elif otvodrole == "otherme":
-            del complaint.otherme[otvodnick]
-          elif otvodrole == "judge":
-            complaint.judge = None
-          db.session.commit()
-
-        new_order = courtOrder(
-        current_uid = uid,
-        author_id = current_user.id,
-        findings = findings,
-        consideration = consideration,
-        ruling =  ruling
-        )
-        db.session.add(new_order)
-    db.session.commit()
-    response = make_response(redirect(url_for('main.claim_state', uid=uid))) 
-    response.status_code = 200 
-    return response
+  from __init__ import iskdis, isksup, repltoisks, Users, guestUsers, claimsStatement, courtOrder
   
   uid = request.args.get('uid')
   if not uid:
     return "No UID provided", 400
-  session['cur_uid'] = uid
   
   claim_statement_district = iskdis.query.filter_by(current_uid=uid).first()
   claim_statement_supreme = isksup.query.filter_by(current_uid=uid).first()
@@ -715,16 +629,40 @@ def claim_state():
   if not claim_statement_district and not claim_statement_supreme:
     return render_template('api/404.html')
 
-  def othermem(self):
-    if self.otherme:
-      return '\n'.join([f"{key}: {value}" for key, value in self.otherme.items()])
-
-
   if claim_statement_district:
     status = check_isk_status(claim_statement_district)
     isk = claim_statement_district
 
     orders_data = courtOrder.query.filter_by(current_uid=uid).all()
+    replo_data = repltoisks.query.filter_by(current_uid=uid).all()
+
+    replies_data = [
+    {
+        'id-replies': reply.id,
+        'current_uid': reply.current_uid,
+        'author_id': reply.author_id,
+        'replyik': reply.replyik,
+        'moderation': reply.moderation,
+        'type_doc': reply.type_doc,
+        'timespan': reply.timespan
+    } for reply in replo_data ]
+
+    court_orders_data = [
+    {
+        'id-court': order.id,
+        'current_uid': order.current_uid,
+        'author_id': order.author_id,
+        'findings': order.findings,
+        'consideration': order.consideration,
+        'ruling': order.ruling,
+        'type_doc': order.type_doc,
+        'timespan': order.timespan
+    } for order in orders_data ]
+
+    combined_data = sorted(replies_data + court_orders_data, key=lambda x: x['timespan'], reverse=True)
+
+    for item in combined_data:
+      print(item)
 
     createat = claimsStatement.query.filter_by(uid=claim_statement_district.current_uid).first()
 
@@ -738,6 +676,7 @@ def claim_state():
     else:
       display_date = create_at_datetime.strftime('%Y-%m-%d %H:%M')
 
+
     return render_template(
       'complaint.html',
       district=claim_statement_district,
@@ -747,9 +686,9 @@ def claim_state():
       defendant=isk.defendant,
       claims=isk.claims,
       status=status,
-      orders_data=orders_data,
+      combined_data=combined_data,
+      repltoisk=repltoisk,
       isk=isk,
-      repltoisk=repltoisk
     )
   
   elif claim_statement_supreme:
@@ -758,13 +697,235 @@ def claim_state():
   else:
     flash('Данный иск удален или поврежден!')
     return redirect(url_for('main.doc'))
+
+@main.route('/create_petition', methods=['POST'])
+def createPettion():
+  from __init__ import repltoisks, db
+  uid = request.form.get('uid')
+  if not uid:
+    return "No UID provided", 400
+
+  type_pettion = request.form.get('action')
+  findings = request.form.get('findings')
+  nickname = request.form.get('nickname')
+  static = request.form.get('static')
+
+  replyik = {}
+
+  count = repltoisks.query.filter_by(current_uid=uid, type_doc='pettion').count()
+  if type_pettion == 'svidetel':
+    replyik = {
+      "№-pettion": count + 1,
+      "type": 'svidetel',
+      "nickname": nickname if nickname != '' else None,
+      "static": static if static != '' else None,
+      "findings": findings
+    }
+
+  elif type_pettion == 'expert':
+    replyik = {
+      "№-pettion": count + 1,
+      "type": 'expert',
+      "nickname": nickname if nickname != '' else None,
+      "static": static if static != '' else None,
+      "findings": findings
+    }
+
+  elif type_pettion == 'otvod':
+    replyik = {
+      "№-pettion": count + 1,
+      "type": 'otvod',
+      "nickname": nickname if nickname != '' else None,
+      "static": static if static != '' else None,
+      "findings": findings
+    }
+
+  elif type_pettion == 'freeform':
+    replyik = {
+      "№-pettion": count + 1,
+      "type": 'freeform',
+      "nickname": nickname if nickname != '' else None,
+      "static": static if static != '' else None,
+      "findings": findings
+    }
+
+  else:
+    flash('Вы должны заполнить действие для ходатайства.')
+
+  try: 
+    new_pettion = repltoisks(
+      current_uid=uid,
+      author_id=current_user.id,
+      replyik=replyik,
+      type_doc='pettion'
+    )
+
+    db.session.add(new_pettion)
+    db.session.commit()
+    return redirect(url_for('main.claim_state', uid=uid))
+
+  except SQLAlchemyError as e:
+    logging.error(f'Ошибка в бд repltoisks: {e}') 
+    flash('Проблема создания ходатайства, попробуйте позже!')
+    return redirect(url_for('main.claim_state', uid=uid))
+
+
+@main.route('/create_court_pettion', methods=['POST'])
+def courtPettion():
+  from __init__ import db, repltoisks, iskdis, courtOrder
+
+  uid = request.form.get('uid')
+  if not uid:
+    return "No UID provided", 400
   
+  if not is_send_allowed():
+    return redirect(url_for('main.claim_state', uid=uid))
+  
+  action = request.form.get('action')
+  pettion = request.form.get('petition')
+  ruling = request.form.getlist('decision')
+  findings = request.form.get('findings')
+  consideration = request.form.get('consideration') 
+
+  if not all([findings, consideration, action, pettion]):
+    flash('Все поля должны быть заполнены!')
+    return redirect(url_for('main.claim_state', uid=uid))
+  
+  entries = repltoisks.query.filter_by(current_uid=uid).all()
+  entry = None
+  id_entry = None
+
+  for e in entries:
+    if e.replyik['№-pettion'] == int(pettion):
+      id_entry = e.id
+      entry = e.replyik['№-pettion']
+
+  if not entry: 
+    flash(f'Ходатайтсва {pettion} не существует!')
+    return redirect(url_for('main.claim_state', uid=uid))
+  
+  replo = repltoisks.query.filter_by(id=id_entry).first()
+  if action == 'false-petition':
+    try:
+      new_order = courtOrder(
+        author_id = current_user.id,
+        current_uid = uid,
+        findings = findings,
+        ruling = ruling, 
+        consideration = consideration,
+        type_doc = 'court_order'
+      )
+
+      replo.moderation = True
+
+      db.session.add(new_order)
+      db.session.commit()
+      return redirect(url_for('main.claim_state', uid=uid))
+    
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      flash('Возникла проблема, повторите попытку позже!')
+      return redirect(url_for('main.claim_state', uid=uid))
+
+  nickname = replo.replyik["nickname"]
+  static = replo.replyik["static"]
+  isk = iskdis.query.filter_by(current_uid=uid).first()
+  if replo.replyik["type"] == 'svidetel':
+    try:
+      isk.otherme = {
+        "type": 'svidetel',
+        "nickname": nickname,
+        "static": static
+      }
+
+      new_order = courtOrder(
+        author_id = current_user.id,
+        current_uid = uid,
+        findings = findings,
+        ruling = ruling, 
+        consideration = consideration,
+        type_doc = 'court_order'
+      )
+
+      replo.moderation = True
+
+      db.session.add(new_order)
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      flash('Возникла проблема, повторите попытку позже!')
+      return redirect(url_for('main.claim_state', uid=uid))
+
+  elif replo.replyik["type"] == 'expert':
+    try:
+      isk.otherme = {
+        "type": 'expert',
+        "nickname": nickname,
+        "static": static
+      }
+
+      new_order = courtOrder(
+        author_id = current_user.id,
+        current_uid = uid,
+        findings = findings,
+        ruling = ruling, 
+        consideration = consideration,
+        type_doc = 'court_order'
+      )
+
+      replo.moderation = True
+
+      db.session.add(new_order)
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      flash('Возникла проблема, повторите попытку позже!')
+      return redirect(url_for('main.claim_state', uid=uid))
+
+  elif replo.replyik["type"] == 'otvod':
+    new_order = courtOrder(
+        author_id = current_user.id,
+        current_uid = uid,
+        findings = findings,
+        ruling = ruling, 
+        consideration = consideration,
+        type_doc = 'court_order'
+      )
+
+    replo.moderation = True
+
+    db.session.add(new_order)
+    db.session.commit()
+
+  elif replo.replyik["type"] == 'freeform':
+    new_order = courtOrder(
+        author_id = current_user.id,
+        current_uid = uid,
+        findings = findings,
+        ruling = ruling, 
+        consideration = consideration,
+        type_doc = 'court_order'
+      )
+
+    replo.moderation = True
+
+    db.session.add(new_order)
+    db.session.commit()
+
+  else:
+    flash('Попробуйте позже или обратитесь в тех. поддержку!')
+    return redirect(url_for('main.claim_state', uid=uid))
+  
+  return redirect(url_for('main.claim_state', uid=uid))
+
+
 @main.route('/create_court_order', methods=['POST'])
 def courtOrder():
   from __init__ import courtOrder, db, iskdis
 
   uid = request.form.get('uid')
-  print(uid)
   if not uid:
     return "No UID provided", 400
   
@@ -780,8 +941,6 @@ def courtOrder():
   findings = request.form.get('findings')
   consideration = request.form.get('consideration') 
   action = request.form.get('action')
-
-  print(ruling, findings, consideration, action)
 
   if not all([findings, consideration, action]):
     flash('Все поля должны быть заполнены!')
@@ -807,7 +966,8 @@ def courtOrder():
       author_id = current_user.id,
       findings = findings,
       consideration = consideration,
-      ruling =  ruling
+      ruling =  ruling,
+      type_doc = 'court_order'
     )
     db.session.add(new_order)
     db.session.commit()

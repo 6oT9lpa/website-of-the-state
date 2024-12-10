@@ -86,132 +86,151 @@
                             </div>   
                         </div> 
                         {% endif %}
-                    {% endif %}
-                    {% if status and status != 'Judge' %}
-                    <button id="hodataistvo" onclick="openModalisk('Modalhod')" >Hitler</button>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    {% if status != 'Waitting' %}
-        {% for order in orders_data %}
-        <div class='container-position-order'>
-            <div class='contanier-court-order'>
-                <div class='header-content-order'>
-                    <div class='img-header-order-1'><img src='{{ url_for("static", filename="img/emblem_court.png")}}'/></div>
-                    <h4>DISCRICT COURT</h4>
-                    <h5>state of San-Andreas</h5>
 
-                    <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
+                        {% set button_displayed = False %}
 
-                    <div class='title-court-order'>
-                        <div class='group-order'>
-                            <div class='content-Plaintiff'>
-                                <p>Plaintiff: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
-                                <p>Attorney for the Plaintiff: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
-                            </div>
-                        </div>
-                        
-                        <div class='title'>
-                            <h4>No. DC-{{ "%03d" | format(district.id) }}-2024 (NM)</h4>
-                            <h4> ОПРЕДЕЛЕНИЕ No. DC-{{ "%03d" | format(district.id) }}-{{ "%02d" | format(loop.index) }} </h4>
-                        </div>
-
-                        <div class='group-order'>
-                            <div class='content-Defendant'>
-                                <p>Attorney for the Defendant: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
-                                <p>Defendant:
-                                    {% for item in defendant %}
-                                    <p><b> {{ item }}, </b></p>
-                                    {% endfor %}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
-                </div>
-                <div class='main-content-order'>
-                    <h4>ОБСТОЯТЕЛЬСТВА</h4>
-                    <div class='findings'> <p>{{ order.findings }}</p> </div>
-
-                    <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
-
-                    <h4>РАССМОТРЕНИЕ</h4>
-                    <div class='consideration'> <p>{{ order.consideration }}</p> </div>
-
-                    <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
-
-                    <h4>ОПРЕДЕЛЕНИЕ</h4>
-                    <div class='ruling'> 
-                        {% for item in order.ruling %}
-                            <p>{{ loop.index }}. {{ item }}</p><br>
+                        {% for item in repltoisk %}
+                            {% if not item.moderation and not button_displayed %}
+                                <div class='submit-btn-contanier'>
+                                    <div class='submit-btn'>
+                                        <input type="submit" class='accept-petition' value="Обработка ходатайства">   
+                                    </div>   
+                                </div> 
+                                {% set button_displayed = True %}
+                            {% endif %}
                         {% endfor %}
-                    </div>
-                </div>
-                <div class='footer-content'>
-                    <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
-                        {{
-                            (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] if user.nikname.split()|length > 1 else user.nikname) if user 
-                            else 
-                            (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
-                        }}
-                    </b></p>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    {% endif %}
+                    {% endif %}
 
-    {% for reply in repltoisk %}
-    {% if reply.type_doc == "hodataistvo" %}
-    <div class='hodataistvo-complaint'>
-        <div class='main-content-complaint'>
-            <div class='header-content'>
-                <div class='header-statement'>
-                    <div class='img-header'><img src="{{ url_for('static', filename='img/DistrictCourt.png') }}"/></div>     
-                    <div class='text-header'>
-                        <h4>District Court of the State of San Andreas</h4>
-                        <p>От: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
-                        <p>Кому: <b>Окружному Суду Штата Сан-Андреас</b></p>
-                    </div>
+                    {% if status and status != 'Judge' %}
+                        {% if district.status != 'Rejectioned' %}
+                        <div class='submit-btn-contanier'>
+                            <div class='submit-btn'>
+                                <input type="submit" class='accept-petition' value="Подать ходатайство">   
+                            </div>   
+                        </div> 
+                        {% endif %}
+                    {% endif %}
                 </div>
-            </div>
-            <div class='description-content'>
-                <h3>Ходатайство №{{ reply.replyik['№_hodataistva'] }}</h3>
-                {% if reply.replyik['type_hodataistva'] == "freeform" %}<p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую о: {{ reply.replyik['texthod'] }}.</p>{% endif %}
-                {% if reply.replyik['type_hodataistva'] == "svidetel" %}<p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую о: привлечении свидетеля {{ reply.replyik['svidetelname'] }} к делу, так как его показания имеют важное значение для справедливого разрешения данного дела. Сведения, которыми обладает свидетель, могут существенно повлиять на исход рассмотрения дела и обеспечить всестороннее и объективное исследование всех обстоятельств дела.</p>{% endif %}
-                {% if reply.replyik['type_hodataistva'] == "expert" %}<p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую о: привлечии к делу эксперта по {{ reply.replyik['experttype'] }}, так как его знания и опыт очень важны для правильного решения. Он может предоставить информацию, которая поможет всесторонне рассмотреть все аспекты дела и принять справедливое решение.</p>{% endif %}
-                {% if reply.replyik['type_hodataistva'] == "otvod" %}<p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую об: {{ reply.replyik['texthod'] }}.</p>{% endif %}
-            </div>
-            <div class='footer-content'>
-                <p>Дата: {{ reply.create_at }}</p>
-                <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
-                    {{
-                        (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] if user.nikname.split()|length > 1 else user.nikname) if user 
-                        else 
-                        (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
-                    }}
-                </b></p>
-                {% if status == 'Judge' %}
-                <button class="buttonisk" onclick="openModalisk('modal-processing-hodataistvo')">Рассмотрение</button>
                 {% endif %}
             </div>
         </div>
     </div>
+    <div class="container">
+        {% for item in combined_data %}
+            {% if item.type_doc == "pettion" %}
+            <div class='hodataistvo-complaint'>
+                <div class='main-content-complaint'>
+                    <div class='header-content'>
+                        <div class='header-statement'>
+                            <div class='img-header'><img src="{{ url_for('static', filename='img/DistrictCourt.png') }}"/></div>     
+                            <div class='text-header'>
+                                <h4>District Court of the State of San Andreas</h4>
+                                <p>От: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
+                                <p>Кому: <b>Окружному Суду Штата Сан-Андреас</b></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class='description-content'>
+                        <h3>Ходатайство №{{ item.replyik['№-pettion'] }}</h3>
+                        {% if item.replyik['type'] == "freeform" %}
+                            <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую о: {{ item.replyik.get('texthod', 'Не указано') }}.</p>
+                        {% elif item.replyik['type'] == "svidetel" %}
+                            <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую о: привлечении свидетеля {{ item.replyik.get('nickname', 'Не указан') }} к делу, так как его показания имеют важное значение для справедливого разрешения данного дела. Сведения, которыми обладает свидетель, могут существенно повлиять на исход рассмотрения дела и обеспечить всестороннее и объективное исследование всех обстоятельств дела.</p>
+                        {% elif item.replyik['type'] == "expert" %}
+                            <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую о: привлечении к делу эксперта по {{ item.replyik.get('nickname', 'Не указан') }}, так как его знания и опыт очень важны для правильного решения. Он может предоставить информацию, которая поможет всесторонне рассмотреть все аспекты дела и принять справедливое решение.</p>
+                        {% elif item.replyik['type'] == "otvod" %}
+                            <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую об: {{ item.replyik.get('texthod', 'Не указано') }}.</p>
+                        {% else %}
+                            <p style='text-align: center;'></p>
+                        {% endif %}
+                    </div>                    
+                    <div class='footer-content'>
+                        <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
+                            {{
+                                (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] if user.nikname.split()|length > 1 else user.nikname) if user 
+                                else 
+                                (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
+                            }}
+                        </b></p>
+                    </div>
+                </div>
+            </div>
+            {% elif item.type_doc == 'court_order' %}
+            <div class='container-position-order'>
+                <div class='contanier-court-order'>
+                    <div class='header-content-order'>
+                        <div class='img-header-order-1'><img src='{{ url_for("static", filename="img/emblem_court.png")}}'/></div>
+                        <h4>DISCRICT COURT</h4>
+                        <h5>state of San-Andreas</h5>
+    
+                        <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
+    
+                        <div class='title-court-order'>
+                            <div class='group-order'>
+                                <div class='content-Plaintiff'>
+                                    <p>Plaintiff: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
+                                    <p>Attorney for the Plaintiff: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
+                                </div>
+                            </div>
+                            
+                            <div class='title'>
+                                <h4>No. DC-{{ "%03d" | format(district.id) }}-2024</h4>
+                                <h4> ОПРЕДЕЛЕНИЕ No. DC-{{ "%03d" | format(district.id) }}-{{ "%02d" | format(item['id-court']) }} </h4>
+                            </div>
+    
+                            <div class='group-order'>
+                                <div class='content-Defendant'>
+                                    <p>Attorney for the Defendant: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
+                                    <p>Defendant:
+                                        {% for item in defendant %}
+                                        <p><b> {{ item }}, </b></p>
+                                        {% endfor %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
+                    </div>
+                    <div class='main-content-order'>
+                        <h4>ОБСТОЯТЕЛЬСТВА</h4>
+                        <div class='findings'> <p>{{ item.findings }}</p> </div>
+    
+                        <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
+    
+                        <h4>РАССМОТРЕНИЕ</h4>
+                        <div class='consideration'> <p>{{ item.consideration }}</p> </div>
+    
+                        <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
+    
+                        <h4>ОПРЕДЕЛЕНИЕ</h4>
+                        <div class='ruling'> 
+                            {% for item in item.ruling %}
+                                <p>{{ loop.index }}. {{ item }}</p><br>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class='footer-content'>
+                        <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
+                            {{
+                                (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] if user.nikname.split()|length > 1 else user.nikname) if user 
+                                else 
+                                (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
+                            }}
+                        </b></p>
+                    </div>
+                </div>
+            </div>
             {% endif %}
-
-    {% endfor %}
-
+        {% endfor %}
+    </div>
 
     <div class='modal-processing-complaint' style='display:none;'>
         <form method='POST' action='/create_court_order'>
-            <input type="hidden" name="uid" id="uid">
+            <input type="hidden" name="uid" id="uidcompliant">
             <div class='content-modal'>
                 <div class="header-modal">
-                    <span class="btn-modal-close" id="btn-modal-close">&times;</span>
+                    <span class="btn-modal-close" id="btn-modal-close-judge">&times;</span>
                     <div class="dropdown">
                         <button class="dropdown-btn">Действия</button>
                         <div class="dropdown-menu">
@@ -252,21 +271,35 @@
         </form>
     </div>
 
-    <div class='modal-processing-hodataistvo' id='modal-processing-hodataistvo'>
-        <form method='POST' action='{{ url_for("main.claim_state") }}'>
-            <input type="hidden" name="typeopr" value="hodataistvorasm">
+    {% if status == 'Judge' %}
+    <div class='modal-processing-pettion' style='display:none;'>
+        <form method='POST' action='/create_court_pettion'>
+            <input type="hidden" name="uid" id="uidcompliant">
             <div class='content-modal'>
                 <div class="header-modal">
-                    <span class="btn-modal-close" id="btn-modal-close" onclick="closeModalisk('modal-processing-hodataistvo')">&times;</span>
-                    <div class="dropdown">
-                        <select class="dropdown-btn" name="accepted">
-                            <option value="True">Принять ходатайство</option>
-                            <option value="False">Отказать</option>
-                        </select>
+                    <span class="btn-modal-close" id="btn-modal-close-pettion">&times;</span>
+                    <div class='group-dropdown'>
+                        <div class="dropdown-pettion-list">
+                            <button class="dropdown-btn-pettion-list">Выбрать ходатайство</button>
+                            <div class="dropdown-menu-pettion-list">
+                                {% for item in repltoisk %}
+                                    {% if not item.moderation %}
+                                        <a data-action="{{ loop.index }}">Ходатайство {{ loop.index }}</a>
+                                    {% endif %}  
+                                {% endfor %}   
+                            </div>
+                        </div>
+                        <div class="dropdown-pettion">
+                            <button class="dropdown-btn-pettion">Действия над ходатайством</button>
+                            <div class="dropdown-menu-pettion">
+                                <a data-action="true-petition">Принять ходатайство</a>
+                                <a data-action="false-petition">Отказать ходатайство</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div id="first_page_hod">
-                <input type="hidden" name="action" id="action">
+                <input type="hidden" name="action" id="action-pettion">
+                <input type="hidden" name="petition" id="action-pettion-list">
                 <div class='form-control'>
                     <label for="findings">Обстоятельства.</label>
                     <div class='form-textarea'>
@@ -281,57 +314,71 @@
                 </div>
                 <div class='form-control'>
                     <label for="decision">Определил.</label>
-                    <div class='group-decision'> 
+                    <div class='group-decision-pettion'> 
                     </div>
-                    <div class='group-btn-decision'>
-                        <a class='btn-add-input'>Добавить пункт</a>
+                    <div class='group-btn-decision-pettion'>
+                        <a class='btn-add-input-pettion'>Добавить пункт</a>
                     </div>
-                </div> 
+                </div>
+
                 <div class='submit-btn-contanier'>
                     <div class='submit-btn'>
-                        <button onclick="togglePage(2)">Далее</button>
-                    </div>  
-                </div>
-                </div>
-                <div id="second_page_hod" style="display: none;">
-                    <label>
-                    <input type="checkbox" onchange="toggleForm('otvodform')"> Отвод
-                    </label>
-                    <select id="otvodform" name="otvodsel" style="display: none;" disabled>
-                        {% for defend in isk.defendant %}
-                        <option value="defendant-{{ defend }}">Ответчик {{ defend }}</option> {% endfor %}
-                        {% if isk.otherme %}
-                        <option value="otherme-{{ value }}"> {% for index, value in isk.otherme.items() %} {{ index }}: {{ value }}</option> {% endfor %}{% endif %}
-                        <option value="judge-{{ isk.judge }}">Судья {{ isk.judge }}</option>
-                        {% if isk.prosecutor %}<option value="prosecutor-{{ isk.prosecutor }}">Прокурор {{ isk.prosecutor }}</option>{% endif %}
-                    </select>
-                    <label>
-                        <input type="checkbox" onchange="toggleForm('dateform')"> Продлить сроки расследования
-                    </label>
-                    <input type="date" id="dateform" name="newdateinv" style="display: none;" disabled>
-                    <label>
-                        <input type="checkbox" onchange="toggleForm('experttform')"> Привлечь эксперта
-                    </label>
-                    <input type="text" id="experttform" name="expertt" placeholder="Введите Имя Фамилию Статик эксперта" style="display: none;" disabled>
-                    <label>
-                        <input type="checkbox" onchange="toggleForm('svidetelform')"> Привлечь эксперта
-                    </label>
-                    <input type="text" id="svidetelform" name="svidetel" placeholder="Введите Имя Фамилию Статик свидетеля" style="display: none;" disabled>
-                    <div class='submit-btn-contanier'>
-                        <div class='submit-btn'>
-                            <input type="submit" value="Оставить ответ">   
-                        </div>   
-                    </div>
-                    <div class='submit-btn-contanier'>
-                        <div class='submit-btn'>
-                            <button onclick="togglePage(1)">Назад</button>
-                        </div>  
-                    </div>
-                </div>
+                        <input type="submit" value="Оставить ответ">   
+                    </div>   
                 </div> 
             </div> 
         </form>
     </div>
+    {% endif %}
+    {% if status != 'Judge' %}
+    <div class='modal-processing-pettion' style='display:none;'>
+        <form method='POST' action='/create_petition'>
+            <input type="hidden" name="uid" id="uidcompliant">
+            <div class='content-modal'>
+                <div class="header-modal">
+                    <span class="btn-modal-close" id="btn-modal-close-pettion">&times;</span>
+                    <div class="dropdown-pettion">
+                        <button class="dropdown-btn-pettion">Действия</button>
+                        <div class="dropdown-menu-pettion">
+                            <a name='freeform' data-action="freeform">Свободная форма</a>
+                            <a name='svidetel' data-action="svidetel">Об привлечении свидетеля</a>
+                            <a name='expert' data-action="expert">Об привлечении эксперта</a>
+                            <a name='otvod' data-action="otvod">Об отводе</a>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="action" id="action-pettion">
+                <div class='group'>
+                    <div class='form-control'>
+                        <label for="nickname">Имя Фамилия.</label>
+                        <div class='form-input'>
+                            <input id="nickname" name="nickname" placeholder='Введите ник (необязательно)'>
+                        </div>
+                        <span class="text-danger" id="is-invalid"></span>
+                    </div>
+                    <div class='form-control'>
+                        <label for="static">ID-карта.</label>
+                        <div class='form-input'>
+                            <input id="static" name="static" placeholder='Введите статик (необязательно)'>
+                        </div>
+                        <span class="text-danger" id="is-invalid"></span>
+                    </div>
+                </div>
+                <div class='form-control'>
+                    <label for="findings">Ходатайствую.</label>
+                    <div class='form-textarea'>
+                        <textarea id="findings" name="findings" rows="8" cols="90" placeholder='Опишите ходатайство'></textarea>
+                    </div>
+                </div>
+                <div class='submit-btn-contanier'>
+                    <div class='submit-btn'>
+                        <input type="submit" value="Оставить ответ">   
+                    </div>   
+                </div> 
+            </div> 
+        </form>
+    </div>
+    {% endif %}
     
     {% block footer %}
         {% include 'footer/footer.html' %}
@@ -357,58 +404,6 @@
     {% endif %}
     {% endwith %}
 
-    <div id="Modalhod" class="modalci">
-        <div class="modalci-content">
-            <span class="close-btn" onclick="closeModalisk('Modalhod')">&times;</span>
-            <h2 id="modalHeader">Подача ходатайства</h2>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                  {% if messages %}
-                    <ul class=flashes>
-                    {% for category, message in messages %}
-                      <li class="{{ category }} errorli">{{ message }}</li>
-                    {% endfor %}
-                    </ul>
-                  {% endif %}
-                {% endwith %}
-            <form id="iskcForm" method="POST" action="{{ url_for('main.claim_state') }}">
-                <input type="hidden" name="typeopr" value="hodataistvo">
-                <h3>Ходатайство <select id="type_hodataistva" name="type_hodataistva" onchange="updateContent()">
-                    <option value="freeform">Свободная форма</option>
-                    <option value="svidetel">Об привлечении свидетеля</option>
-                    <option value="expert">Об привлечении эксперта</option>
-                    <option value="otvod">Об отводе</option>
-                </select></h3>
-                <div id="svidetel" class="contenthod" style="display: none;">
-                    <label for="svidetelname">Имя фамилия:</label>
-                    <input type="text" id="svidetelname" name="svidetelname" placeholder="Введите имя фамилию свидетеля"> 
-                </div>
-                <div id="expert" class="contenthod" style="display: none;">
-                    <label for="experttype">Тип эксперта:</label>
-                    <input type="text" id="experttype" name="experttype" placeholder="Введите тип эксперта"> 
-                </div>
-                <div id="otvod" class="contenthod" style="display: none;">
-                    <label for="otvodnick">Отвод</label>
-                    <select id="otvodnick" name="otvodselecti">
-                        {% for defend in isk.defendant %}
-                        <option value="defendant-{{ defend }}">Ответчик {{ defend }}</option> {% endfor %}
-                        {% if isk.otherme %}
-                        <option value="otherme-{{ value }}"> {% for index, value in isk.otherme.items() %} {{ index }}: {{ value }}</option> {% endfor %}{% endif %}
-                        <option value="judge-{{ isk.judge }}">Судья {{ isk.judge }}</option>
-                        {% if isk.prosecutor %}<option value="prosecutor-{{ isk.prosecutor }}">Прокурор {{ isk.prosecutor }}</option>{% endif %}
-                    </select> 
-                </div>
-                <div id="freeform" class="contenthod">
-                    <label for="texthod">Текст:</label>
-                    <input type="text" id="texthod" name="texthod" placeholder="Введите текст ходатайства"> 
-                </div>
-                <label for="investigation">Срок расследования:</label>
-                <input type="text" id="investigation" name="investigation">
-                <input type="submit" value="Отправить">                
-            </form>
-            <div id="responseMessage"></div>
-        </div>
-    </div>
-
     <script>
         function updateContent() {
             const allContent = document.querySelectorAll('.contenthod');
@@ -425,36 +420,6 @@
         }
         
         var status = {{ status | tojson }};
-        const urlParams = new URLSearchParams(window.location.search);
-        const uid = urlParams.get('uid');
-        document.getElementById('uid').value = uid;
-
-        function openModalisk(modalid) {
-            document.getElementById(modalid).style.display = "flex";
-        }
-        function closeModalisk(modalid) {
-        document.getElementById(modalid).style.display = "none";
-    }
-    function toggleForm(inputId) {
-    const inputElement = document.getElementById(inputId);
-    if (inputElement.disabled) {
-        inputElement.disabled = false;
-        inputElement.style.display = "block";
-    } else {
-        inputElement.disabled = true;
-        inputElement.style.display = "none";
-    }
-}
-    function togglePage(number) {
-    event.preventDefault();
-    if (number === 2) {
-        document.getElementById('first_page_hod').style.display = "none";
-        document.getElementById('second_page_hod').style.display = "block";
-    } else if (number === 1) {
-        document.getElementById('first_page_hod').style.display = "block";
-        document.getElementById('second_page_hod').style.display = "none";
-    }
-    }
 
     </script>
     <script src="{{ url_for('static', filename='js/script-complaint.js')}}"></script>
