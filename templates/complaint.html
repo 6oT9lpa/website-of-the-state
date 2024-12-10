@@ -13,6 +13,9 @@
     {% block header %}
         {% include 'header/header-doc.html' %}
     {% endblock %}
+    {% block content %}
+        {% include 'main/new-year.html' %}
+    {% endblock %}
 
     {% set user = Users.query.filter_by(static=district.created).first() %}
     {% set guest = guestUsers.query.filter_by(static=district.created).first() %}
@@ -133,13 +136,13 @@
                     <div class='description-content'>
                         <h3>Ходатайство №{{ item.replyik['№-pettion'] }}</h3>
                         {% if item.replyik['type'] == "freeform" %}
-                            <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую о: {{ item.replyik.get('texthod', 'Не указано') }}.</p>
+                            <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую о: {{ item.replyik.get('findings', 'Не указано') }}.</p>
                         {% elif item.replyik['type'] == "svidetel" %}
                             <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую о: привлечении свидетеля {{ item.replyik.get('nickname', 'Не указан') }} к делу, так как его показания имеют важное значение для справедливого разрешения данного дела. Сведения, которыми обладает свидетель, могут существенно повлиять на исход рассмотрения дела и обеспечить всестороннее и объективное исследование всех обстоятельств дела.</p>
                         {% elif item.replyik['type'] == "expert" %}
                             <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую о: привлечении к делу эксперта по {{ item.replyik.get('nickname', 'Не указан') }}, так как его знания и опыт очень важны для правильного решения. Он может предоставить информацию, которая поможет всесторонне рассмотреть все аспекты дела и принять справедливое решение.</p>
                         {% elif item.replyik['type'] == "otvod" %}
-                            <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую об: {{ item.replyik.get('texthod', 'Не указано') }}.</p>
+                            <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, ходатайствую об: {{ item.replyik.get('findings', 'Не указано') }}.</p>
                         {% else %}
                             <p style='text-align: center;'></p>
                         {% endif %}

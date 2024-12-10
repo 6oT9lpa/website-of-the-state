@@ -11,6 +11,9 @@
     {% block header %}
         {% include 'header/header-account.html' %}
     {% endblock %}
+    {% block content %}
+        {% include 'main/new-year.html' %}
+    {% endblock %}
 
     <main>
     {% with messages = get_flashed_messages() %}

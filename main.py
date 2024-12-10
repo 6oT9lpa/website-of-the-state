@@ -104,6 +104,9 @@ def check_isk_status(isk):
     elif isk.lawerc and current_user.id == isk.lawerc:
       status = 'Lawerc'
 
+    elif current_user.static == isk.created:
+      status = 'Created'
+
     elif isk.lawerd and current_user.id == isk.lawerd:
       status = 'Lawerd'
 

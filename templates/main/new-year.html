@@ -1,0 +1,227 @@
+<body>
+    <div id="snowflakeContainer"></div>
+    <ul class="lightrope">
+        <li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li>
+      </ul>
+    <script>const snowflakeContainer = document.getElementById('snowflakeContainer');
+        let activeSnowflakes = 0; // Текущие снежинки
+        const maxSnowflakes = 400; // Лимит снежинок
+
+        function createSnowflake() {
+            if (activeSnowflakes < maxSnowflakes) {
+                const snowflake = document.createElement('div');
+                snowflake.classList.add('snowflake');
+                snowflake.style.left = Math.random() * window.innerWidth + 'px';
+                snowflake.style.animationDuration = 3 + Math.random() * 5 + 's';
+
+                snowflakeContainer.appendChild(snowflake);
+                activeSnowflakes++; // Увеличиваем количество активных снежинок
+
+                snowflake.addEventListener('animationend', () => {
+                    snowflake.remove();
+                    activeSnowflakes--; // Уменьшаем, когда снежинка исчезает
+                });
+            }
+            setTimeout(createSnowflake, 100); // Периодичность появления
+        }
+        
+        createSnowflake();
+        </script>
+    <style>
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #000;
+}
+
+#snowflakeContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.snowflake {
+    position: fixed;
+    top: -10px;
+    background: url('static/img/snowflake.png') no-repeat;
+    background-size: contain;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    opacity: 0.9;
+    animation: fall linear infinite;
+    animation-timing-function: ease-in-out;
+    transition: transform 2s ease, opacity 2s ease; /* Плавность */
+}
+
+
+
+@keyframes fall {
+    to {
+        transform: translateY(100vh);
+    }
+}
+.lightrope {
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+  margin: -15px 0 0 0;
+  padding: 0;
+  pointer-events: none;
+  width: 100%;
+}
+
+.lightrope li {
+  position: relative;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+  -webkit-animation-iteration-count: infinite;
+  animation-iteration-count: infinite;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: block;
+  width: 12px;
+  height: 28px;
+  border-radius: 50%;
+  margin: 20px;
+  display: inline-block;
+  background: #00f73e;
+  box-shadow: 0px 4.66667px 24px 3px #00f73e;
+  -webkit-animation-name: flash-1;
+  animation-name: flash-1;
+  -webkit-animation-duration: 5s;
+  animation-duration: 5s;
+}
+
+.lightrope li:nth-child(2n+1) {
+  background: yellow;
+  box-shadow: 0px 4.66667px 24px 3px rgba(0, 255, 255, 0.5);
+  -webkit-animation-name: flash-2;
+  animation-name: flash-2;
+  -webkit-animation-duration: 1.4s;
+  animation-duration: 1.2s;
+}
+
+.lightrope li:nth-child(4n+2) {
+  background: red;
+  box-shadow: 0px 4.66667px 24px 3px red;
+  -webkit-animation-name: flash-3;
+  animation-name: flash-3;
+  -webkit-animation-duration: 1.8s;
+  animation-duration: 1.8s;
+}
+
+.lightrope li:nth-child(odd) {
+  -webkit-animation-duration: 1.8s;
+  animation-duration: 1.8s;
+}
+
+.lightrope li:nth-child(3n+1) {
+  -webkit-animation-duration: 1.4s;
+  animation-duration: 1.4s;
+}
+
+.lightrope li:before {
+  content: "";
+  position: absolute;
+  background: #222;
+  width: 10px;
+  height: 9.33333px;
+  border-radius: 3px;
+  top: -4.66667px;
+  left: 1px;
+}
+
+.lightrope li:after {
+  content: "";
+  top: -14px;
+  left: 9px;
+  position: absolute;
+  width: 52px;
+  height: 18.66667px;
+  border-bottom: solid #222 2px;
+  border-radius: 50%;
+}
+
+.lightrope li:last-child:after {
+  content: none;
+}
+
+.lightrope li:first-child {
+  margin-left: -40px;
+}
+
+@-webkit-keyframes flash-1 {
+  0%, 100% {
+    background: #00f700;
+    box-shadow: 0px 4.66667px 24px 3px #00f700;
+  }
+  50% {
+    background: #00f7004b;
+    box-shadow: 0px 4.66667px 24px 3px rgba(0, 247, 165, 0.2);
+  }
+}
+
+@keyframes flash-1 {
+  0%, 100% {
+    background: #00f700;
+    box-shadow: 0px 4.66667px 24px 3px #00f700;
+  }
+  50% {
+    background: #00f7004b;
+    box-shadow: 0px 4.66667px 24px 3px #00f7004b;
+  }
+}
+
+@-webkit-keyframes flash-2 {
+  0%, 100% {
+    background: rgb(251, 255, 0);
+    box-shadow: 0px 4.66667px 24px 3px rgb(251, 255, 0);
+  }
+  50% {
+    background: rgba(251, 255, 0, 0.466);
+    box-shadow: 0px 4.66667px 24px 3px rgba(251, 255, 0, 0.466);
+  }
+}
+
+@keyframes flash-2 {
+  0%, 100% {
+    background: rgb(251, 255, 0);
+    box-shadow: 0px 4.66667px 24px 3px rgb(251, 255, 0);
+  }
+  50% {
+    background: rgba(251, 255, 0, 0.466);
+    box-shadow: 0px 4.66667px 24px 3px rgba(251, 255, 0, 0.466);
+  }
+}
+
+@-webkit-keyframes flash-3 {
+  0%, 100% {
+    background: #f70000;
+    box-shadow: 0px 4.66667px 24px 3px #f70000;
+  }
+  50% {
+    background: rgba(255, 0, 0, 0.39);
+    box-shadow: 0px 4.66667px 24px 3px rgba(255, 0, 0, 0.39);
+  }
+}
+
+@keyframes flash-3 {
+  0%, 100% {
+    background: #f70000;
+    box-shadow: 0px 4.66667px 24px 3px #f70000;
+  }
+  50% {
+    background: rgba(255, 0, 0, 0.39);
+    box-shadow: 0px 4.66667px 24px 3px rgba(255, 0, 0, 0.39);
+  }
+}
+
+    </style>
+</body>
