@@ -859,7 +859,7 @@ a.create-btn:hover {
 }
 
 .modal-district-content {
-    position: absolute;
+    position: fixed;
     top: -85px;
     z-index: 100;
     flex-direction: column;

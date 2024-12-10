@@ -4,6 +4,13 @@
     font-weight: normal;
     font-style: normal;
 }
+.modal-button {
+    display: none;
+}
+
+.modal-complaint {
+    display: inline;
+}
 
 ::-webkit-scrollbar {
     width: 12px; 
@@ -35,6 +42,10 @@ body {
     display: none !important;
 }
 
+.container {
+    z-index: 1;
+}
+
 .container-complaint {
     display: flex;
     width: 100%;
@@ -42,6 +53,7 @@ body {
     padding: 10px;
     gap: 25px;
     justify-content: space-between;
+    z-index: 1;
 }
 
 .main-content-complaint {
