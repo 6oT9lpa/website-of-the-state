@@ -293,6 +293,12 @@ a.accept-judge {
     left: 50%;
 }
 
+.modal-investigation-start {
+    opacity: 1;
+    position: fixed;
+    left: 50%;
+    z-index: 100;
+}
 
 .group-btn-decision {
     display: flex;

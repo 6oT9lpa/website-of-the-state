@@ -16,7 +16,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_AS_ASCII'] = False
 app.config['WTF_CSRF_ENABLED'] = True
 app.config['DEBUG'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:arnetik1@localhost:3306/site'
 app.config['FERNET_KEY'] = b'RZP6DxiYrL_hz7fX1IN0v4YAtfMwwz5Gp53JRVvLw6M='
 cipher = Fernet(app.config['FERNET_KEY'])
 app.register_blueprint(main)
@@ -31,9 +31,15 @@ def get_next_id_user():
     last_id_user = db.session.query(func.max(Users.id)).scalar()
     last_id_guest = db.session.query(func.max(guestUsers.id)).scalar()
 
+    if not last_id_user:
+        return (last_id_guest or 0) + 1
+
+    if not last_id_guest:
+        return (last_id_user or 0) + 1
+
     if last_id_user > last_id_guest:
         return (last_id_user or 0) + 1
-    
+
     return (last_id_guest or 0) + 1
     
 
@@ -91,7 +97,7 @@ class guestUsers(db.Model, UserMixin):
     @property
     def is_guest(self):
         return True
-    
+
     permissions = db.relationship('PermissionUsers', back_populates='guest_user')
 
 class PermissionUsers(db.Model, UserMixin):
@@ -108,6 +114,7 @@ class PermissionUsers(db.Model, UserMixin):
     creation_doc = db.Column(db.Boolean, default=False)
     create_news = db.Column(db.Boolean, default=False)
     lawyer = db.Column(db.Boolean, default=False)
+    prosecutor = db.Column(db.Boolean, default=False)
 
     user = db.relationship('Users', back_populates='permissions')
     guest_user = db.relationship('guestUsers', back_populates='permissions')
