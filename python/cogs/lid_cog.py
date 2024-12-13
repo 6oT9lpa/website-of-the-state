@@ -42,7 +42,7 @@ class lid_cog(commands.Cog):
                                     fraction_name = server_info.get('fraction_name')
                                     rank = server_info.get('rank')
                                     db.session.query(Users).filter_by(discordid=member.id).update({
-                                        "rankuser": rank,
+                                        "curr_rank": rank,
                                         "organ": fraction_name,
                                         "action": "Invite"
                                     })

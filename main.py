@@ -789,25 +789,35 @@ def createProsecutor():
   type_document = request.form.get('type_document')
   if type_document == "complete_delo":
     delo = request.form.get('delo')
+    type_delo = request.form.get('type_delo')
 
   replyik = {}
   if type_document == 'start_investigation':
+    from __init__ import iskdis, isksup
     now = datetime.now()
     replyik = {
       "type": 'start_investigation',
       "date": now.strftime("%Y.%m.%d %H:%M")
     }
+    claim_statement_district = iskdis.query.filter_by(current_uid=uid).first()
+    claim_statement_supreme = isksup.query.filter_by(current_uid=uid).first()
+    if claim_statement_district:
+      claim_statement_district.prosecutor = current_user.id
+    elif claim_statement_supreme:
+      claim_statement_supreme.prosecutor = current_user.id
 
   elif type_document == 'complete_delo':
     now = datetime.now()
     replyik = {
       "type": 'complete_delo',
       "date": now.strftime("%Y.%m.%d %H:%M"),
-      "delo": delo
+      "delo": delo,
+      "type_delo": type_delo
     }
 
   else:
     flash('Ошибка которой быть не должно! Если она повториться обратитесь в тех. поддержку.')
+    return redirect(url_for('main.claim_state', uid=uid))
 
   try: 
     new_procdoc = repltoisks(
@@ -1014,7 +1024,7 @@ def courtOrder():
     complaint.status = 'LeftMoved'
 
   else:
-    flash('Вы не выбрали действи енад исковым заявлением!')
+    flash('Вы не выбрали действие над исковым заявлением!')
     return redirect(url_for('main.claim_state', uid=uid))
 
   try:
