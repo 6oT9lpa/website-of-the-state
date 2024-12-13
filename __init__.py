@@ -31,6 +31,12 @@ def get_next_id_user():
     last_id_user = db.session.query(func.max(Users.id)).scalar()
     last_id_guest = db.session.query(func.max(guestUsers.id)).scalar()
 
+    if not last_id_user:
+        return (last_id_guest or 0) + 1
+    
+    if not last_id_guest:
+        return (last_id_user or 0) + 1
+
     if last_id_user > last_id_guest:
         return (last_id_user or 0) + 1
     
@@ -361,7 +367,7 @@ with app.app_context():
     )
     db.session.add(new_user)
     db.session.commit()
-    
+     
     user = Users.query.filter_by(static=77857).first()
     permission_entry = PermissionUsers(
         author_id=user.id,
@@ -373,7 +379,7 @@ with app.app_context():
     )
     db.session.add(permission_entry)
     db.session.commit()
-    """ 
+    """
    
     
 @login_manager.user_loader

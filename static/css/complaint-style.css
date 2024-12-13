@@ -264,13 +264,13 @@ a.accept-judge {
     opacity: 0;
     z-index: 100;
 }
-.modal-processing-complaint.show-modal-district {
+.modal-processing-complaint.show-modal {
     opacity: 1;
     position: fixed;
     left: 50%;
 }
 
-.modal-processing-complaint.hidden-modal-district {
+.modal-processing-complaint.hidden-modal {
     opacity: 0;
     position: fixed;
     left: 50%;

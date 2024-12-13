@@ -97,15 +97,15 @@ def check_isk_status(isk):
 
     elif current_user.user_type == 'user' and (current_user.id == isk.judge or (not isk.judge and current_user.curr_rank in [13, 15, 21])):
       status = 'Judge'
-
+    
+    elif current_user.static == isk.created:
+      status = 'Created'
+      
     elif isk.prosecutor and current_user.id == isk.prosecutor and current_user.user_type == 'user':
       status = 'Prosecutor'
 
     elif isk.lawerc and current_user.id == isk.lawerc:
       status = 'Lawerc'
-
-    elif current_user.static == isk.created:
-      status = 'Created'
 
     elif isk.lawerd and current_user.id == isk.lawerd:
       status = 'Lawerd'
@@ -768,6 +768,7 @@ def createPettion():
 
   else:
     flash('Вы должны заполнить действие для ходатайства.')
+    return redirect(url_for('main.claim_state', uid=uid))
 
   try: 
     new_pettion = repltoisks(

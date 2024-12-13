@@ -90,18 +90,13 @@
                         </div> 
                         {% endif %}
 
-                        {% set button_displayed = False %}
-
-                        {% for item in repltoisk %}
-                            {% if not item.moderation and not button_displayed %}
-                                <div class='submit-btn-contanier'>
-                                    <div class='submit-btn'>
-                                        <input type="submit" class='accept-petition' value="Обработка ходатайства">   
-                                    </div>   
-                                </div> 
-                                {% set button_displayed = True %}
-                            {% endif %}
-                        {% endfor %}
+                        {% if repltoisk | selectattr('moderation', 'equalto', false) | list | length > 0 %}
+                            <div class='submit-btn-contanier'>
+                                <div class='submit-btn'>
+                                    <input type="submit" class='accept-petition' value="Обработка ходатайства">   
+                                </div>   
+                            </div>
+                        {% endif %}
                     {% endif %}
 
                     {% if status and status != 'Judge' %}
@@ -228,7 +223,7 @@
         {% endfor %}
     </div>
 
-    <div class='modal-processing-complaint' style='display:none;'>
+    <div class='modal-processing-complaint' id='modal-1' style='display:none;'>
         <form method='POST' action='/create_court_order'>
             <input type="hidden" name="uid" id="uidcompliant">
             <div class='content-modal'>
@@ -275,7 +270,7 @@
     </div>
 
     {% if status == 'Judge' %}
-    <div class='modal-processing-pettion' style='display:none;'>
+    <div class='modal-processing-pettion' id='modal-2' style='display:none;'>
         <form method='POST' action='/create_court_pettion'>
             <input type="hidden" name="uid" id="uidcompliant">
             <div class='content-modal'>
@@ -334,7 +329,7 @@
     </div>
     {% endif %}
     {% if status != 'Judge' %}
-    <div class='modal-processing-pettion' style='display:none;'>
+    <div class='modal-processing-pettion' id='modal-3' style='display:none;'>
         <form method='POST' action='/create_petition'>
             <input type="hidden" name="uid" id="uidcompliant">
             <div class='content-modal'>
