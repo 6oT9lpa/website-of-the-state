@@ -1,27 +1,5 @@
 document.documentElement.style.setProperty('--screen-width', `${window.innerWidth}px`);
 document.documentElement.style.setProperty('--screen-height', `${window.innerHeight}px`);
-function toggleModal(modal) {
-    if (document.querySelector(modal).style.display == 'none') {
-        document.querySelector(modal).style.display = 'block'
-        document.querySelectorAll('#overlay').forEach(o => {
-            o.classList.add('active');
-        });
-        setTimeout(() => {
-            document.querySelector(modal).classList.remove('hidden-modal-district');
-            document.querySelector(modal).classList.add('show-modal-district');
-        }, 10)
-    }
-    else {
-        document.querySelector(modal).classList.remove('show-modal-district');
-        document.querySelector(modal).classList.add('hidden-modal-district');
-        setTimeout(() => {
-            document.querySelector(modal).style.display = 'none';
-            document.querySelectorAll('#overlay').forEach(o => {
-                o.classList.remove('active');
-            });
-        }, 350);
-    }
-}
 
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -32,18 +10,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sidebar = document.querySelector('.sidebar-container');
     const maincontent = document.querySelector('.main-content-complaint');
-    const dropdownBtn = document.querySelector('.dropdown-btn');
-    const dropdownMenu = document.querySelector('.dropdown-menu');
-    const dropdown = document.querySelector('.dropdown');
+
+    const acceptprosecutorcomplete = document.getElementById('accept-prosecutor-complete');
+    const closeprosecutorcomplete = document.getElementById('close-prosecutor-complete');
+
+    const acceptinvestigationprosecutor = document.getElementById('accept-investigation-prosecutor');
+    const closeinvestigationprosecutor = document.getElementById('close-investigation-prosecutor')
 
     const acceptjudge = document.querySelector('.accept-judge');
     const closeModalBtnjudge = document.querySelector('#btn-modal-close-judge');
+
     const acceptpettion = document.querySelector('.accept-petition');
     const closeModalBtnpettion = document.querySelector('#btn-modal-close-pettion');
 
     const modal1 = document.getElementById('modal-1');
     const modal2 = document.getElementById('modal-2');
     const modal3 = document.getElementById('modal-3');
+    const modal4 = document.getElementById('modal-4');
+    const modal5 = document.getElementById('modal-5');
 
     function showModal(modal) {
         modal.style.display = 'flex';
@@ -67,6 +51,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 o.classList.remove('active');
             });
         }, 450);
+    }
+
+    if (acceptinvestigationprosecutor) {
+        if (modal4) {
+            acceptinvestigationprosecutor.addEventListener('click', () => showModal(modal4));
+            closeinvestigationprosecutor.addEventListener('click',  () => hideModal(modal4));
+        }
+    }
+
+    if (acceptprosecutorcomplete) {
+        const dropdown = document.getElementById('dropdown-1');
+        const dropdownBtn = document.getElementById('dropdown-btn-1');
+        const dropdownMenu = document.getElementById('dropdown-menu-1');
+
+        if (modal5) {
+            acceptprosecutorcomplete.addEventListener('click', () => showModal(modal5));
+            closeprosecutorcomplete.addEventListener('click',  () => hideModal(modal5));
+        }
+
+        dropdownBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            dropdown.classList.toggle('open');
+            dropdownBtn.classList.toggle('active');
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target) && !dropdownBtn.contains(e.target)) {
+                dropdown.classList.remove('open');
+                dropdownBtn.classList.remove('active');
+            }
+        });
+        
+        dropdownMenu.addEventListener('click', (e) => {
+            e.preventDefault();
+            const action = e.target.dataset.action;
+            dropdownBtn.textContent = e.target.textContent;
+            document.getElementById('action-prosecutor').value = action;
+            dropdown.classList.remove('open');
+            dropdownBtn.classList.remove('active');
+        });
     }
 
     if (acceptpettion) {  
@@ -232,6 +256,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (acceptjudge) {
+        const dropdownBtn = document.querySelector('.dropdown-btn');
+        const dropdownMenu = document.querySelector('.dropdown-menu');
+        const dropdown = document.querySelector('.dropdown');
         if (modal1) {
             acceptjudge.addEventListener('click', () => showModal(modal1));
             closeModalBtnjudge.addEventListener('click',  () => hideModal(modal1));

@@ -95,11 +95,14 @@ def check_isk_status(isk):
     if any(current_user.static == defenda['static'] for defenda in result):
       status = 'Defenda'
 
-    elif current_user.user_type == 'user' and (current_user.id == isk.judge or (not isk.judge and current_user.curr_rank in [13, 15, 21])):
-      status = 'Judge'
-
     elif ((isk.prosecutor and current_user.id == isk.prosecutor) or (not isk.prosecutor and current_user.permissions[0].prosecutor)) and current_user.user_type == 'user':
       status = 'Prosecutor'
+
+    elif current_user.static == isk.created:
+      status = 'Created'
+
+    elif current_user.user_type == 'user' and (current_user.id == isk.judge or (not isk.judge and current_user.curr_rank in [13, 15, 21])):
+      status = 'Judge'
 
     elif isk.lawerc and current_user.id == isk.lawerc:
       status = 'Lawerc'
@@ -639,6 +642,7 @@ def claim_state():
 
     replies_data = [
     {
+        'creater': reply.creater,
         'id-replies': reply.id,
         'current_uid': reply.current_uid,
         'author_id': reply.author_id,
@@ -701,7 +705,7 @@ def claim_state():
 
 @main.route('/create_petition', methods=['POST'])
 def createPettion():
-  from __init__ import repltoisks, db
+  from __init__ import repltoisks, db, Users, guestUsers
   uid = request.form.get('uid')
   if not uid:
     return "No UID provided", 400
@@ -716,6 +720,7 @@ def createPettion():
   count = repltoisks.query.filter_by(current_uid=uid, type_doc='pettion').count()
   if type_pettion == 'svidetel':
     replyik = {
+      "creater": current_user.id,
       "№-pettion": count + 1,
       "type": 'svidetel',
       "nickname": nickname if nickname != '' else None,
@@ -725,6 +730,7 @@ def createPettion():
 
   elif type_pettion == 'expert':
     replyik = {
+      "creater": current_user.id,
       "№-pettion": count + 1,
       "type": 'expert',
       "nickname": nickname if nickname != '' else None,
@@ -734,6 +740,7 @@ def createPettion():
 
   elif type_pettion == 'otvod':
     replyik = {
+      "creater": current_user.id,
       "№-pettion": count + 1,
       "type": 'otvod',
       "nickname": nickname if nickname != '' else None,
@@ -743,6 +750,7 @@ def createPettion():
 
   elif type_pettion == 'freeform':
     replyik = {
+      "creater": current_user.id,
       "№-pettion": count + 1,
       "type": 'freeform',
       "nickname": nickname if nickname != '' else None,
@@ -774,7 +782,7 @@ def createPettion():
 
 @main.route('/create_prosecutor', methods=['POST'])
 def createProsecutor():
-  from __init__ import repltoisks, db
+  from __init__ import repltoisks, db, iskdis, isksup
   uid = request.form.get('uid')
   if not uid:
     return "No UID provided", 400
@@ -791,7 +799,6 @@ def createProsecutor():
 
   replyik = {}
   if type_document == 'start_investigation':
-    from __init__ import iskdis, isksup
     now = datetime.now()
     replyik = {
       "type": 'start_investigation',
@@ -825,11 +832,16 @@ def createProsecutor():
       type_doc='start_investigation' if type_document == 'start_investigation' else 'complete_delo'
     )
 
+    if type_document == 'complete_delo':
+      district = iskdis.query.filter_by(current_uid=uid).first()
+      district.status = 'CompleteWork'
+
     db.session.add(new_procdoc)
     db.session.commit()
     return redirect(url_for('main.claim_state', uid=uid))
 
   except SQLAlchemyError as e:
+    db.session.rollback()
     logging.error(f'Ошибка в бд repltoisks: {e}') 
     flash('Проблема создания, попробуйте позже!')
     return redirect(url_for('main.claim_state', uid=uid))
@@ -1014,12 +1026,15 @@ def courtOrder():
   complaint = iskdis.query.filter_by(current_uid=uid).first()
   if action == 'accept':
     complaint.status = 'Accepted'
+    complaint.judge = True
   
   elif action == 'reject':
     complaint.status = 'Rejectioned'
+    complaint.judge = True
 
   elif action == 'hold':
     complaint.status = 'LeftMoved'
+    complaint.judge = True
 
   else:
     flash('Вы не выбрали действие над исковым заявлением!')

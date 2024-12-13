@@ -16,7 +16,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_AS_ASCII'] = False
 app.config['WTF_CSRF_ENABLED'] = True
 app.config['DEBUG'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:arnetik1@localhost:3306/site'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
 app.config['FERNET_KEY'] = b'RZP6DxiYrL_hz7fX1IN0v4YAtfMwwz5Gp53JRVvLw6M='
 cipher = Fernet(app.config['FERNET_KEY'])
 app.register_blueprint(main)
@@ -254,7 +254,7 @@ class claimsStatement(db.Model):
     is_archived = db.Column(db.Boolean, default=False)
 
     reply = db.relationship('repltoisks', back_populates='current_claim')
-    district_court = db.relationship('iskdis', back_populates='current_claim', foreign_keys='iskdis.claims_id') 
+    district_court = db.relationship('iskdis', back_populates='current_claim', foreign_keys='iskdis.current_uid') 
     supreme_court = db.relationship('isksup', back_populates='current_claim', foreign_keys='isksup.claims_id')  
     court_order = db.relationship('courtOrder', back_populates='current_claim')
 
@@ -263,7 +263,7 @@ class iskdis(db.Model):
     __tablename__ = 'district_court'
 
     id = db.Column(db.Integer, primary_key=True)
-    current_uid = db.Column(db.String(16), unique=True)
+    current_uid = db.Column(db.String(16), db.ForeignKey('court_claims.uid'), unique=True)
     judge = db.Column(db.Integer, db.ForeignKey('users.id'))
     discription = db.Column(db.Text, nullable=False)
     claims = db.Column(db.PickleType, nullable=False)
@@ -275,7 +275,6 @@ class iskdis(db.Model):
     lawerc = db.Column(db.String(45))
     lawerd = db.Column(db.String(45))
     otherme = db.Column(db.PickleType, nullable=True)
-    claims_id = db.Column(db.String(16), db.ForeignKey('court_claims.uid')) 
     status = db.Column(db.String(15), default='Waitting')
 
     judge_user = db.relationship('Users', foreign_keys=[judge], back_populates='judges')

@@ -74,7 +74,8 @@
                                 'Accepted': 'В работе у Прокуратуры',
                                 'Rejectioned': 'Отказано',
                                 'LeftMoved': 'Оставлено без движения',
-                                'CourtHearing': 'Назначено заседание'
+                                'CourtHearing': 'Назначено заседание',
+                                'CompleteWork': 'Дело проведено в суд'
                             }.get(district.status, 'Неизвестный статус')
                         }}
                     </p>
@@ -109,20 +110,18 @@
                         {% endif %}
                     {% endif %}
 
-                    {% if status == 'Prosecutor' and not isk.prosecutor %}
-                        {% if district.status != 'Rejectioned' %}
+                    {% if status == 'Prosecutor' and not isk.prosecutor  and district.status == 'Accepted' %}
                         <div class='submit-btn-contanier'>
                             <div class='submit-btn'>
-                                <input type="submit" class='investigation-start' onclick="toggleModal('.modal-investigation-start')" value="Начать расследование">   
+                                <input type="submit" class='investigation-start' id='accept-investigation-prosecutor' value="Начать расследование">   
                             </div>   
                         </div> 
-                        {% endif %}
                     {% endif %}
-                    {% if status == 'Prosecutor' and isk.prosecutor %}
+                    {% if status == 'Prosecutor' and isk.prosecutor and district.status != 'CompleteWork' %}
                         {% if district.status != 'Rejectioned' %}
                         <div class='submit-btn-contanier'>
                             <div class='submit-btn'>
-                                <input type="submit" class='investigation-complete' onclick="toggleModal('.modal-investigation-complete')" value="Завершить расследование">   
+                                <input type="submit" class='investigation-complete' id='accept-prosecutor-complete' value="Завершить расследование">   
                             </div>   
                         </div> 
                         {% endif %}
@@ -135,6 +134,8 @@
     <div class="container">
         {% for item in combined_data %}
             {% if item.type_doc == "pettion" %}
+            {% set u_pett = Users.query.filter_by(id=item.replyik['creater']).first() %}
+            {% set g_pett = Users.query.filter_by(id=item.replyik['creater']).first() %}
             <div class='hodataistvo-complaint'>
                 <div class='main-content-complaint'>
                     <div class='header-content'>
@@ -164,15 +165,16 @@
                     <div class='footer-content'>
                         <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
                             {{
-                                (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] if user.nikname.split()|length > 1 else user.nikname) if user 
+                                (u_pett.nikname.split()[1][0] + '. ' + u_pett.nikname.split()[0] if u_pett.nikname.split()|length > 1 else u_pett.nikname) if u_pett
                                 else 
-                                (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
+                                (g_pett.nikname.split()[1][0] + '. ' + g_pett.nikname.split()[0] if g_pett.nikname.split()|length > 1 else g_pett.nikname)
                             }}
                         </b></p>
                     </div>
                 </div>
             </div>
             {% elif item.type_doc == 'court_order' %}
+            {% set judge = Users.query.filter_by(id=district.judge).first() %}
             <div class='container-position-order'>
                 <div class='contanier-court-order'>
                     <div class='header-content-order'>
@@ -230,15 +232,14 @@
                     <div class='footer-content'>
                         <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
                             {{
-                                (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] if user.nikname.split()|length > 1 else user.nikname) if user 
-                                else 
-                                (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
+                                judge.nikname.split()[1][0] + '. ' + judge.nikname.split()[0] if judge.nikname.split()|length > 1 else judge.nikname
                             }}
                         </b></p>
                     </div>
                 </div>
             </div>
             {% elif item.type_doc == 'start_investigation' %}
+            {% set prosecutor = Users.query.filter_by(id=district.prosecutor).first() %}
             <div class='hodataistvo-complaint'>
                 <div class='main-content-complaint'>
                     <div class='header-content'>
@@ -259,15 +260,14 @@
                     <div class='footer-content'>
                         <p style='margin-top: -5px;'>Подпись: А сасать тут истец уже расписался <b style='font-family:Updock;font-size: 30px;'>
                             {{
-                                (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] if user.nikname.split()|length > 1 else user.nikname) if user 
-                                else 
-                                (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
+                                prosecutor.nikname.split()[1][0] + '. ' + prosecutor.nikname.split()[0] if prosecutor.nikname.split()|length > 1 else prosecutor.nikname
                             }}
                         </b></p>
                     </div>
                 </div>
             </div>
             {% elif item.type_doc == 'complete_delo' %}
+            {% set prosecutor = Users.query.filter_by(id=district.prosecutor).first() %}
             <div class='hodataistvo-complaint'>
                 <div class='main-content-complaint'>
                     <div class='header-content'>
@@ -288,14 +288,12 @@
                     <div class='footer-content'>
                         <p style='margin-top: -5px;'>Подпись: А сасать тут истец уже расписался <b style='font-family:Updock;font-size: 30px;'>
                             {{
-                                (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] if user.nikname.split()|length > 1 else user.nikname) if user 
-                                else 
-                                (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
+                                prosecutor.nikname.split()[1][0] + '. ' + prosecutor.nikname.split()[0] if prosecutor.nikname.split()|length > 1 else prosecutor.nikname
                             }}
                         </b></p>
                         {% if status %}
                         <div class='submit-btn-contanier'>
-                            <div class='submit-btn'>
+                            <div class='submit-btn-delo'>
                                 <a href="{{ item.replyik['delo'] }}" style="color:white; text-decoration: none;">Делопроизводство</a>
                             </div>   
                         </div> 
@@ -462,17 +460,17 @@
     </div>
     {% endif %}
     {% if status == "Prosecutor" %}
-    <div class='modal-investigation-start' style='display:none;'>
+    <div class='modal-investigation-start' style='display:none;' id='modal-4'>
         <form method='POST' action='/create_prosecutor'>
             <input type="hidden" name="uid" id="uidcompliant">
             <input type="hidden" name="type_document" id="type_document" value="start_investigation">
             <div class='content-modal'>
                 <div class="header-modal">
-                    <span class="btn-modal-close" id="btn-modal-close" onclick="toggleModal('.modal-investigation-start')">&times;</span>
+                    <span class="btn-modal-close" id="close-investigation-prosecutor">&times;</span>
                 </div>
-                <input type="hidden" name="action" id="action-pettion">
                 <div class='form-control'>
-                    <p>Вы уверены? В случае если вы начнете расследование суд будет ожидать от вас делопроизводство в установленый срок!</p>
+                    <h4>Вы уверены? Не обратимое действие!</h4>
+                    <p>В случае если вы начнете расследование и не успеете в срок указанным судом, вы можете понести IC наказания.</p>
                 </div>
                 <div class='submit-btn-contanier'>
                     <div class='submit-btn'>
@@ -482,20 +480,23 @@
             </div> 
         </form>
     </div>
-    <div class='modal-investigation-complete' style='display:none;'>
+    <div class='modal-investigation-complete' style='display:none;' id='modal-5'>
         <form method='POST' action='/create_prosecutor'>
             <input type="hidden" name="uid" id="uidcompliant">
             <input type="hidden" name="type_document" id="type_document" value="complete_delo">
             <div class='content-modal'>
                 <div class="header-modal">
-                    <span class="btn-modal-close" id="btn-modal-close" onclick="toggleModal('.modal-investigation-complete')">&times;</span>
-                </div>
-                <div class="dropdown-isk">
-                    <select class="dropdown-select-isk" name="type_delo">
-                        <option value="accusatory">С обвинениями</option>
-                        <option value="blameless">Без обвинений</option>
-                    </select>
-                </div>
+                    <span class="btn-modal-close" id="close-prosecutor-complete">&times;</span>
+                    <div class="dropdown" id='dropdown-1'>
+                        <button class="dropdown-btn" id='dropdown-btn-1'>Действия</button>
+                        <div class="dropdown-menu" id='dropdown-menu-1'>
+                            <a name='accusatory' data-action="accusatory">С обвинениями</a>
+                            <a name='blameless' data-action="blameless">Без обвинений</a>
+                        </div>
+                    </div>
+                </div>  
+                <input type="hidden" name="action" id="action-prosecutor">
+
                 <div class='form-control'>
                     <label for="delo">Ссылка на дело.</label>
                     <div class='form-input'>
