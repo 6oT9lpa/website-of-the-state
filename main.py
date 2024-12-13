@@ -97,11 +97,8 @@ def check_isk_status(isk):
 
     elif current_user.user_type == 'user' and (current_user.id == isk.judge or (not isk.judge and current_user.curr_rank in [13, 15, 21])):
       status = 'Judge'
-    
-    elif current_user.static == isk.created:
-      status = 'Created'
-      
-    elif isk.prosecutor and current_user.id == isk.prosecutor and current_user.user_type == 'user':
+
+    elif ((isk.prosecutor and current_user.id == isk.prosecutor) or (not isk.prosecutor and current_user.permissions[0].prosecutor)) and current_user.user_type == 'user':
       status = 'Prosecutor'
 
     elif isk.lawerc and current_user.id == isk.lawerc:
@@ -346,14 +343,6 @@ def index():
   from __init__ import PermissionUsers, Users, db, News
   from form import Formnews
   import time
-
-  session['isVerification'] = False
-  session.pop('nickname', None)
-  session.pop('static', None)
-  session.pop('discord', None)
-  session.pop('password', None)
-  session.pop('verification_code', None)
-
   form = Formnews()
   city_hallnews = News.query.filter_by(typenews="cityhall").all()
   leadernews = News.query.filter_by(typenews="leaders").all()
@@ -500,15 +489,10 @@ def validate_code():
         discord_id=discord,
         password=password
       )
-      db.session.add(new_guest)
-      db.session.commit()
 
-      guest = guestUsers.query.filter_by(static=static).first()
-
-      new_permission = PermissionUsers( 
-        guest_id = guest.id
-      )
+      new_permission = PermissionUsers( )
       db.session.add(new_permission)
+      db.session.add(new_guest)
       db.session.commit()
 
       session.pop('nickname', None)
@@ -786,6 +770,69 @@ def createPettion():
     logging.error(f'Ошибка в бд repltoisks: {e}') 
     flash('Проблема создания ходатайства, попробуйте позже!')
     return redirect(url_for('main.claim_state', uid=uid))
+  
+
+@main.route('/create_prosecutor', methods=['POST'])
+def createProsecutor():
+  from __init__ import repltoisks, db
+  uid = request.form.get('uid')
+  if not uid:
+    return "No UID provided", 400
+  
+  if not current_user.is_authenticated and current_user.type_user != 'user' and \
+    not current_user.permissions[0].prosecutor:
+    flash('Вы не прокурор, вследствие не можете это сделать!')
+    return redirect(url_for('main.claim_state', uid=uid))
+
+  type_document = request.form.get('type_document')
+  if type_document == "complete_delo":
+    delo = request.form.get('delo')
+    type_delo = request.form.get('type_delo')
+
+  replyik = {}
+  if type_document == 'start_investigation':
+    from __init__ import iskdis, isksup
+    now = datetime.now()
+    replyik = {
+      "type": 'start_investigation',
+      "date": now.strftime("%Y.%m.%d %H:%M")
+    }
+    claim_statement_district = iskdis.query.filter_by(current_uid=uid).first()
+    claim_statement_supreme = isksup.query.filter_by(current_uid=uid).first()
+    if claim_statement_district:
+      claim_statement_district.prosecutor = current_user.id
+    elif claim_statement_supreme:
+      claim_statement_supreme.prosecutor = current_user.id
+
+  elif type_document == 'complete_delo':
+    now = datetime.now()
+    replyik = {
+      "type": 'complete_delo',
+      "date": now.strftime("%Y.%m.%d %H:%M"),
+      "delo": delo,
+      "type_delo": type_delo
+    }
+
+  else:
+    flash('Ошибка которой быть не должно! Если она повториться обратитесь в тех. поддержку.')
+    return redirect(url_for('main.claim_state', uid=uid))
+
+  try: 
+    new_procdoc = repltoisks(
+      current_uid=uid,
+      author_id=current_user.id,
+      replyik=replyik,
+      type_doc='start_investigation' if type_document == 'start_investigation' else 'complete_delo'
+    )
+
+    db.session.add(new_procdoc)
+    db.session.commit()
+    return redirect(url_for('main.claim_state', uid=uid))
+
+  except SQLAlchemyError as e:
+    logging.error(f'Ошибка в бд repltoisks: {e}') 
+    flash('Проблема создания, попробуйте позже!')
+    return redirect(url_for('main.claim_state', uid=uid))
 
 
 @main.route('/create_court_pettion', methods=['POST'])
@@ -975,7 +1022,7 @@ def courtOrder():
     complaint.status = 'LeftMoved'
 
   else:
-    flash('Вы не выбрали действи енад исковым заявлением!')
+    flash('Вы не выбрали действие над исковым заявлением!')
     return redirect(url_for('main.claim_state', uid=uid))
 
   try:

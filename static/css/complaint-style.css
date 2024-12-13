@@ -293,6 +293,19 @@ a.accept-judge {
     left: 50%;
 }
 
+.modal-investigation-start {
+    opacity: 1;
+    position: fixed;
+    left: 50%;
+    z-index: 100;
+}
+
+.modal-investigation-complete {
+    opacity: 1;
+    position: fixed;
+    left: 50%;
+    z-index: 100;
+}
 
 .group-btn-decision {
     display: flex;
@@ -403,6 +416,39 @@ a.accept-judge {
 .dropdown-pettion.open .dropdown-menu-pettion {
     display: block;
 }
+
+.dropdown-isk {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-select-isk {
+    appearance: none; /* Убирает стандартный стиль браузера */
+    background: transparent;
+    color: white;
+    border: #141414 solid 2px;
+    padding: 10px 15px;
+    font-size: 14px;
+    border-radius: 10px;
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+    width: 200px; /* Задайте ширину, если нужно */
+    box-sizing: border-box;
+}
+
+.dropdown-select-isk:hover, .dropdown-select-isk:focus {
+    border: #e81c591a solid 2px;
+    box-shadow: inset black 0 0 8px 2px;
+    outline: none; /* Убирает стандартный outline */
+}
+
+.dropdown-select-isk option {
+    background-color: #141414;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
 
 .contanier-court-order {
     color: white;

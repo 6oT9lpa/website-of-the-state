@@ -1,5 +1,28 @@
 document.documentElement.style.setProperty('--screen-width', `${window.innerWidth}px`);
 document.documentElement.style.setProperty('--screen-height', `${window.innerHeight}px`);
+function toggleModal(modal) {
+    if (document.querySelector(modal).style.display == 'none') {
+        document.querySelector(modal).style.display = 'block'
+        document.querySelectorAll('#overlay').forEach(o => {
+            o.classList.add('active');
+        });
+        setTimeout(() => {
+            document.querySelector(modal).classList.remove('hidden-modal-district');
+            document.querySelector(modal).classList.add('show-modal-district');
+        }, 10)
+    }
+    else {
+        document.querySelector(modal).classList.remove('show-modal-district');
+        document.querySelector(modal).classList.add('hidden-modal-district');
+        setTimeout(() => {
+            document.querySelector(modal).style.display = 'none';
+            document.querySelectorAll('#overlay').forEach(o => {
+                o.classList.remove('active');
+            });
+        }, 350);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const uid = urlParams.get('uid');

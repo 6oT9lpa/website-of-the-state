@@ -108,6 +108,25 @@
                         </div> 
                         {% endif %}
                     {% endif %}
+
+                    {% if status == 'Prosecutor' and not isk.prosecutor %}
+                        {% if district.status != 'Rejectioned' %}
+                        <div class='submit-btn-contanier'>
+                            <div class='submit-btn'>
+                                <input type="submit" class='investigation-start' onclick="toggleModal('.modal-investigation-start')" value="Начать расследование">   
+                            </div>   
+                        </div> 
+                        {% endif %}
+                    {% endif %}
+                    {% if status == 'Prosecutor' and isk.prosecutor %}
+                        {% if district.status != 'Rejectioned' %}
+                        <div class='submit-btn-contanier'>
+                            <div class='submit-btn'>
+                                <input type="submit" class='investigation-complete' onclick="toggleModal('.modal-investigation-complete')" value="Завершить расследование">   
+                            </div>   
+                        </div> 
+                        {% endif %}
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -216,6 +235,71 @@
                                 (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
                             }}
                         </b></p>
+                    </div>
+                </div>
+            </div>
+            {% elif item.type_doc == 'start_investigation' %}
+            <div class='hodataistvo-complaint'>
+                <div class='main-content-complaint'>
+                    <div class='header-content'>
+                        <div class='header-statement'>
+                            <div class='img-header'><img src="{{ url_for('static', filename='img/DistrictCourt.png') }}"/></div>     
+                            <div class='text-header'>
+                                <h4>District Court of the State of San Andreas</h4>
+                                <p>От: <b>Прокуратуры штата Сан-Андреас</b></p>
+                                <p>Кому: <b>Окружному Суду Штата Сан-Андреас</b></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class='description-content'>
+                        <p style="text-align: center;">Тут должен был быть герб прокуратуры, но бюджет пропит и денег нет</p>
+                        <h3>Прокуратура штата Сан-Андреас</h3>
+                            <p style='text-align: center;'>Уважаемый Чорт ебаный, по вашему заявлению будет проведена прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и действующих на территории San-Andreas нормативно-правовых актов, на установление причин и условий, способствующих выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений..</p>
+                    </div>                    
+                    <div class='footer-content'>
+                        <p style='margin-top: -5px;'>Подпись: А сасать тут истец уже расписался <b style='font-family:Updock;font-size: 30px;'>
+                            {{
+                                (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] if user.nikname.split()|length > 1 else user.nikname) if user 
+                                else 
+                                (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
+                            }}
+                        </b></p>
+                    </div>
+                </div>
+            </div>
+            {% elif item.type_doc == 'complete_delo' %}
+            <div class='hodataistvo-complaint'>
+                <div class='main-content-complaint'>
+                    <div class='header-content'>
+                        <div class='header-statement'>
+                            <div class='img-header'><img src="{{ url_for('static', filename='img/DistrictCourt.png') }}"/></div>     
+                            <div class='text-header'>
+                                <h4>District Court of the State of San Andreas</h4>
+                                <p>От: <b>Прокуратуры штата Сан-Андреас</b></p>
+                                <p>Кому: <b>Окружному Суду Штата Сан-Андреас</b></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class='description-content'>
+                        <p style="text-align: center;">Тут должен был быть герб прокуратуры, но бюджет пропит и денег нет</p>
+                        <h3>Прокуратура штата Сан-Андреас</h3>
+                            <p style='text-align: center;'>Уважаемый Чорт ебаный, по вашему заявлению была проведена прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и действующих на территории San-Andreas нормативно-правовых актов, на установление причин и условий, способствующих выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений. По итогам проверки: {% if item.replyik['type_delo'] == "blameless" %} Прокуратурой штата не были выявлены нарушения Конституции и действующих на территории San-Andreas нормативно-правовых актов. {% elif item.replyik['type_delo' == "accusatory"] %} Прокуратура выявила нарушения Конституции и действующих на территории San-Andreas нормативно-правовых актов.{% endif %} </p>
+                    </div>                    
+                    <div class='footer-content'>
+                        <p style='margin-top: -5px;'>Подпись: А сасать тут истец уже расписался <b style='font-family:Updock;font-size: 30px;'>
+                            {{
+                                (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] if user.nikname.split()|length > 1 else user.nikname) if user 
+                                else 
+                                (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
+                            }}
+                        </b></p>
+                        {% if status %}
+                        <div class='submit-btn-contanier'>
+                            <div class='submit-btn'>
+                                <a href="{{ item.replyik['delo'] }}" style="color:white; text-decoration: none;">Делопроизводство</a>
+                            </div>   
+                        </div> 
+                    {% endif %}
                     </div>
                 </div>
             </div>
@@ -371,6 +455,56 @@
                 <div class='submit-btn-contanier'>
                     <div class='submit-btn'>
                         <input type="submit" value="Оставить ответ">   
+                    </div>   
+                </div> 
+            </div> 
+        </form>
+    </div>
+    {% endif %}
+    {% if status == "Prosecutor" %}
+    <div class='modal-investigation-start' style='display:none;'>
+        <form method='POST' action='/create_prosecutor'>
+            <input type="hidden" name="uid" id="uidcompliant">
+            <input type="hidden" name="type_document" id="type_document" value="start_investigation">
+            <div class='content-modal'>
+                <div class="header-modal">
+                    <span class="btn-modal-close" id="btn-modal-close" onclick="toggleModal('.modal-investigation-start')">&times;</span>
+                </div>
+                <input type="hidden" name="action" id="action-pettion">
+                <div class='form-control'>
+                    <p>Вы уверены? В случае если вы начнете расследование суд будет ожидать от вас делопроизводство в установленый срок!</p>
+                </div>
+                <div class='submit-btn-contanier'>
+                    <div class='submit-btn'>
+                        <input type="submit" value="Начать расследование">   
+                    </div>   
+                </div> 
+            </div> 
+        </form>
+    </div>
+    <div class='modal-investigation-complete' style='display:none;'>
+        <form method='POST' action='/create_prosecutor'>
+            <input type="hidden" name="uid" id="uidcompliant">
+            <input type="hidden" name="type_document" id="type_document" value="complete_delo">
+            <div class='content-modal'>
+                <div class="header-modal">
+                    <span class="btn-modal-close" id="btn-modal-close" onclick="toggleModal('.modal-investigation-complete')">&times;</span>
+                </div>
+                <div class="dropdown-isk">
+                    <select class="dropdown-select-isk" name="type_delo">
+                        <option value="accusatory">С обвинениями</option>
+                        <option value="blameless">Без обвинений</option>
+                    </select>
+                </div>
+                <div class='form-control'>
+                    <label for="delo">Ссылка на дело.</label>
+                    <div class='form-input'>
+                        <input id="delo" name="delo" placeholder='Вставьте ссылку на дело'></input>
+                    </div>
+                </div>
+                <div class='submit-btn-contanier'>
+                    <div class='submit-btn'>
+                        <input type="submit" value="Завершить расследование">   
                     </div>   
                 </div> 
             </div> 
