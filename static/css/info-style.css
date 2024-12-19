@@ -1,0 +1,36 @@
+.navbar {
+    display: none !important;
+}
+
+.modal-button {
+    display: none;
+}
+
+.modal-complaint {
+    display: block;
+}
+
+.rules h3 {
+    text-align: center;
+}
+.rules h4 {
+    margin-top: 20px;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 5px;
+}
+.rules p, li {
+    margin-bottom: 10px;
+}
+.rules ul {
+    padding-left: 20px;
+}
+.rules pre {
+    background: #f4f4f4;
+    padding: 10px;
+    border: 1px solid #ddd;
+    overflow-x: auto;
+}
+
+.rules ol {
+    margin-top: 10px;
+} 

@@ -251,6 +251,8 @@ class claimsStatement(db.Model):
     id = db.Column(db.Integer, primary_key=True, default=get_next_id_isk)
     uid = db.Column(db.String(16), unique=True, default=generate_uid)
     create_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    date_court_session = db.Column(db.DateTime, nullable=True)
+    criminal_case = db.Column(db.Boolean, default=False)
     is_archived = db.Column(db.Boolean, default=False)
 
     reply = db.relationship('repltoisks', back_populates='current_claim')
@@ -265,10 +267,10 @@ class iskdis(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     current_uid = db.Column(db.String(16), db.ForeignKey('court_claims.uid'), unique=True)
     judge = db.Column(db.Integer, db.ForeignKey('users.id'))
-    discription = db.Column(db.Text, nullable=False)
-    claims = db.Column(db.PickleType, nullable=False)
-    phone = db.Column(db.String(12), nullable=False)
-    cardn = db.Column(db.String(15), nullable=False)
+    discription = db.Column(db.Text, nullable=True)
+    claims = db.Column(db.PickleType, nullable=True)
+    phone = db.Column(db.String(12), nullable=True)
+    cardn = db.Column(db.String(15), nullable=True)
     created = db.Column(db.Integer, nullable=False)
     defendant = db.Column(db.PickleType)
     prosecutor = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -334,6 +336,7 @@ class courtOrder(db.Model):
     findings = db.Column(db.PickleType, nullable=False)
     consideration = db.Column(db.PickleType, nullable=False)
     ruling = db.Column(db.PickleType, nullable=False)
+    other = db.Column(db.String(256), nullable=True)
 
     type_doc = db.Column(db.String(45), nullable=False)
 
@@ -385,7 +388,7 @@ with app.app_context():
 @login_manager.user_loader
 def load_user(user_id):
     user = Users.query.get(user_id) 
-    if user:
+    if user and user.action != 'Dismissal':
         return user
 
     guest = guestUsers.query.get(user_id)

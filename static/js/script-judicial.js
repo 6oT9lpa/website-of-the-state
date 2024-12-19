@@ -19,8 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleContent(savedButtonId, savedUrl);
     }
     restoreState();
-
-    
 });
 document.querySelector('.navbar').prepend(backButton);
 
@@ -170,6 +168,61 @@ document.addEventListener('DOMContentLoaded', () => {
         const claim = document.getElementById('claim');
         const accessMessage = document.querySelector('#access-message');
         const closeButton = document.querySelector('.modal-close-error');
+
+        function setupDropdown(dropdown, dropdownBtn, dropdownMenu, hiddenInputId) {
+            if (!dropdown || !dropdownBtn || !dropdownMenu) return;
+        
+            dropdownBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                dropdown.classList.toggle('open');
+                dropdownBtn.classList.toggle('active');
+            });
+        
+            document.addEventListener('click', (e) => {
+                if (!dropdown.contains(e.target) && !dropdownBtn.contains(e.target)) {
+                    dropdown.classList.remove('open');
+                    dropdownBtn.classList.remove('active');
+                }
+            });
+        
+            dropdownMenu.addEventListener('click', (e) => {
+                e.preventDefault();
+                const action = e.target.dataset.action;
+                dropdownBtn.textContent = e.target.textContent;
+                document.getElementById(hiddenInputId).value = action;
+                dropdown.classList.remove('open');
+                dropdownBtn.classList.remove('active');
+                updateContentProsecutor(hiddenInputId);
+            });
+        }
+
+        function updateContentProsecutor(hiddenInputId) {
+            let action = document.getElementById(hiddenInputId);
+            let criminalPage = document.getElementById('criminal');
+            let complaintPage = document.getElementById('complaint');
+
+            if (action.value == 'criminal_case') {
+                complaintPage.style.display = 'none';
+                criminalPage.style.display = 'flex';
+                console.log(action.value);
+
+            } else if (action.value == 'common_complaint') {
+                criminalPage.style.display = 'none';
+                complaintPage.style.display = 'flex';
+                console.log(action.value);
+
+            } else {
+                return;
+            }
+        }
+    
+        setupDropdown(
+            document.querySelector('#dropdown-0'),
+            document.querySelector('#dropdown-btn-0'),
+            document.querySelector('#dropdown-menu-0'),
+            'action-0'
+        );
+        
 
         function showAccessMessage() {
             if (accessMessage) {

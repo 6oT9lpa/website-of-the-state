@@ -8,27 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
         inp.value = uid;
     });
 
-    const sidebar = document.querySelector('.sidebar-container');
-    const maincontent = document.querySelector('.main-content-complaint');
-
-    const acceptprosecutorcomplete = document.getElementById('accept-prosecutor-complete');
-    const closeprosecutorcomplete = document.getElementById('close-prosecutor-complete');
-
-    const acceptinvestigationprosecutor = document.getElementById('accept-investigation-prosecutor');
-    const closeinvestigationprosecutor = document.getElementById('close-investigation-prosecutor')
-
-    const acceptjudge = document.querySelector('.accept-judge');
-    const closeModalBtnjudge = document.querySelector('#btn-modal-close-judge');
-
-    const acceptpettion = document.querySelector('.accept-petition');
-    const closeModalBtnpettion = document.querySelector('#btn-modal-close-pettion');
-
-    const modal1 = document.getElementById('modal-1');
-    const modal2 = document.getElementById('modal-2');
-    const modal3 = document.getElementById('modal-3');
-    const modal4 = document.getElementById('modal-4');
-    const modal5 = document.getElementById('modal-5');
-
     function showModal(modal) {
         modal.style.display = 'flex';
         document.querySelectorAll('#overlay').forEach(o => {
@@ -53,243 +32,67 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 450);
     }
 
-    if (acceptinvestigationprosecutor) {
-        if (modal4) {
-            acceptinvestigationprosecutor.addEventListener('click', () => showModal(modal4));
-            closeinvestigationprosecutor.addEventListener('click',  () => hideModal(modal4));
-        }
-    }
-
-    if (acceptprosecutorcomplete) {
-        const dropdown = document.getElementById('dropdown-1');
-        const dropdownBtn = document.getElementById('dropdown-btn-1');
-        const dropdownMenu = document.getElementById('dropdown-menu-1');
-
-        if (modal5) {
-            acceptprosecutorcomplete.addEventListener('click', () => showModal(modal5));
-            closeprosecutorcomplete.addEventListener('click',  () => hideModal(modal5));
-        }
-
+    function setupDropdown(dropdown, dropdownBtn, dropdownMenu, hiddenInputId) {
+        if (!dropdown || !dropdownBtn || !dropdownMenu) return;
+    
         dropdownBtn.addEventListener('click', (e) => {
             e.preventDefault();
             dropdown.classList.toggle('open');
             dropdownBtn.classList.toggle('active');
         });
-        
+    
         document.addEventListener('click', (e) => {
             if (!dropdown.contains(e.target) && !dropdownBtn.contains(e.target)) {
                 dropdown.classList.remove('open');
                 dropdownBtn.classList.remove('active');
             }
         });
-        
+    
         dropdownMenu.addEventListener('click', (e) => {
             e.preventDefault();
             const action = e.target.dataset.action;
             dropdownBtn.textContent = e.target.textContent;
-            document.getElementById('action-prosecutor').value = action;
+            document.getElementById(hiddenInputId).value = action;
             dropdown.classList.remove('open');
             dropdownBtn.classList.remove('active');
         });
     }
 
-    if (acceptpettion) {  
-        const dropdownBtnpettion = document.querySelectorAll('.dropdown-btn-pettion');
-        const dropdownMenupettion = document.querySelectorAll('.dropdown-menu-pettion');
-        const dropdownpettion = document.querySelectorAll('.dropdown-pettion');
-        
-        const dropdownBtnpettionList = document.querySelector('.dropdown-btn-pettion-list');
-        const dropdownMenupettionList = document.querySelector('.dropdown-menu-pettion-list');
-        const dropdownpettionList = document.querySelector('.dropdown-pettion-list');
-
-        
-        if (modal3) {
-            acceptpettion.addEventListener('click', () => showModal(modal3));
-            closeModalBtnpettion.addEventListener('click',  () => hideModal(modal3));
-        }
-
-        if (modal2) {
-            acceptpettion.addEventListener('click', () => showModal(modal2));
-            closeModalBtnpettion.addEventListener('click',  () => hideModal(modal2));
-        }
-
-        dropdownBtnpettion.forEach(btn => {
-            if (btn) {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    dropdownpettion.forEach(main => {
-                        if (main) { main.classList.toggle('open'); }
-                    })
-                    btn.classList.toggle('active');
-                });
-            }
-        });
-        
-        document.addEventListener('click', (e) => {
-            dropdownpettion.forEach(main => {
-                if (main && !main.contains(e.target)) { main.classList.remove('open'); }
-            })
-
-            dropdownBtnpettion.forEach(btn => {
-                if (btn && btn.contains(e.target)) { btn.classList.remove('active');}
-            })
-        });
-
-        dropdownMenupettion.forEach(menu => {
-            if (menu) {
-                menu.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const action = e.target.dataset.action;
-
-                    dropdownBtnpettion.forEach(btn => {
-                        if (btn) { btn.textContent = e.target.textContent; btn.classList.remove('active');}
-                    })
-
-                    document.getElementById('action-pettion').value = action;
-                    dropdownpettion.forEach(main => {
-                        if (main) { main.classList.remove('open'); }
-                    })
-                    
-                });
-            }
-        });
-
-        if (modal2) {
-            dropdownBtnpettionList.addEventListener('click', (e) => {
-                e.preventDefault();
-                dropdownpettionList.classList.toggle('open');
-                dropdownBtnpettionList.classList.toggle('active');
-            });
-            
-            document.addEventListener('click', (e) => {
-                if (!dropdownpettionList.contains(e.target) && !dropdownBtnpettionList.contains(e.target)) {
-                    dropdownpettionList.classList.remove('open');
-                    dropdownBtnpettionList.classList.remove('active');
-                }
-            });
-            
-            dropdownMenupettionList.addEventListener('click', (e) => {
-                e.preventDefault();
-                const action = e.target.dataset.action;
-                dropdownBtnpettionList.textContent = e.target.textContent;
-                document.getElementById('action-pettion-list').value = action;
-                dropdownpettionList.classList.remove('open');
-                dropdownBtnpettionList.classList.remove('active');
-            });
-
-            let counter = 1; 
-
-            const addDefendaButton = document.querySelector(".btn-add-input-pettion"); 
-            const groupDefendaDiv = document.querySelector('.group-decision-pettion'); 
-            const groupBtnDecision = document.querySelector('.group-btn-decision-pettion');
-            
-            const deleteButton = document.createElement("a");
-            deleteButton.classList.add("btn-add-decision");
-            deleteButton.textContent = "Удалить";
-            deleteButton.style.display = "none"; 
-            
-            deleteButton.addEventListener("click", function (e) {
-                e.preventDefault();
-                const inputWrappers = Array.from(groupDefendaDiv.children);
-
-                const lastInputWrapper = groupDefendaDiv.lastElementChild;
-                if (lastInputWrapper) {
-                    lastInputWrapper.remove();
-                    counter--;
-                    updateInputNumbers();
-
-                    if (counter <= 2) {
-                        deleteButton.style.display = "none";
-                    }
-                }
-                
-            });
-            
-            
-            groupBtnDecision.appendChild(deleteButton);
-            
-            addDefendaButton.addEventListener("click", function(e) {
-                e.preventDefault();
-            
-                const newContentDiv = document.createElement("div");
-                newContentDiv.classList.add("form-input-modal");
-                newContentDiv.id = `decision-input-${counter}`;
-            
-                const inputWrapper = document.createElement("div");
-                inputWrapper.style.display = "flex";
-                inputWrapper.style.alignItems = "center";
-            
-                const inputNumber = document.createElement("span");
-                inputNumber.textContent = `${counter}.`;
-                inputNumber.style.fontWeight = "bold";
-                inputNumber.style.fontSize = "13px";
-            
-                const newInput = document.createElement("input");
-                newInput.type = "text";
-                newInput.id = `decision_${counter}`;
-                newInput.name = "decision";
-                newInput.placeholder = "Введите пункт определения";
-                
-                newContentDiv.appendChild(newInput);
-                inputWrapper.appendChild(inputNumber);
-                inputWrapper.appendChild(newContentDiv);
-                groupDefendaDiv.appendChild(inputWrapper);
-            
-                counter++;
-                if (counter > 1) {
-                    deleteButton.style.display = "inline-block";
-                }
-            });
-
-            function updateInputNumbers() {
-                const inputWrappers = Array.from(groupDefendaDiv.children);
-                let number = 1;
-                inputWrappers.forEach((wrapper) => {
-                    const inputNumber = wrapper.querySelector("span");
-                    if (inputNumber) {
-                        inputNumber.textContent = `${number}.`;
-                        number++;
-                    }
-                });
-            }
+    function setupModalToggle(openBtn, closeBtn, modal) {
+        if (openBtn && closeBtn && modal) {
+            openBtn.addEventListener('click', () => showModal(modal));
+            closeBtn.addEventListener('click', () => hideModal(modal));
         }
     }
 
-    if (acceptjudge) {
-        const dropdownBtn = document.querySelector('.dropdown-btn');
-        const dropdownMenu = document.querySelector('.dropdown-menu');
-        const dropdown = document.querySelector('.dropdown');
-        if (modal1) {
-            acceptjudge.addEventListener('click', () => showModal(modal1));
-            closeModalBtnjudge.addEventListener('click',  () => hideModal(modal1));
-        }
-        dropdownBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            dropdown.classList.toggle('open');
-            dropdownBtn.classList.toggle('active');
-        });
-        
-        document.addEventListener('click', (e) => {
-            if (!dropdown.contains(e.target) && !dropdownBtn.contains(e.target)) {
-                dropdown.classList.remove('open');
-                dropdownBtn.classList.remove('active');
-            }
-        });
-        
-        dropdownMenu.addEventListener('click', (e) => {
-            e.preventDefault();
-            const action = e.target.dataset.action;
-            dropdownBtn.textContent = e.target.textContent;
-            document.getElementById('action').value = action;
-            dropdown.classList.remove('open');
-            dropdownBtn.classList.remove('active');
-        });
+    const modals = [
+        { openBtn: '#open-btn-1', closeBtn: '#close-btn-1', modal: '#modal-1' },
+        { openBtn: '#open-btn-2', closeBtn: '#close-btn-2', modal: '#modal-2' },
+        { openBtn: '#open-btn-3', closeBtn: '#close-btn-3', modal: '#modal-3' },
+        { openBtn: '#open-btn-4', closeBtn: '#close-btn-4', modal: '#modal-4' },
+        { openBtn: '#open-btn-5', closeBtn: '#close-btn-5', modal: '#modal-5' },
+        { openBtn: '#open-btn-6', closeBtn: '#close-btn-6', modal: '#modal-6' },
+        { openBtn: '#open-btn-7', closeBtn: '#close-btn-7', modal: '#modal-7' },
+    ];
 
-        let counter = 1; 
+    modals.forEach(({ openBtn, closeBtn, modal }) => {
+        setupModalToggle(document.querySelector(openBtn), document.querySelector(closeBtn), document.querySelector(modal));
+    });
 
-        const addDefendaButton = document.querySelector(".btn-add-input"); 
-        const groupDefendaDiv = document.querySelector('.group-decision'); 
-        const groupBtnDecision = document.querySelector('.group-btn-decision');
+    setupDropdown(document.querySelector('#dropdown-1'), document.querySelector('#dropdown-btn-1'), document.querySelector('#dropdown-menu-1'), 'action-1');
+    setupDropdown(document.querySelector('#dropdown-2'), document.querySelector('#dropdown-btn-2'), document.querySelector('#dropdown-menu-2'), 'action-2');
+    setupDropdown(document.querySelector('#dropdown-3'), document.querySelector('#dropdown-btn-3'), document.querySelector('#dropdown-menu-3'), 'action-3');
+    setupDropdown(document.querySelector('#dropdown-4'), document.querySelector('#dropdown-btn-4'), document.querySelector('#dropdown-menu-4'), 'action-4');
+    setupDropdown(document.querySelector('#dropdown-5'), document.querySelector('#dropdown-btn-5'), document.querySelector('#dropdown-menu-5'), 'action-5');
+    setupDropdown(document.querySelector('#dropdown-6'), document.querySelector('#dropdown-btn-6'), document.querySelector('#dropdown-menu-6'), 'action-6');
+
+    function initInputGroup(addButtonSelector, groupSelector, deleteButtonSelector) {
+        let counter = 1;
+        const maxInputs = 11;
+    
+        const addDefendaButton = document.querySelector(addButtonSelector); 
+        const groupDefendaDiv = document.querySelector(groupSelector); 
+        const groupBtnDecision = document.querySelector(deleteButtonSelector);
         
         const deleteButton = document.createElement("a");
         deleteButton.classList.add("btn-add-decision");
@@ -299,39 +102,41 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteButton.addEventListener("click", function (e) {
             e.preventDefault();
             const inputWrappers = Array.from(groupDefendaDiv.children);
-
+    
             const lastInputWrapper = groupDefendaDiv.lastElementChild;
             if (lastInputWrapper) {
                 lastInputWrapper.remove();
                 counter--;
                 updateInputNumbers();
-
-                if (counter <= 2) {
+    
+                if (counter == 2) {
                     deleteButton.style.display = "none";
                 }
             }
-            
         });
         
-        
         groupBtnDecision.appendChild(deleteButton);
-        
+    
         addDefendaButton.addEventListener("click", function(e) {
             e.preventDefault();
-        
+
+            if (counter >= maxInputs) {
+                return;  
+            }
+    
             const newContentDiv = document.createElement("div");
             newContentDiv.classList.add("form-input-modal");
             newContentDiv.id = `decision-input-${counter}`;
-        
+    
             const inputWrapper = document.createElement("div");
             inputWrapper.style.display = "flex";
             inputWrapper.style.alignItems = "center";
-        
+    
             const inputNumber = document.createElement("span");
             inputNumber.textContent = `${counter}.`;
             inputNumber.style.fontWeight = "bold";
             inputNumber.style.fontSize = "13px";
-        
+    
             const newInput = document.createElement("input");
             newInput.type = "text";
             newInput.id = `decision_${counter}`;
@@ -342,13 +147,13 @@ document.addEventListener('DOMContentLoaded', () => {
             inputWrapper.appendChild(inputNumber);
             inputWrapper.appendChild(newContentDiv);
             groupDefendaDiv.appendChild(inputWrapper);
-        
+    
             counter++;
             if (counter > 1) {
                 deleteButton.style.display = "inline-block";
             }
         });
-
+    
         function updateInputNumbers() {
             const inputWrappers = Array.from(groupDefendaDiv.children);
             let number = 1;
@@ -360,11 +165,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+    }   
+    
+    if (document.getElementById('modal-1')) {
+        initInputGroup("#btn-0", "#group-0", "#group-btn-0");
     }
+
+    if (document.getElementById('modal-2')) {
+        initInputGroup("#btn-1", "#group-1", "#group-btn-1");
+    }
+
+    if (document.getElementById('modal-6')) {
+        initInputGroup("#btn-2", "#group-2", "#group-btn-2");
+    }
+
+    if (document.getElementById('modal-7')) {
+        initInputGroup("#btn-3", "#group-3", "#group-btn-3");
+    }
+
+    document.querySelectorAll('.submit-btn input').forEach(button => {
+        button.addEventListener('click', (event) => {
+            event.stopPropagation(); 
+        });
+    });
 
     let isHovered = false;
     let isAnimating = false;
     let hoverTimeout;
+
+    const sidebar = document.querySelector('.sidebar-container');
+    const maincontent = document.querySelector('.main-content-complaint');
 
     sidebar.addEventListener('mouseenter', () => {
         if (isHovered || isAnimating) return;

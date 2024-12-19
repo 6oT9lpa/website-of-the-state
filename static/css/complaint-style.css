@@ -247,7 +247,7 @@ a.accept-judge {
     display: flex;
     flex-direction: column;
     position: absolute;
-    top: 45vh;
+    top: 50vh;
     left: 50%;
     transform: translate(-50%, -50%);
     background: #141414;
@@ -312,21 +312,13 @@ a.accept-judge {
     left: 50%;
 }
 
-.modal-processing-pettion {
-    opacity: 0;
-    z-index: 100;
-}
-
-.modal-processing-pettion.show-modal{
-    opacity: 1;
-    position: fixed;
-    left: 50%;
-}
-
-.modal-processing-pettion.hidden-modal {
-    opacity: 0;
-    position: fixed;
-    left: 50%;
+.group-dec {
+    margin-top: 10px;
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
 }
 
 .modal-investigation-start {
@@ -400,56 +392,6 @@ a.accept-judge {
 }
 
 .dropdown.open .dropdown-menu {
-    display: block;
-}
-
-.dropdown-pettion {
-    position: relative;
-    display: inline-block;
-}
-
-.dropdown-btn-pettion {
-    background: transparent;
-    color: white;
-    border: #141414 solid 2px;
-    padding: 10px 15px;
-    font-size: 14px;
-    cursor: pointer;
-    border-radius: 10px;
-    transition: all 0.3s ease-in-out;
-}
-
-.dropdown-btn-pettion:hover, .dropdown-btn-pettion.active {
-    border: #e81c591a solid 2px;
-    box-shadow: inset black 0 0 8px 2px;
-}
-.dropdown-menu-pettion {
-    display: none;
-    position: absolute;
-    right: 0;
-    background-color: #141414;
-    min-width: 185px;
-    text-align: center;
-    border: 1px solid #323232;
-    border-radius: 5px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-}
-
-.dropdown-menu-pettion a {
-    color: #ffffff;
-    padding: 10px 15px;
-    text-decoration: none;
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.dropdown-menu-pettion a:hover {
-    background-color: #1e1e1e;
-}
-
-.dropdown-pettion.open .dropdown-menu-pettion {
     display: block;
 }
 
@@ -647,4 +589,18 @@ a.accept-judge {
 
 .dropdown-pettion-list.open .dropdown-menu-pettion-list {
     display: block;
+}
+
+.group-kick p {
+    font-size: 14px;
+    align-content: center;
+    text-align: start;
+}
+
+.functional-menu {
+    margin-top: 20px;
+}
+
+.group-kick {
+    display: flex;
 }

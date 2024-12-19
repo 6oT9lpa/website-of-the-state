@@ -747,9 +747,9 @@ div#judicial-content {
     box-shadow: black 0 0 5px 2px;
     border-radius: 50%;
 }
-
 .btn-court {
-    padding: 0 10px
+    text-decoration: none;
+    color: white
 }
 
 .court-container {
@@ -791,7 +791,7 @@ div#judicial-content {
 }
 
 .btn-complaint {
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     height: 50px;
     color: white;
     text-decoration: none;
@@ -1081,7 +1081,60 @@ span.btn-modal-close:hover {
     justify-content: end;
 }
 
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
 
+.dropdown-btn {
+    background: transparent;
+    color: white;
+    border: #141414 solid 2px;
+    padding: 10px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.3s ease-in-out;
+}
+
+.dropdown-btn:hover, .dropdown-btn.active {
+    border: #e81c591a solid 2px;
+    box-shadow: inset black 0 0 8px 2px;
+}
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: #141414;
+    min-width: 190px;
+    text-align: center;
+    border: 1px solid #323232;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.dropdown-menu a {
+    color: #ffffff;
+    padding: 10px 15px;
+    text-decoration: none;
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.dropdown-menu a:hover {
+    background-color: #1e1e1e;
+}
+
+.dropdown.open .dropdown-menu {
+    display: block;
+}
+
+.head {
+    display: flex;
+    gap: 25px;
+}
 
 @media (max-width: 480px) { 
     .modal-content {

@@ -27,7 +27,7 @@
                     <div class='img-header'><img src="{{ url_for('static', filename='img/DistrictCourt.png') }}"/></div>     
                     <div class='text-header'>
                         <h4>District Court of the State of San Andreas</h4>
-                        <p>Plaintiff: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
+                        <p>Plaintiff: <b>{{ user.nikname if user else (guest.nickname if guest else 'Не найден') }}</b></p>
                         <p>Attorney for the Plaintiff: <b></b></p>
                         <p style="width: 90%;font-size: 16px;font-weight: 700;"> v. </p>
                         <div class='content-defendant'>
@@ -56,13 +56,17 @@
                 <p>Дата: {{ createat }}</p>
                 <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
                     {{
-                        (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] if user.nikname.split()|length > 1 else user.nikname) if user 
-                        else 
-                        (guest.nikname.split()[1][0] + '. ' + guest.nikname.split()[0] if guest.nikname.split()|length > 1 else guest.nikname)
+                        (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] 
+                        if user and user.nikname and user.nikname.split()|length > 1 
+                        else user.nikname if user and user.nikname 
+                        else guest.nickname.split()[1][0] + '. ' + guest.nickname.split()[0] 
+                        if guest and guest.nickname and guest.nickname.split()|length > 1 
+                        else guest.nickname)
                     }}
                 </b></p>
             </div>
         </div>
+        {% if district.status != 'CompletedTrial' %}
         <div class="sidebar-container">
             <div class='content-sidebar'>
                 <div class='header-sidebar'>
@@ -75,26 +79,69 @@
                                 'Rejectioned': 'Отказано',
                                 'LeftMoved': 'Оставлено без движения',
                                 'CourtHearing': 'Назначено заседание',
-                                'CompleteWork': 'Дело проведено в суд'
+                                'CompleteWork': 'Дело проведено в суд',
+                                'CompletedTrial': 'Завершенный судебный процесс'
                             }.get(district.status, 'Неизвестный статус')
                         }}
                     </p>
                 </div>
+                {% if status == 'Judge' %}
+                    <div class='functional-menu'>
+                        {% if district.prosecutor != '' %}
+                            <div class='group-kick'> 
+                                <p>Прокурор: {{ Users.query.filter_by(id=district.prosecutor).first().nikname }} </p>
+                                <div class='submit-btn-contanier'>
+                                    <div class='submit-btn'>
+                                        <input type="submit" class='accept-petition' value="Отсранить">   
+                                    </div>   
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div class='submit-btn-contanier'>
+                            <div class='submit-btn'>
+                                <input type="submit" class='accept-petition' value="Привлечь лицо">   
+                            </div>   
+                        </div>
+                        
+                        <div class='submit-btn-contanier'>
+                            <div class='submit-btn'>
+                                <input type="submit" class='accept-petition' value="Заявить самоотвод">   
+                            </div>   
+                        </div>
+                    </div>
+                {% endif %}
+
                 {% if not district.status in ['Rejectioned', 'LeftMoved'] %}
                 <div class='block-btn'>
                     {% if status == 'Judge' %}
                         {% if district.status == 'Waitting' %}
-                        <div class='submit-btn-contanier'>
-                            <div class='submit-btn'>
-                                <input type="submit" class='accept-judge' value="Обработка иска">   
-                            </div>   
-                        </div> 
-                        {% endif %}
-
-                        {% if repltoisk | selectattr('moderation', 'equalto', false) | list | length > 0 %}
                             <div class='submit-btn-contanier'>
                                 <div class='submit-btn'>
-                                    <input type="submit" class='accept-petition' value="Обработка ходатайства">   
+                                    <input type="submit" class='accept-judge' id='open-btn-1' value="Обработка иска">   
+                                </div>   
+                            </div> 
+                        {% endif %}
+
+                        {% if repltoisk | selectattr('moderation', 'equalto', false) | list | length > 0  and district.status != 'Waitting' %}
+                            <div class='submit-btn-contanier'>
+                                <div class='submit-btn'>
+                                    <input type="submit" class='accept-petition' id='open-btn-2' value="Обработка ходатайства">   
+                                </div>   
+                            </div>
+                        {% endif %}
+
+                        {% if district.status == 'CompleteWork' or district.status == 'CourtHearing' %}
+                            <div class='submit-btn-contanier'>
+                                <div class='submit-btn'>
+                                    <input type="submit" class='accept-judge' id='open-btn-6' value="Судебное заседание">   
+                                </div>   
+                            </div>
+                        {% endif %}
+                        {% if district.status == 'CourtHearing' %}
+                            <div class='submit-btn-contanier'>
+                                <div class='submit-btn'>
+                                    <input type="submit" class='accept-judge' id='open-btn-7' value="Вынести решение">   
                                 </div>   
                             </div>
                         {% endif %}
@@ -104,7 +151,7 @@
                         {% if district.status != 'Rejectioned' %}
                         <div class='submit-btn-contanier'>
                             <div class='submit-btn'>
-                                <input type="submit" class='accept-petition' value="Подать ходатайство">   
+                                <input type="submit" class='accept-petition' id='open-btn-3' value="Подать ходатайство">   
                             </div>   
                         </div> 
                         {% endif %}
@@ -113,7 +160,7 @@
                     {% if status == 'Prosecutor' and not isk.prosecutor  and district.status == 'Accepted' %}
                         <div class='submit-btn-contanier'>
                             <div class='submit-btn'>
-                                <input type="submit" class='investigation-start' id='accept-investigation-prosecutor' value="Начать расследование">   
+                                <input type="submit" class='investigation-start' id='open-btn-4' value="Начать расследование">   
                             </div>   
                         </div> 
                     {% endif %}
@@ -121,7 +168,7 @@
                         {% if district.status != 'Rejectioned' %}
                         <div class='submit-btn-contanier'>
                             <div class='submit-btn'>
-                                <input type="submit" class='investigation-complete' id='accept-prosecutor-complete' value="Завершить расследование">   
+                                <input type="submit" class='investigation-complete' id='open-btn-5' value="Завершить расследование">   
                             </div>   
                         </div> 
                         {% endif %}
@@ -130,6 +177,7 @@
                 {% endif %}
             </div>
         </div>
+        {% endif %}
     </div>
     <div class="container">
         {% for item in combined_data %}
@@ -164,10 +212,13 @@
                     </div>                    
                     <div class='footer-content'>
                         <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
-                            {{
-                                (u_pett.nikname.split()[1][0] + '. ' + u_pett.nikname.split()[0] if u_pett.nikname.split()|length > 1 else u_pett.nikname) if u_pett
-                                else 
-                                (g_pett.nikname.split()[1][0] + '. ' + g_pett.nikname.split()[0] if g_pett.nikname.split()|length > 1 else g_pett.nikname)
+                            {{ 
+                                u_pett.nikname.split()[1][0] + '. ' + u_pett.nikname.split()[0] 
+                                if u_pett and u_pett.nikname and u_pett.nikname.split()|length > 1 
+                                else u_pett.nikname if u_pett and u_pett.nikname 
+                                else g_pett.nickname.split()[1][0] + '. ' + g_pett.nickname.split()[0] 
+                                if g_pett and g_pett.nickname and g_pett.nickname.split()|length > 1 
+                                else g_pett.nickname
                             }}
                         </b></p>
                     </div>
@@ -187,7 +238,7 @@
                         <div class='title-court-order'>
                             <div class='group-order'>
                                 <div class='content-Plaintiff'>
-                                    <p>Plaintiff: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
+                                    <p>Plaintiff: <b>{{ user.nikname if user else (guest.nickname if guest else 'Не найден') }}</b></p>
                                     <p>Attorney for the Plaintiff: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
                                 </div>
                             </div>
@@ -258,7 +309,7 @@
                             <p style='text-align: center;'>Уважаемый Чорт ебаный, по вашему заявлению будет проведена прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и действующих на территории San-Andreas нормативно-правовых актов, на установление причин и условий, способствующих выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений..</p>
                     </div>                    
                     <div class='footer-content'>
-                        <p style='margin-top: -5px;'>Подпись: А сасать тут истец уже расписался <b style='font-family:Updock;font-size: 30px;'>
+                        <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
                             {{
                                 prosecutor.nikname.split()[1][0] + '. ' + prosecutor.nikname.split()[0] if prosecutor.nikname.split()|length > 1 else prosecutor.nikname
                             }}
@@ -286,7 +337,7 @@
                             <p style='text-align: center;'>Уважаемый Чорт ебаный, по вашему заявлению была проведена прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и действующих на территории San-Andreas нормативно-правовых актов, на установление причин и условий, способствующих выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений. По итогам проверки: {% if item.replyik['type_delo'] == "blameless" %} Прокуратурой штата не были выявлены нарушения Конституции и действующих на территории San-Andreas нормативно-правовых актов. {% elif item.replyik['type_delo' == "accusatory"] %} Прокуратура выявила нарушения Конституции и действующих на территории San-Andreas нормативно-правовых актов.{% endif %} </p>
                     </div>                    
                     <div class='footer-content'>
-                        <p style='margin-top: -5px;'>Подпись: А сасать тут истец уже расписался <b style='font-family:Updock;font-size: 30px;'>
+                        <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
                             {{
                                 prosecutor.nikname.split()[1][0] + '. ' + prosecutor.nikname.split()[0] if prosecutor.nikname.split()|length > 1 else prosecutor.nikname
                             }}
@@ -305,22 +356,24 @@
         {% endfor %}
     </div>
 
+    {% if district.status == 'Waitting' and status == 'Judge' %}
     <div class='modal-processing-complaint' id='modal-1' style='display:none;'>
         <form method='POST' action='/create_court_order'>
             <input type="hidden" name="uid" id="uidcompliant">
+            <input type="hidden" name="type_court_order" value="processiong_complaint">
             <div class='content-modal'>
                 <div class="header-modal">
-                    <span class="btn-modal-close" id="btn-modal-close-judge">&times;</span>
-                    <div class="dropdown">
-                        <button class="dropdown-btn">Действия</button>
-                        <div class="dropdown-menu">
+                    <span class="btn-modal-close" id="close-btn-1">&times;</span>
+                    <div class="dropdown" id='dropdown-1'>
+                        <button class="dropdown-btn" id='dropdown-btn-1'>Действия</button>
+                        <div class="dropdown-menu" id='dropdown-menu-1'>
                             <a name='accept' data-action="accept">Принять иск</a>
                             <a name='reject' data-action="reject">Отказать в иске</a>
                             <a name='hold' data-action="hold">Оставить без движения</a>
                         </div>
                     </div>
                 </div>
-                <input type="hidden" name="action" id="action">
+                <input type="hidden" name="action" id="action-1">
                 <div class='form-control'>
                     <label for="findings">Обстоятельства.</label>
                     <div class='form-textarea'>
@@ -335,10 +388,10 @@
                 </div>
                 <div class='form-control'>
                     <label for="decision">Определил.</label>
-                    <div class='group-decision'> 
+                    <div class='group-decision' id='group-0'> 
                     </div>
-                    <div class='group-btn-decision'>
-                        <a class='btn-add-input'>Добавить пункт</a>
+                    <div class='group-btn-decision' id='group-btn-0'>
+                        <a class='btn-add-input' id='btn-0'>Добавить пункт</a>
                     </div>
                 </div>
 
@@ -350,18 +403,19 @@
             </div> 
         </form>
     </div>
+    {% endif %}
 
     {% if status == 'Judge' %}
-    <div class='modal-processing-pettion' id='modal-2' style='display:none;'>
+    <div class='modal-processing-complaint' id='modal-2' style='display:none;'>
         <form method='POST' action='/create_court_pettion'>
             <input type="hidden" name="uid" id="uidcompliant">
             <div class='content-modal'>
                 <div class="header-modal">
-                    <span class="btn-modal-close" id="btn-modal-close-pettion">&times;</span>
+                    <span class="btn-modal-close" id="close-btn-2">&times;</span>
                     <div class='group-dropdown'>
-                        <div class="dropdown-pettion-list">
-                            <button class="dropdown-btn-pettion-list">Выбрать ходатайство</button>
-                            <div class="dropdown-menu-pettion-list">
+                        <div class="dropdown-pettion-list" id='dropdown-4'>
+                            <button class="dropdown-btn-pettion-list" id='dropdown-btn-4'>Выбрать ходатайство</button>
+                            <div class="dropdown-menu-pettion-list" id='dropdown-menu-4'>
                                 {% for item in repltoisk %}
                                     {% if not item.moderation %}
                                         <a data-action="{{ loop.index }}">Ходатайство {{ loop.index }}</a>
@@ -369,17 +423,17 @@
                                 {% endfor %}   
                             </div>
                         </div>
-                        <div class="dropdown-pettion">
-                            <button class="dropdown-btn-pettion">Действия над ходатайством</button>
-                            <div class="dropdown-menu-pettion">
+                        <div class="dropdown" id='dropdown-2'>
+                            <button class="dropdown-btn" id='dropdown-btn-2'>Действия над ходатайством</button>
+                            <div class="dropdown-menu" id='dropdown-menu-2'>
                                 <a data-action="true-petition">Принять ходатайство</a>
                                 <a data-action="false-petition">Отказать ходатайство</a>
                             </div>
                         </div>
                     </div>
                 </div>
-                <input type="hidden" name="action" id="action-pettion">
-                <input type="hidden" name="petition" id="action-pettion-list">
+                <input type="hidden" name="action" id="action-2">
+                <input type="hidden" name="petition" id="action-4">
                 <div class='form-control'>
                     <label for="findings">Обстоятельства.</label>
                     <div class='form-textarea'>
@@ -394,10 +448,10 @@
                 </div>
                 <div class='form-control'>
                     <label for="decision">Определил.</label>
-                    <div class='group-decision-pettion'> 
+                    <div class='group-decision-pettion' id='group-1'> 
                     </div>
-                    <div class='group-btn-decision-pettion'>
-                        <a class='btn-add-input-pettion'>Добавить пункт</a>
+                    <div class='group-btn-decision-pettion' id='group-btn-1'>
+                        <a class='btn-add-input-pettion' id='btn-1'>Добавить пункт</a>
                     </div>
                 </div>
 
@@ -411,15 +465,15 @@
     </div>
     {% endif %}
     {% if status != 'Judge' %}
-    <div class='modal-processing-pettion' id='modal-3' style='display:none;'>
+    <div class='modal-processing-complaint' id='modal-3' style='display:none;'>
         <form method='POST' action='/create_petition'>
             <input type="hidden" name="uid" id="uidcompliant">
             <div class='content-modal'>
                 <div class="header-modal">
-                    <span class="btn-modal-close" id="btn-modal-close-pettion">&times;</span>
-                    <div class="dropdown-pettion">
-                        <button class="dropdown-btn-pettion">Действия</button>
-                        <div class="dropdown-menu-pettion">
+                    <span class="btn-modal-close" id="close-btn-3">&times;</span>
+                    <div class="dropdown" id='dropdown-3'>
+                        <button class="dropdown-btn" id='dropdown-btn-3'>Действия</button>
+                        <div class="dropdown-menu" id='dropdown-menu-3'>
                             <a name='freeform' data-action="freeform">Свободная форма</a>
                             <a name='svidetel' data-action="svidetel">Об привлечении свидетеля</a>
                             <a name='expert' data-action="expert">Об привлечении эксперта</a>
@@ -427,7 +481,7 @@
                         </div>
                     </div>
                 </div>
-                <input type="hidden" name="action" id="action-pettion">
+                <input type="hidden" name="action" id="action-3">
                 <div class='group'>
                     <div class='form-control'>
                         <label for="nickname">Имя Фамилия.</label>
@@ -460,13 +514,13 @@
     </div>
     {% endif %}
     {% if status == "Prosecutor" %}
-    <div class='modal-investigation-start' style='display:none;' id='modal-4'>
+    <div class='modal-processing-complaint' style='display:none;' id='modal-4'>
         <form method='POST' action='/create_prosecutor'>
             <input type="hidden" name="uid" id="uidcompliant">
             <input type="hidden" name="type_document" id="type_document" value="start_investigation">
             <div class='content-modal'>
                 <div class="header-modal">
-                    <span class="btn-modal-close" id="close-investigation-prosecutor">&times;</span>
+                    <span class="btn-modal-close" id="close-btn-4">&times;</span>
                 </div>
                 <div class='form-control'>
                     <h4>Вы уверены? Не обратимое действие!</h4>
@@ -480,22 +534,22 @@
             </div> 
         </form>
     </div>
-    <div class='modal-investigation-complete' style='display:none;' id='modal-5'>
+    <div class='modal-processing-complaint' style='display:none;' id='modal-5'>
         <form method='POST' action='/create_prosecutor'>
             <input type="hidden" name="uid" id="uidcompliant">
             <input type="hidden" name="type_document" id="type_document" value="complete_delo">
             <div class='content-modal'>
                 <div class="header-modal">
-                    <span class="btn-modal-close" id="close-prosecutor-complete">&times;</span>
-                    <div class="dropdown" id='dropdown-1'>
-                        <button class="dropdown-btn" id='dropdown-btn-1'>Действия</button>
-                        <div class="dropdown-menu" id='dropdown-menu-1'>
+                    <span class="btn-modal-close" id="close-btn-5">&times;</span>
+                    <div class="dropdown" id='dropdown-5'>
+                        <button class="dropdown-btn" id='dropdown-btn-5'>Действия</button>
+                        <div class="dropdown-menu" id='dropdown-menu-5'>
                             <a name='accusatory' data-action="accusatory">С обвинениями</a>
                             <a name='blameless' data-action="blameless">Без обвинений</a>
                         </div>
                     </div>
                 </div>  
-                <input type="hidden" name="action" id="action-prosecutor">
+                <input type="hidden" name="action" id="action-5">
 
                 <div class='form-control'>
                     <label for="delo">Ссылка на дело.</label>
@@ -506,6 +560,99 @@
                 <div class='submit-btn-contanier'>
                     <div class='submit-btn'>
                         <input type="submit" value="Завершить расследование">   
+                    </div>   
+                </div> 
+            </div> 
+        </form>
+    </div>
+    {% endif %}
+
+    {% if (district.status == 'CompleteWork' or district.status == 'CourtHearing') and status == 'Judge' %}
+    <div class='modal-processing-complaint' id='modal-6' style='display:none;'>
+        <form method='POST' action='/create_court_order'>
+            <input type="hidden" name="uid" id="uidcompliant">
+            <input type="hidden" name="type_court_order" value="appoint_court_session">
+            <div class='content-modal'>
+                <div class="header-modal">
+                    <span class="btn-modal-close" id="close-btn-6">&times;</span>
+                    <div class="dropdown" id='dropdown-6'>
+                        <button class="dropdown-btn" id='dropdown-btn-6'>Действия</button>
+                        <div class="dropdown-menu" id='dropdown-menu-6'>
+                            <a name='reassign' data-action="reassign">Переназначить суд</a>
+                            <a name='appoint' data-action="appoint">Назначить суд</a>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="action" id="action-6">
+                <div class='form-control'>
+                    <label for="findings">Обстоятельства.</label>
+                    <div class='form-textarea'>
+                        <textarea id="findings" name="findings" rows="8" cols="90" placeholder='Опишите обстоятельства'></textarea>
+                    </div>
+                </div>
+                <div class='form-control'>
+                    <label for="consideration">Рассмотрение.</label>
+                    <div class='form-textarea'>
+                        <textarea id="consideration" name="consideration" rows="8" cols="90" placeholder='Опишите мотивирвнное решение при рассмотрение искового заявления'></textarea>
+                    </div>
+                </div>
+                <div class='form-control'>
+                    <label for="decision">Определил.</label>
+                    <div class='group-dec'> 
+                        <label for="time">Время судебного заседания.</label>
+                        <div class='form-input'>
+                            <input id="time" name="time" placeholder='Введите время суда'>
+                        </div>
+                        <span class="text-danger" id="is-invalid"></span>
+                    </div>
+                    <div class='group-decision-pettion' id='group-2'> 
+                    </div>
+                    <div class='group-btn-decision-pettion' id='group-btn-2'>
+                        <a class='btn-add-input-pettion' id='btn-2' >Добавить пункт</a>
+                    </div>
+                </div>
+                <div class='submit-btn-contanier'>
+                    <div class='submit-btn'>
+                        <input type="submit" value="Оставить ответ">   
+                    </div>   
+                </div> 
+            </div> 
+        </form>
+    </div>
+    {% endif %}
+
+    {% if district.status == 'CourtHearing' and status == 'Judge' %}
+    <div class='modal-processing-complaint' id='modal-7' style='display:none;'>
+        <form method='POST' action='/create_court_order'>
+            <input type="hidden" name="uid" id="uidcompliant">
+            <input type="hidden" name="type_court_order" value="decision_court_session">
+            <div class='content-modal'>
+                <div class="header-modal">
+                    <span class="btn-modal-close" id="close-btn-7">&times;</span>
+                </div>
+                <div class='form-control'>
+                    <label for="findings">Обстоятельства.</label>
+                    <div class='form-textarea'>
+                        <textarea id="findings" name="findings" rows="8" cols="90" placeholder='Опишите обстоятельства'></textarea>
+                    </div>
+                </div>
+                <div class='form-control'>
+                    <label for="consideration">Рассмотрение.</label>
+                    <div class='form-textarea'>
+                        <textarea id="consideration" name="consideration" rows="8" cols="90" placeholder='Опишите мотивирвнное решение при рассмотрение искового заявления'></textarea>
+                    </div>
+                </div>
+                <div class='form-control'>
+                    <label for="decision">Определил.</label>
+                    <div class='group-decision-pettion' id='group-3'> 
+                    </div>
+                    <div class='group-btn-decision-pettion' id='group-btn-3'>
+                        <a class='btn-add-input-pettion' id='btn-3' >Добавить пункт</a>
+                    </div>
+                </div>
+                <div class='submit-btn-contanier'>
+                    <div class='submit-btn'>
+                        <input type="submit" value="Оставить ответ">   
                     </div>   
                 </div> 
             </div> 
@@ -538,22 +685,7 @@
     {% endwith %}
 
     <script>
-        function updateContent() {
-            const allContent = document.querySelectorAll('.contenthod');
-            allContent.forEach(function(content) {
-                content.style.display = 'none';
-            });
-
-            const selectedValue = document.getElementById('type_hodataistva').value;
-
-            const selectedContent = document.getElementById(selectedValue);
-            if (selectedContent) {
-                selectedContent.style.display = 'block';
-            }
-        }
-        
         var status = {{ status | tojson }};
-
     </script>
     <script src="{{ url_for('static', filename='js/script-complaint.js')}}"></script>
 </body>
