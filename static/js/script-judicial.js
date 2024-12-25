@@ -169,60 +169,54 @@ document.addEventListener('DOMContentLoaded', () => {
         const accessMessage = document.querySelector('#access-message');
         const closeButton = document.querySelector('.modal-close-error');
 
-        function setupDropdown(dropdown, dropdownBtn, dropdownMenu, hiddenInputId) {
-            if (!dropdown || !dropdownBtn || !dropdownMenu) return;
+        document.addEventListener('click', function(event) {
+            const dropdownBtn = document.querySelector('#dropdown-btn-0');
+            const dropdownMenu = document.querySelector('#dropdown-0');
         
-            dropdownBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                dropdown.classList.toggle('open');
+            if (event.target && event.target === dropdownBtn) {
+                event.preventDefault();
+                dropdownMenu.classList.toggle('open');
                 dropdownBtn.classList.toggle('active');
-            });
+            }
         
-            document.addEventListener('click', (e) => {
-                if (!dropdown.contains(e.target) && !dropdownBtn.contains(e.target)) {
-                    dropdown.classList.remove('open');
-                    dropdownBtn.classList.remove('active');
-                }
-            });
-        
-            dropdownMenu.addEventListener('click', (e) => {
-                e.preventDefault();
-                const action = e.target.dataset.action;
-                dropdownBtn.textContent = e.target.textContent;
-                document.getElementById(hiddenInputId).value = action;
-                dropdown.classList.remove('open');
-                dropdownBtn.classList.remove('active');
-                updateContentProsecutor(hiddenInputId);
-            });
-        }
+        });
 
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('#dropdown-0');
+            const dropdownButton = document.querySelector('#dropdown-btn-0');
+
+            if (event.target && event.target.closest('#dropdown-menu-0')) {
+                if (event.target.tagName === 'A') {
+                    event.preventDefault();
+                    const action = event.target.dataset.action;
+                    dropdownButton.textContent = event.target.textContent;
+                    document.getElementById('action-0').value = action;
+                    dropdown.classList.remove('open');
+                    dropdownButton.classList.remove('active');
+                    updateContentProsecutor('action-0');
+                }
+            } else if (!event.target.closest('.dropdown')) {
+                dropdown.classList.remove('open');
+                dropdownButton.classList.remove('active');
+            }
+        });
+
+        
         function updateContentProsecutor(hiddenInputId) {
             let action = document.getElementById(hiddenInputId);
             let criminalPage = document.getElementById('criminal');
             let complaintPage = document.getElementById('complaint');
-
-            if (action.value == 'criminal_case') {
+        
+            if (action.value === 'criminal_case') {
                 complaintPage.style.display = 'none';
                 criminalPage.style.display = 'flex';
-                console.log(action.value);
-
-            } else if (action.value == 'common_complaint') {
+            } else if (action.value === 'common_complaint') {
                 criminalPage.style.display = 'none';
                 complaintPage.style.display = 'flex';
-                console.log(action.value);
-
             } else {
                 return;
             }
         }
-    
-        setupDropdown(
-            document.querySelector('#dropdown-0'),
-            document.querySelector('#dropdown-btn-0'),
-            document.querySelector('#dropdown-menu-0'),
-            'action-0'
-        );
-        
 
         function showAccessMessage() {
             if (accessMessage) {
@@ -388,167 +382,189 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (createButton && modalDistrict) {
-            createButton.addEventListener('click', showModal);
-            closeModalBtn.addEventListener('click', hideModal)
+            document.addEventListener('click', function(event) {
+                if (event.target && event.target.id === 'create-btn-district') {
+                    event.preventDefault();
+                    showModal();
+                }
             
-            function showModal() {
-                modalDistrict.style.display = 'flex';
-                document.querySelectorAll('#overlay').forEach(o => {
-                    o.classList.add('active');
-                });
-
-                enableModalFields([defendant, phone, lawyer, card, claim])
-                
-                setTimeout(() => {
-                    modalDistrict.classList.remove('hidden-modal-district')
-                    modalDistrict.classList.add('show-modal-district')
-                }, 10)
-            }
-
-            function hideModal() {
-                modalDistrict.classList.remove('show-modal-district')
-                modalDistrict.classList.add('hidden-modal-district')
-
-                setTimeout(() => {
-                    modalDistrict.style.display = 'none';
-                    document.querySelectorAll('#overlay').forEach(o => {
-                        o.classList.remove('active');
-                    });
-                }, 450);
-            }
-
-            let counter = 1; 
-            const addDefendaButton = document.getElementById("addDefenda");
-            const btnGroupDefenda = document.querySelector(".btn-group-defenda");
-            const groupDefendaDiv = document.querySelector('.group-defenda');
-
-            const deleteButton = document.createElement("a");
-            deleteButton.classList.add("btn-add-defenda");
-            deleteButton.textContent = "Удалить";
-            deleteButton.style.display = "none"; 
-
-            deleteButton.addEventListener("click", function(e) {
-                e.preventDefault();
-                const lastInputDiv = document.querySelector(".content-defenda:last-of-type");
-                if (lastInputDiv) {
-                    lastInputDiv.remove();
-                    counter--; 
-                    if (counter === 1) {
-                        deleteButton.style.display = "none"; 
-                        groupDefendaDiv.classList.remove('active-grid');
-                    }
+                if (event.target && event.target.id === 'btn-modal-close') {
+                    event.preventDefault();
+                    hideModal();
                 }
             });
-            btnGroupDefenda.appendChild(deleteButton);
+            
+            function showModal() {
+                const modalDistrict = document.getElementById('modal-district-content');
+                const overlay = document.getElementById('overlay');
+            
+                if (modalDistrict && overlay) {
+                    modalDistrict.style.display = 'flex';
+                    overlay.classList.add('active');
+            
+                    enableModalFields([defendant, phone, lawyer, card, claim]);
+            
+                    setTimeout(() => {
+                        modalDistrict.classList.remove('hidden-modal-district');
+                        modalDistrict.classList.add('show-modal-district');
+                    }, 10);
+                }
+            }
+            
+            function hideModal() {
+                const modalDistrict = document.getElementById('modal-district-content');
+                const overlay = document.getElementById('overlay');
+            
+                if (modalDistrict && overlay) {
+                    modalDistrict.classList.remove('show-modal-district');
+                    modalDistrict.classList.add('hidden-modal-district');
+            
+                    setTimeout(() => {
+                        modalDistrict.style.display = 'none';
+                        overlay.classList.remove('active');
+                    }, 450);
+                }
+            }
 
-            addDefendaButton.addEventListener("click", function(e) {
+            document.addEventListener("click", function (e) {
+                if (e.target && e.target.id === 'addDefenda-criminal') {
+                    e.preventDefault();
+                    handleAddDefenda('criminal-group-defenda', 'btn-add-defenda-criminal');
+                }
+            
+                if (e.target && e.target.id === 'btn-add-defenda-criminal') {
+                    e.preventDefault();
+                    handleRemoveDefenda('criminal-group-defenda', 'btn-add-defenda-criminal');
+                }
+            
+                if (e.target && e.target.id === 'addDefenda-complaint') {
+                    e.preventDefault();
+                    handleAddDefenda('complaint-group-defenda', 'btn-add-defenda-complaint');
+                }
+            
+                if (e.target && e.target.id === 'btn-add-defenda-complaint') {
+                    e.preventDefault();
+                    handleRemoveDefenda('complaint-group-defenda', 'btn-add-defenda-complaint');
+                }
+            });
+            
+            function handleAddDefenda(groupId, deleteButtonId) {
+                const groupDefendaDiv = document.getElementById(groupId);
+                if (!groupDefendaDiv) return;
+                
                 groupDefendaDiv.classList.add('active-grid');
-
                 const newContentDiv = document.createElement("div");
                 newContentDiv.classList.add("content-defenda");
-
+            
                 const newLabel = document.createElement("label");
-                newLabel.setAttribute("for", `defenda_${counter}`);
                 newLabel.textContent = "Ответчик.";
-
+            
                 const newFormInputDiv = document.createElement("div");
                 newFormInputDiv.classList.add("form-input-modal");
-                newFormInputDiv.id = `defendant-input-${counter}`;
-
+            
                 const newInput = document.createElement("input");
                 newInput.type = "text";
-                newInput.id = `defendant`;
                 newInput.name = "defenda[]";
-                newInput.placeholder = "Введите ник";
-
-                enableModalFields([newInput]);
-
+                newInput.placeholder = "Введите ник и статик";
+            
                 newFormInputDiv.appendChild(newInput);
-
+            
                 const newSpan = document.createElement("span");
                 newSpan.classList.add("text-danger");
-                newSpan.id = 'is-invalid';
-
+            
                 newContentDiv.appendChild(newLabel);
                 newContentDiv.appendChild(newFormInputDiv);
                 newContentDiv.appendChild(newSpan);
-
-                const groupDefenda = document.querySelector(".group-defenda");
-                groupDefenda.appendChild(newContentDiv);
-
-                counter++;
-
-                if (counter > 1) {
+            
+                groupDefendaDiv.appendChild(newContentDiv);
+            
+                const deleteButton = document.getElementById(deleteButtonId);
+                if (deleteButton) {
                     deleteButton.style.display = "inline-block";
                 }
-            });
-
-
-            let claimCounter = 1;
-
-            const addClaimButton = document.getElementById("addClaim");
-            const btnGroupClaim = document.querySelector(".btn-group-claim");
-            const groupClaimDiv = document.querySelector('.group-claim');
-        
-            const deleteClaimButton = document.createElement("a");
-            deleteClaimButton.classList.add("btn-add-defenda");
-            deleteClaimButton.textContent = "Удалить";
-            deleteClaimButton.style.display = "none"; 
-
-            deleteClaimButton.addEventListener("click", function(e) {
-                e.preventDefault();
-                const lastClaimDiv = document.querySelector(".content-claim:last-of-type");
-                if (lastClaimDiv) {
-                    lastClaimDiv.remove();
-                    claimCounter--;
-                    if (claimCounter <= 1) {
-                        deleteClaimButton.style.display = "none"; 
-                        groupClaimDiv.classList.remove('active-grid');
+            }
+            
+            function handleRemoveDefenda(groupId, deleteButtonId) {
+                const groupDefendaDiv = document.getElementById(groupId);
+                if (!groupDefendaDiv) return;
+            
+                const lastDefendaDiv = groupDefendaDiv.querySelector(".content-defenda:last-of-type");
+                if (lastDefendaDiv) {
+                    lastDefendaDiv.remove();
+                }
+            
+                if (groupDefendaDiv.querySelectorAll(".content-defenda").length <= 1) {
+                    const deleteButton = document.getElementById(deleteButtonId);
+                    if (deleteButton) {
+                        deleteButton.style.display = "none";
+                        groupDefendaDiv.classList.remove('active-grid');
                     }
                 }
-            });
-            btnGroupClaim.appendChild(deleteClaimButton);
-        
-            addClaimButton.addEventListener("click", function(e) {
-                e.preventDefault();
-                
-                groupClaimDiv.classList.add('active-grid');
-                const newClaimDiv = document.createElement("div");
-                newClaimDiv.classList.add("content-claim");
-        
-                const newLabel = document.createElement("label");
-                newLabel.setAttribute("for", `claims_${claimCounter}`);
-                newLabel.textContent = "Исковое требование.";
-        
-                const newFormInputDiv = document.createElement("div");
-                newFormInputDiv.classList.add("form-input-modal");
-                newFormInputDiv.id = `claim-input-${claimCounter}`;
-        
-                const newInput = document.createElement("input");
-                newInput.type = "text";
-                newInput.id = `claim`;
-                newInput.name = "claims[]";
-                newInput.placeholder = "Введите требование";
+            }
 
-                enableModalFields([newInput])
-        
-                newFormInputDiv.appendChild(newInput);
+            let claimCounter = 1;
+            document.addEventListener("click", function(e) {
+                if (e.target && e.target.id === 'addClaim') {
+                    e.preventDefault();
+                    
+                    const groupClaimDiv = document.querySelector('.group-claim');
+                    if (!groupClaimDiv) return; 
+                    
+                    groupClaimDiv.classList.add('active-grid');
+                    const newClaimDiv = document.createElement("div");
+                    newClaimDiv.classList.add("content-claim");
 
-                const newSpan = document.createElement("span");
-                newSpan.classList.add("text-danger");
-                newSpan.id = `is-invalid`;
+                    const newLabel = document.createElement("label");
+                    newLabel.setAttribute("for", `claims_${claimCounter}`);
+                    newLabel.textContent = "Исковое требование.";
 
-                newClaimDiv.appendChild(newLabel);
-                newClaimDiv.appendChild(newFormInputDiv);
-                newClaimDiv.appendChild(newSpan);
+                    const newFormInputDiv = document.createElement("div");
+                    newFormInputDiv.classList.add("form-input-modal");
+                    newFormInputDiv.id = `claim-input-${claimCounter}`;
 
-                const groupClaim = document.querySelector(".group-claim");
-                groupClaim.appendChild(newClaimDiv);
+                    const newInput = document.createElement("input");
+                    newInput.type = "text";
+                    newInput.id = `claim`;
+                    newInput.name = "claims[]";
+                    newInput.placeholder = "Введите требование";
 
-                claimCounter++;
-        
-                if (claimCounter > 1) {
-                    deleteClaimButton.style.display = "inline-block";
+                    enableModalFields([newInput]);
+
+                    newFormInputDiv.appendChild(newInput);
+
+                    const newSpan = document.createElement("span");
+                    newSpan.classList.add("text-danger");
+                    newSpan.id = `is-invalid`;
+
+                    newClaimDiv.appendChild(newLabel);
+                    newClaimDiv.appendChild(newFormInputDiv);
+                    newClaimDiv.appendChild(newSpan);
+
+                    groupClaimDiv.appendChild(newClaimDiv);
+
+                    claimCounter++;
+
+                    const deleteButton = document.querySelector('#btn-add-claim');
+                    if (deleteButton) {
+                        deleteButton.style.display = "inline-block";
+                    }
+                }
+
+                if (e.target && e.target.id === 'btn-add-claim') {
+                    e.preventDefault();
+                    
+                    const groupClaimDiv = document.querySelector('.group-claim');
+                    if (!groupClaimDiv) return; 
+
+                    const lastClaimDiv = groupClaimDiv.querySelector(".content-claim:last-of-type");
+                    if (lastClaimDiv) {
+                        lastClaimDiv.remove();
+                        claimCounter--;
+                        if (claimCounter <= 1) {
+                            e.target.style.display = "none";
+                            groupClaimDiv.classList.remove('active-grid');
+                        }
+                    }
                 }
             });
 

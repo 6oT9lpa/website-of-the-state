@@ -90,58 +90,58 @@
     <div class='line-modal'></div>
     <div class='main-content-modal'>
         <form id="form-modal-district" method="POST" action="/create-claim-state">
-            <input type="hidden" id="court-type" name="district" value="district">
+            <input type="hidden" id="court-type" name="court" value="district">
             {% if current_user.permissions[0].prosecutor %} <input type="hidden" name="action" id="action-0"> {% endif %}
             {% if current_user.permissions[0].prosecutor %}
-                <div class='form-container' style='display: none;' id='criminal'>
-                    <div class='form-control'>
-                        <label for="criminal_case">Делопроизводство.</label>
-                        <div class='form-input-modal' id='criminal_case'>
-                            <input id="criminal" name="criminal_case" placeholder='Введите сслыку на google docs'>
-                        </div>
-                        <span class="text-danger" id="is-invalid"></span>
+            <div class='form-container' style='display: none;' id='criminal'>
+                <div class='form-control'>
+                    <label for="criminal_case">Делопроизводство.</label>
+                    <div class='form-input-modal' id='criminal_case'>
+                        <input id="criminal" name="criminal_case" placeholder='Введите сслыку на google docs'>
                     </div>
-
-                    <div class='form-control'>
-                        <label for="date_investigation">Дата начала рассделования.</label>
-                        <div class='form-input-modal' id='date_investigation'>
-                            <input id="investigation" name="date_investigation" placeholder='Введите дату начала рассдледования'>
-                        </div>
-                        <span class="text-danger" id="is-invalid"></span>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+            
+                <div class='form-control'>
+                    <label for="date_investigation">Дата начала рассделования.</label>
+                    <div class='form-input-modal' id='date_investigation'>
+                        <input id="investigation" name="date_investigation" placeholder='Введите дату начала рассдледования'>
                     </div>
-
-                    <div class='form-control'>
-                        <div class='form-control'>
-                            <div class='group-defenda'>
-                                <div class='content-defenda'>
-                                    <label for="defenda">Ответчик.</label>
-                                    <div class='form-input-modal' id='defendant-input'>
-                                        <input id="defendant" name="defenda[]" placeholder='Введите ник и статик'>
-                                    </div>
-                                    <span class="text-danger" id="is-invalid"></span>
-                                </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+            
+                <div class='form-control'>
+                    <div class='group-defenda' id="criminal-group-defenda">
+                        <div class='content-defenda'>
+                            <label for="defenda">Ответчик.</label>
+                            <div class='form-input-modal' id='defendant-input'>
+                                <input id="defendant" name="defenda" placeholder='Введите ник и статик'>
                             </div>
-                            <div class='btn-group-defenda'>
-                                <a class='btn-add-defenda' id='addDefenda'>Добавить Ответчика</a>
-                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
                         </div>
+                    </div>
+                    <div class='btn-group-defenda'>
+                        <a class='btn-add-defenda' id='btn-add-defenda-criminal' style='display:none;'>Удалить</a>
+                        <a class='btn-add-defenda' id='addDefenda-criminal'>Добавить Ответчика</a>
                     </div>
                 </div>
+            </div>
             {% endif %}
             <div class='form-container' id='complaint'>
                 <div class='group-contaniner-modal'>
                     <div class='form-control'>
-                        <div class='group-defenda'>
+                        <div class='group-defenda' id="complaint-group-defenda">
                             <div class='content-defenda'>
                                 <label for="defenda">Ответчик.</label>
                                 <div class='form-input-modal' id='defendant-input'>
-                                    <input id="defendant" name="defenda[]" placeholder='Введите ник'>
+                                    <input id="defendant" name="defenda[]" placeholder='Введите ник и статик'>
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
                         </div>
                         <div class='btn-group-defenda'>
-                            <a class='btn-add-defenda' id='addDefenda'>Добавить Ответчика</a>
+                            <a class='btn-add-defenda' id='btn-add-defenda-complaint' style='display:none;'>Удалить</a>
+                            <a class='btn-add-defenda' id='addDefenda-complaint'>Добавить Ответчика</a>
                         </div>
                     </div>
                 </div>
@@ -184,6 +184,7 @@
                             </div>
                         </div>
                         <div class='btn-group-claim'>
+                            <a class='btn-add-defenda' id='btn-add-claim' style='display:none;'>Удалить</a>
                             <a class='btn-add-claims' id='addClaim'>Добавить Требование</a>
                         </div>  
                     </div>

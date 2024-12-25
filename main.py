@@ -551,10 +551,18 @@ def get_claim_district_content():
 
 @main.route('/get-claim-supreme-content', methods=['GET'])
 def get_claim_supreme_content():
-  from __init__ import isksup
-  supreme = isksup.query.all()
+  from __init__ import isksup, Users, guestUsers, db, claimsStatement
+  count = claimsStatement.query.filter_by(is_archived=True).count()
+  now = datetime.now()
   
-  return render_template('main/main-state-supreme.html', supreme=supreme)
+  considered_claims = claimsStatement.query.filter_by(is_archived=False).all()
+  district_data = isksup.query.filter(isksup.current_uid.in_([claim.uid for claim in considered_claims])).all()
+
+  if not current_user.is_authenticated:
+    flash('Вам нужно авторизоваться, прежде чем составлять обращение')
+  
+  return render_template('main/main-state-supreme.html', 
+                         timedelta=timedelta, district=district_data, Users=Users, guestUsers=guestUsers, count=count, now=now)
 
 @main.route('/create-claim-state', methods=['POST'])
 def create_claim():
@@ -563,7 +571,7 @@ def create_claim():
   if not current_user.is_authenticated:
     flash('Вы не вошли в акаунт!')
     return redirect(url_for('main.auth'))
-  
+
   criminal_case = 'common_complaint'
   if current_user.permissions[0].prosecutor:
     criminal_case = request.form.get('action')
@@ -574,7 +582,7 @@ def create_claim():
     card_plaintiff = request.form.get('card-plaintiff') 
     claims = request.form.getlist('claims[]')
     description = request.form.get('description') 
-    court_type = request.form.get('district') or request.form.get('supreme') 
+    court_type = request.form.get('court')
     
     lower = request.form.get('lower')
 
@@ -627,6 +635,19 @@ def create_claim():
           lawerc= None if static == None else (user_lower.id if user_lower else guest_lower.id)
         )
         db.session.add(district_claim)
+      
+      elif court_type == "supreme":
+        supreme_claim = isksup(
+          current_uid=claim.uid,
+          discription=description,
+          claims=claims, 
+          phone=phone_plaintiff,
+          cardn=card_plaintiff,
+          created=current_user.static,
+          defendant=defendants,
+          lawerc= None if static == None else (user_lower.id if user_lower else guest_lower.id)
+        )
+        db.session.add(supreme_claim)
 
       db.session.commit()
 
@@ -638,11 +659,12 @@ def create_claim():
       return redirect(url_for('main.doc'))
 
   elif criminal_case == 'criminal_case':    
-    defendants = request.form.getlist('defenda[]')
+    defendants = request.form.getlist('defenda')
     link_case = request.form.get('criminal_case')
     date_case = request.form.get('date_investigation')
+    court_type = request.form.get('court')
 
-    if all([link_case, date_case]):
+    if not all([link_case, date_case]):
       flash('Неверный формат. Поля должны быть заполнены')
       return redirect(url_for('main.doc'))
     
@@ -656,10 +678,19 @@ def create_claim():
           current_uid=claim.uid,
           created=current_user.static,
           prosecutor=current_user.id,
-          defendant=defendants,
-          lawerc= None if static == None else (user_lower.id if user_lower else guest_lower.id)
+          defendant=defendants
         )
         db.session.add(district_claim)
+      
+      elif court_type == 'supreme':
+        supreme_claim = isksup(
+          current_uid=claim.uid,
+          created=current_user.static,
+          prosecutor=current_user.id,
+          defendant=defendants
+        )
+
+        db.session.add(supreme_claim)
 
       db.session.commit()
 
@@ -669,6 +700,8 @@ def create_claim():
       db.session.rollback()
       print(f'Ошибка {str(e)}')
       return redirect(url_for('main.doc'))
+    
+
 
 @main.route('/complaint', methods=['GET'])
 def claim_state():
@@ -745,8 +778,63 @@ def claim_state():
     )
   
   elif claim_statement_supreme:
-    pass
+    status = check_isk_status(claim_statement_supreme)
+    isk = claim_statement_supreme
 
+    orders_data = courtOrder.query.filter_by(current_uid=uid).all()
+    replo_data = repltoisks.query.filter_by(current_uid=uid).all()
+
+    replies_data = [
+    {
+        'id-replies': reply.id,
+        'current_uid': reply.current_uid,
+        'author_id': reply.author_id,
+        'replyik': reply.replyik,
+        'moderation': reply.moderation,
+        'type_doc': reply.type_doc,
+        'timespan': reply.timespan
+    } for reply in replo_data ]
+
+    court_orders_data = [
+    {
+        'id-court': order.id,
+        'current_uid': order.current_uid,
+        'author_id': order.author_id,
+        'findings': order.findings,
+        'consideration': order.consideration,
+        'ruling': order.ruling,
+        'type_doc': order.type_doc,
+        'timespan': order.timespan
+    } for order in orders_data ]
+
+    combined_data = sorted(replies_data + court_orders_data, key=lambda x: x['timespan'], reverse=True)
+
+    createat = claimsStatement.query.filter_by(uid=claim_statement_supreme.current_uid).first()
+
+    create_at_datetime = createat.create_at
+    current_date = datetime.now()
+
+    if create_at_datetime.date() == current_date.date():
+      display_date = f"Сегодня, {create_at_datetime.strftime('%H:%M')}"
+    elif create_at_datetime.date() == (current_date - timedelta(days=1)).date():
+      display_date = f"Вчера, {create_at_datetime.strftime('%H:%M')}"
+    else:
+      display_date = create_at_datetime.strftime('%Y-%m-%d %H:%M')
+
+
+    return render_template(
+      'complaint.html',
+      district=claim_statement_supreme,
+      Users=Users,
+      guestUsers=guestUsers,
+      createat=display_date,
+      defendant=isk.defendant,
+      claims=isk.claims,
+      status=status,
+      combined_data=combined_data,
+      repltoisk=repltoisk,
+      isk=isk,
+      )
   else:
     flash('Данный иск удален или поврежден!')
     return redirect(url_for('main.doc'))

@@ -79,8 +79,7 @@ class Users(db.Model, UserMixin):
     create_document = db.relationship('PDFDocument', back_populates='user')
     action_log = db.relationship('ActionUsers', back_populates='user')
     order = db.relationship('OrderTheUser', back_populates='user')
-    judges = db.relationship('iskdis', foreign_keys='iskdis.judge', back_populates='judge_user')
-    prosecutors = db.relationship('iskdis', foreign_keys='iskdis.prosecutor', back_populates='prosecutor_user')
+
 
 
 class guestUsers(db.Model, UserMixin):
@@ -257,7 +256,7 @@ class claimsStatement(db.Model):
 
     reply = db.relationship('repltoisks', back_populates='current_claim')
     district_court = db.relationship('iskdis', back_populates='current_claim', foreign_keys='iskdis.current_uid') 
-    supreme_court = db.relationship('isksup', back_populates='current_claim', foreign_keys='isksup.claims_id')  
+    supreme_court = db.relationship('isksup', back_populates='current_claim', foreign_keys='isksup.current_uid')  
     court_order = db.relationship('courtOrder', back_populates='current_claim')
 
 
@@ -266,21 +265,19 @@ class iskdis(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     current_uid = db.Column(db.String(16), db.ForeignKey('court_claims.uid'), unique=True)
-    judge = db.Column(db.Integer, db.ForeignKey('users.id'))
+    judge = db.Column(db.Integer)
     discription = db.Column(db.Text, nullable=True)
     claims = db.Column(db.PickleType, nullable=True)
     phone = db.Column(db.String(12), nullable=True)
     cardn = db.Column(db.String(15), nullable=True)
     created = db.Column(db.Integer, nullable=False)
     defendant = db.Column(db.PickleType)
-    prosecutor = db.Column(db.Integer, db.ForeignKey('users.id'))
+    prosecutor = db.Column(db.Integer)
     lawerc = db.Column(db.String(45))
     lawerd = db.Column(db.String(45))
     otherme = db.Column(db.PickleType, nullable=True)
     status = db.Column(db.String(15), default='Waitting')
 
-    judge_user = db.relationship('Users', foreign_keys=[judge], back_populates='judges')
-    prosecutor_user = db.relationship('Users', foreign_keys=[prosecutor], back_populates='prosecutors')
     current_claim = db.relationship('claimsStatement', back_populates='district_court')
 
 
@@ -288,25 +285,19 @@ class isksup(db.Model):
     __tablename__ = 'supreme_court'
 
     id = db.Column(db.Integer, primary_key=True)
-    current_uid = db.Column(db.String(16), unique=True, default=generate_uid)
-
-    judge = db.Column(db.String(45), nullable=True)
-    discription = db.Column(db.Text, nullable=False)
-    claims = db.Column(db.PickleType, nullable=False)
-    phone = db.Column(db.String(12), nullable=False)
-    cardn = db.Column(db.String(15), nullable=False)
-    createdds = db.Column(db.String(100), nullable=False)
-
-    created = db.Column(db.String(45), nullable=False)
-    defendant = db.Column(db.PickleType, nullable=True)
-    prosecutor = db.Column(db.String(45), nullable=True)
-
-    lawerc = db.Column(db.String(45), nullable=True)
-    lawerd = db.Column(db.String(45), nullable=True)
-
+    current_uid = db.Column(db.String(16), db.ForeignKey('court_claims.uid'), unique=True)
+    judge = db.Column(db.Integer)
+    discription = db.Column(db.Text, nullable=True)
+    claims = db.Column(db.PickleType, nullable=True)
+    phone = db.Column(db.String(12), nullable=True)
+    cardn = db.Column(db.String(15), nullable=True)
+    created = db.Column(db.Integer, nullable=False)
+    defendant = db.Column(db.PickleType)
+    prosecutor = db.Column(db.Integer)
+    lawerc = db.Column(db.String(45))
+    lawerd = db.Column(db.String(45))
     otherme = db.Column(db.PickleType, nullable=True)
-
-    claims_id = db.Column(db.String(16), db.ForeignKey('court_claims.uid')) 
+    status = db.Column(db.String(15), default='Waitting')
 
     current_claim = db.relationship('claimsStatement', back_populates='supreme_court')
 

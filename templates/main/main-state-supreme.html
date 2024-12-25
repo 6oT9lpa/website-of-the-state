@@ -1,0 +1,210 @@
+<div class="contanier-content">
+    <div class='create-container-button' id='create-container-button'>
+        <a class='create-btn' id='create-btn-district'>Создать Обращение</a>
+    </div>
+    <div class='header-container'>
+        <a class='precedents-btn btn-court' href="{{ url_for('main.district_court_info', info_type='precedents') }}">
+            <div class='section-district-precedents court-container'>
+                <div class='breaker-entey'>
+                    <div class='ico-header-jud'>
+                        <img width="25" height="25" src="https://img.icons8.com/external-konkapp-detailed-outline-konkapp/64/FA5252/external-gavel-law-and-justice-konkapp-detailed-outline-konkapp.png" alt="external-gavel-law-and-justice-konkapp-detailed-outline-konkapp"/>
+                    </div>
+                    <h4> Judiciary | Сборник прецедентов Верховного Суда</h4>
+                </div>
+                <div class='footer-info-precedents'>
+                    <p> Nick Name * дата и время</p>
+                </div>
+            </div>
+        </a>
+        <a class='precedents-btn btn-court' href="{{ url_for('main.district_court_info', info_type='rules') }}">
+            <div class='rules-submited-form court-container'>
+                <div class='breaker-entey'>
+                    <div class='ico-header-jud'>
+                        <img width="25" height="25" src="https://img.icons8.com/external-flatart-icons-solid-flatarticons/64/FA5252/external-equality-womens-day-flatart-icons-solid-flatarticons.png" alt="external-equality-womens-day-flatart-icons-solid-flatarticons"/>
+                    </div>
+                    <h4> Judiciary | Система обращений в Верховного суд штата Сан-Андреас</h4>
+                </div>
+                <div class='footer-info-rules'>
+                    <p> Nick Name * дата и время</p>
+                </div>
+            </div>
+        </a>
+        <a class='precedents-btn btn-court' href="{{ url_for('main.district_court_info', info_type='considered_claims') }}">
+            <div class='considered-claims court-container'>
+                <div class='breaker-entey'>
+                    <div class='ico-header-jud'>
+                        <img width="25" height="25" src="https://img.icons8.com/pastel-glyph/64/FA5252/scales--v3.png" alt="scales--v3"/>
+                    </div>
+                    <h4> Judiciary | Рассмотренные исковые заявления Верховного суда штата Сан-Андреас</h4>
+                </div>
+                <div class='info-considered-claims'>
+                    <p>Кол-во Обращений: {{ count }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class='main-contanier'>
+        {% for element in district %}
+            <a class='btn-complaint' href="/complaint?uid={{ element.current_uid }}">
+                <div class="list-claim">
+                    <h4>Исковое заявление № {{ "%03d" | format(element.id) }}</h4>
+                    {% set user = Users.query.filter_by(static=element.created).first() %}
+                    {% set guest = guestUsers.query.filter_by(static=element.created).first() %}
+    
+                    <p>Истец: {{ user.nikname if user else (guest.nickname if guest else 'Не найден') }}</p>
+    
+                    {% if element.current_claim.create_at.date() == now.date() %}
+                        <p>Дата: Сегодня {{ element.current_claim.create_at.strftime('%H:%M') }}</p>
+                    {% elif element.current_claim.create_at.date() == (now - timedelta(days=1)).date() %}
+                        <p>Дата: Вчера {{ element.current_claim.create_at.strftime('%H:%M') }}</p>
+                    {% else %}
+                        <p>Дата: {{ element.current_claim.create_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% endif %}
+                </div>
+            </a>
+        {% endfor %}
+    </div> 
+</div>
+<div class="overlay overlay-main" id='overlay'></div>
+
+{% if current_user.is_authenticated %}
+<div class='modal-district-content hidden-modal-district' id='modal-district-content' style='display: none;'>
+    <div class='header-modal'>
+        <div class='head'>
+            <div class='text-header'>
+                <h4>Подача искового заявления</h4>
+                <p>Инстанция: Верховный суд</p>
+            </div>
+            {% if current_user.permissions[0].prosecutor %}
+            <div class="dropdown" id="dropdown-0">
+                <button class="dropdown-btn" id="dropdown-btn-0">Действия</button>
+                <div class="dropdown-menu" id="dropdown-menu-0">
+                    <a data-action="criminal_case">Уголовное дело</a>
+                    <a data-action="common_complaint">Подача иска</a>
+                </div>
+            </div>        
+            {% endif %}
+        </div> 
+        <span class="btn-modal-close" id='btn-modal-close'>&times;</span>
+    </div>
+    <div class='line-modal'></div>
+    <div class='main-content-modal'>
+        <form id="form-modal-district" method="POST" action="/create-claim-state">
+            <input type="hidden" id="court-type" name="court" value="supreme">
+            {% if current_user.permissions[0].prosecutor %} <input type="hidden" name="action" id="action-0"> {% endif %}
+            {% if current_user.permissions[0].prosecutor %}
+                <div class='form-container' style='display: none;' id='criminal'>
+                    <div class='form-control'>
+                        <label for="criminal_case">Делопроизводство.</label>
+                        <div class='form-input-modal' id='criminal_case'>
+                            <input id="criminal" name="criminal_case" placeholder='Введите сслыку на google docs'>
+                        </div>
+                        <span class="text-danger" id="is-invalid"></span>
+                    </div>
+
+                    <div class='form-control'>
+                        <label for="date_investigation">Дата начала рассделования.</label>
+                        <div class='form-input-modal' id='date_investigation'>
+                            <input id="investigation" name="date_investigation" placeholder='Введите дату начала рассдледования'>
+                        </div>
+                        <span class="text-danger" id="is-invalid"></span>
+                    </div>
+
+                    <div class='form-control'>
+                        <div class='group-defenda' id="criminal-group-defenda">
+                            <div class='content-defenda'>
+                                <label for="defenda">Ответчик.</label>
+                                <div class='form-input-modal' id='defendant-input'>
+                                    <input id="defendant" name="defenda" placeholder='Введите ник и статик'>
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
+                            </div>
+                        </div>
+                        <div class='btn-group-defenda'>
+                            <a class='btn-add-defenda' id='btn-add-defenda-criminal' style='display:none;'>Удалить</a>
+                            <a class='btn-add-defenda' id='addDefenda-criminal'>Добавить Ответчика</a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            <div class='form-container' id='complaint'>
+                <div class='group-contaniner-modal'>
+                    <div class='form-control'>
+                        <div class='group-defenda' id="complaint-group-defenda">
+                            <div class='content-defenda'>
+                                <label for="defenda">Ответчик.</label>
+                                <div class='form-input-modal' id='defendant-input'>
+                                    <input id="defendant" name="defenda[]" placeholder='Введите ник и статик'>
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
+                            </div>
+                        </div>
+                        <div class='btn-group-defenda'>
+                            <a class='btn-add-defenda' id='btn-add-defenda-complaint' style='display:none;'>Удалить</a>
+                            <a class='btn-add-defenda' id='addDefenda-complaint'>Добавить Ответчика</a>
+                        </div>
+                    </div>
+                </div>
+                <div class='group'>
+                    <div class='personal-info group-contaniner-modal'>
+                        <div class='form-control'>
+                            <label for="phone">Номер телефона.</label>
+                            <div class='form-input-modal' id='phone-plaintiff'>
+                                <input id="phone" name="phone-plaintiff" placeholder='Введите номер телефона'>
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                        <div class='form-control'>
+                            <label for="phone">Представитель.</label>
+                            <div class='form-input-modal' id='lower'>
+                                <input id="lower" name="lower" placeholder='Введите ник и статик(необязательно)'>
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class='group-contaniner-modal'>
+                    <div class='form-control'>
+                        <label for="card">Номер личного счета.</label>
+                        <div class='form-input-modal' id='card-plaintiff'>
+                            <input id="card" name="card-plaintiff" placeholder='Введите карту'>
+                        </div>
+                        <span class="text-danger" id="is-invalid"></span>
+                    </div>
+                </div>
+                <div class='group-claims group-contaniner-modal'>
+                    <div class='form-control'>
+                        <div class='group-claim'>
+                            <div class='content-claim'>
+                                <label for="claims">Исковое требование.</label>
+                                <div class='form-input-modal' id='claim-input'>
+                                    <input id="claim" name="claims[]" placeholder='Введите требование'>
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
+                            </div>
+                        </div>
+                        <div class='btn-group-claim'>
+                            <a class='btn-add-defenda' id='btn-add-claim' style='display:none;'>Удалить</a>
+                            <a class='btn-add-claims' id='addClaim'>Добавить Требование</a>
+                        </div>  
+                    </div>
+                </div>
+
+                <div class='form-control'>
+                    <label for="descri">Описание ситуации.</label>
+                    <div class='form-textarea' id='description'>
+                        <textarea name="description" placeholder='Опишите ситуацию (подробно)'></textarea>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+            </div>        
+            <div class='submit-btn-contanier'>
+                <div class='submit-btn'>
+                    <input type="submit" value="Оставить ответ">   
+                </div>   
+            </div> 
+        </form>
+    </div>
+</div>
+
+{% endif %}
