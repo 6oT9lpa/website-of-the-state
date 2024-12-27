@@ -11,7 +11,7 @@
     </nav>
 </header>
 <div class="navbar">
-<a href="#" class="nav-button" id="messanger">Messanger</a>
+<a href="#" class="nav-button" onclick="openmodal('.modal-setting-profile')">Settings</a>
 <a href="{{ url_for('main.audit')}}" class="nav-button" id="audit">Create Audit</a>
-<a href="#" class="nav-button">-</a>
+<a href="{{ url_for('main.logout')}}" class="nav-button">Logout</a>
 </div>

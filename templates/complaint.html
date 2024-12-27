@@ -85,16 +85,12 @@
                         }}
                     </p>
                 </div>
-                {% if status == 'Judge' %}
+                {% if status == 'Judge' and isk.judge %}
                     <div class='functional-menu'>
                         {% if district.prosecutor != '' %}
                             <div class='group-kick'> 
-                                <p>Прокурор: {{ Users.query.filter_by(id=district.prosecutor).first().nikname }} </p>
-                                <div class='submit-btn-contanier'>
-                                    <div class='submit-btn'>
-                                        <input type="submit" class='accept-petition' value="Отсранить">   
-                                    </div>   
-                                </div>
+                                {% if district.prosecutor %}<p>Прокурор: {{ Users.query.filter_by(id=district.prosecutor).first().nikname }} </p><div class='submit-btn-contanier'><div class='submit-btn'><form id="judgeForm" action="/judge_settings" method="POST"><input type="hidden" name="setting" value="otvodoth"><input type="hidden" name="uid" id="uidcompliant"><input type="hidden" name="type_otvod" value="prosecutor"><input type="hidden" name="name_otvod" value="{{ Users.query.filter_by(id=district.prosecutor).first().nikname }}"><input type="submit" class='accept-petition' value="Отстранить"></form></div></div> {% endif %}
+                                {% if district.otherme %}{% for index in district.otherme %}<p>{% if index.type == "svidetel" %}Свидетель{% elif index.type == "expert" %}Эксперт{% endif %}: {{ index.nickname }}</p><div class='submit-btn-contanier'><div class='submit-btn'><form id="judgeForm" action="/judge_settings" method="POST"><input type="hidden" name="setting" value="otvodoth"><input type="hidden" name="uid" id="uidcompliant"><input type="hidden" name="type_otvod" value="otherme"><input type="hidden" name="name_otvod" value="{{ index.nickname }}"><input type="submit" class='accept-petition' value="Отстранить"></form></div></div>{% endfor %}{% endif %}
                             </div>
                         {% endif %}
 
@@ -106,7 +102,11 @@
                         
                         <div class='submit-btn-contanier'>
                             <div class='submit-btn'>
-                                <input type="submit" class='accept-petition' value="Заявить самоотвод">   
+                                <form id="judgeForm" action="/judge_settings" method="POST">
+                                <input type="hidden" name="uid" id="uidcompliant">
+                                <input type="hidden" name="setting" value="samootvod">
+                                <input type="submit" class='accept-petition' value="Заявить самоотвод">
+                                </form>   
                             </div>   
                         </div>
                     </div>
@@ -282,9 +282,9 @@
                     </div>
                     <div class='footer-content'>
                         <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
-                            {{
+                           <!-- 
                                 judge.nikname.split()[1][0] + '. ' + judge.nikname.split()[0] if judge.nikname.split()|length > 1 else judge.nikname
-                            }}
+                            -->
                         </b></p>
                     </div>
                 </div>

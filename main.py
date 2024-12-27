@@ -289,6 +289,14 @@ def send_to_bot_changepass(code, discord_id):
     }
     redis_client.publish('changepass_channel', json.dumps(message))
 
+def send_to_bot_notification(text, discord_id, url):
+    message = {
+        'text': text,
+        'discord_id': discord_id,
+        'url': url
+    }
+    redis_client.publish('notificationdm_channel', json.dumps(message))
+
 # создание блюпринта
 main = Blueprint('main', __name__)
 
@@ -650,9 +658,40 @@ def create_claim():
         db.session.add(supreme_claim)
 
       db.session.commit()
+      defenda = district_claim.defendant
+      result = []
+      for item in defenda:
+          nickname, static = item.rsplit(' ', 1) 
+          if not static.isdigit():
+            raise ValueError("Номер должен быть числом.")
+
+      if court_type == "district":
+        district_claim = iskdis(
+          current_uid=claim.uid,
+          discription=description,
+          claims=claims, 
+          phone=phone_plaintiff,
+          cardn=card_plaintiff,
+          created=current_user.static,
+          defendant=defendants,
+          lawerc= None if static == None else (user_lower.id if user_lower else guest_lower.id)
+        )
+        db.session.add(district_claim)
+      db.session.commit()
+      defenda = district_claim.defendant
+      result = []
+      for item in defenda:
+          nickname, static = item.rsplit(' ', 1) 
+          if not static.isdigit():
+            raise ValueError("Номер должен быть числом.")
+
+          result.append({'nickname': nickname.strip(), 'static': int(static)})
+      for defenda in result:
+          defendant = Users.query.filter_by(static=defenda['static']).first()
+          if defendant:
+            send_to_bot_notification(f"На вас подано исковое заявление №{district_claim.id}.", defendant.discordid, f"http://26.45.155.104:8000/complaint?uid={district_claim.current_uid}")
 
       return redirect(url_for('main.doc'))
-
     except Exception as e:
       db.session.rollback()
       print(f'Ошибка {str(e)}')
@@ -701,7 +740,42 @@ def create_claim():
       print(f'Ошибка {str(e)}')
       return redirect(url_for('main.doc'))
     
+@main.route('/judge_settings', methods=['POST'])
+def judge_settings():
+  from __init__ import iskdis, isksup, repltoisks, Users, guestUsers, claimsStatement, db
 
+  uid = request.form.get('uid')
+  if not uid:
+    return "No UID provided", 400
+  setting = request.form.get('setting')
+  if setting == "samootvod":
+    isk = claimsStatement.query.filter_by(uid=uid).first()
+    if isk.district_court and isk.district_court[0].judge == current_user.id:
+      isk.district_court[0].judge = None
+    elif isk.supreme_court and isk.supreme_court[0].judge == current_user.id:
+      isk.supreme_court[0].judge = None
+    else:
+      return "Эта ошибка не должна произойти, но если вы её видите напишите в тех. поддержку", 400
+  elif setting == "otvodoth":
+    isk = claimsStatement.query.filter_by(uid=uid).first()
+    type_otvod = request.form.get('type_otvod')
+    name_otvod = request.form.get('name_otvod')
+    if isk.district_court and isk.district_court[0].judge == current_user.id:
+      if type_otvod == "otherme":
+        otherme_dict = isk.district_court[0].otherme
+        key_to_delete = next((key for key, value in otherme_dict.items() if value == name_otvod), None) 
+        if key_to_delete: 
+          del otherme_dict[key_to_delete]
+      else:
+        setattr(isk.district_court[0], type_otvod, None)
+  try:
+    db.session.commit()
+  except Exception as e:
+    db.session.rollback()
+    print(f'Ошибка {str(e)}')
+    return redirect(url_for('main.doc'))
+    
+  return redirect(url_for('main.claim_state', uid=uid))
 
 @main.route('/complaint', methods=['GET'])
 def claim_state():
@@ -1046,11 +1120,14 @@ def courtPettion():
   isk = iskdis.query.filter_by(current_uid=uid).first()
   if replo.replyik["type"] == 'svidetel':
     try:
-      isk.otherme = {
+      if not isk.otherme:
+        isk.otherme = []
+      data = {
         "type": 'svidetel',
         "nickname": nickname,
         "static": static
-      }
+        }
+      isk.otherme.append(data)
 
       new_order = courtOrder(
         author_id = current_user.id,
@@ -1073,11 +1150,14 @@ def courtPettion():
 
   elif replo.replyik["type"] == 'expert':
     try:
-      isk.otherme = {
+      if not isk.otherme:
+        isk.otherme = []
+      data = {
         "type": 'expert',
         "nickname": nickname,
         "static": static
-      }
+        }
+      isk.otherme.append(data)
 
       new_order = courtOrder(
         author_id = current_user.id,
@@ -1822,7 +1902,6 @@ def logout():
 def profile():
   from __init__ import Users, guestUsers
   is_guest = current_user.user_type == 'guest'
-
   if not is_guest:
     organ = current_user.organ
     rank = current_user.curr_rank

@@ -201,27 +201,35 @@ class SendDmMessage(commands.Cog):
             print(f"Не удалось отправить сообщение пользователю {discord_id}: {e}")
             traceback.print_exc()
 
-    async def send_log_mes(self, header, text):
+    async def send_notifdm(self, text, discord_id, url):
         try:
-            print(f"Попытка отправить лог")
-            channel = self.bot.get_channel(1302666128065040425)
+            print(f"Попытка отправить сообщение пользователю с ID: {discord_id}")
+            user = await self.bot.fetch_user(discord_id)
 
             embed = disnake.Embed(
-                title=header,
+                title=f"Внимание!",
                 description=(
                     text
                 ),
-                color=disnake.Color.green()
+                color=disnake.Color.orange()
             )
             embed.set_footer(text="Если вы считаете, что это ошибочное сообщение, свяжитесь с Arnetik")
+            if url:
+                button = Button(
+                        label="Подробнее",
+                        url=url,
+                        style=ButtonStyle.link
+                    )
 
             view = View()
+            if url:
+                view.add_item(button)
 
-            await channel.send(embed=embed, view=view)
-            print(f"Сообщение лога отправлено")
+            await user.send(embed=embed, view=view)
+            print(f"Сообщение отправлено пользователю {discord_id}")
         except Exception as e:
-            print(f"Не удалось отправить Сообщение лога: {e}")
-            traceback.print_exc()           
+            print(f"Не удалось отправить сообщение пользователю {discord_id}: {e}")
+            traceback.print_exc()       
 
 
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -302,18 +310,19 @@ async def process_invite_changepass(dm_message):
                 traceback.print_exc()
         await asyncio.sleep(1)
 
-async def process_log_mes(dm_message):
+async def process_notifdm(dm_message):
     pubsub = redis_client.pubsub()
-    pubsub.subscribe('log_dump')
+    pubsub.subscribe('notificationdm_channel')
 
     while True:
         message = pubsub.get_message()
         if message and message['type'] == 'message':
             try:
                 data = json.loads(message['data'])
-                header = data['header']
+                discord_id = data['discord_id']
                 text = data['text']
-                await dm_message.send_log_mes(header, text)
+                url = data['url']
+                await dm_message.send_notifdm(text, discord_id, url)
             except Exception as e:
                 print(f"Ошибка обработки сообщения: {e}")
                 traceback.print_exc()
@@ -350,5 +359,5 @@ def setup(bot):
     bot.loop.create_task(process_new_resolution_message(dm_message))
     bot.loop.create_task(process_information_resolution_message(dm_message))
     bot.loop.create_task(process_invite_changepass(dm_message))
-    bot.loop.create_task(process_log_mes(dm_message))
+    bot.loop.create_task(process_notifdm(dm_message))
     bot.add_cog(SendDmMessage(bot))
