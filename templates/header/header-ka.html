@@ -1,0 +1,17 @@
+<header>
+    <div class="logo">
+        <a class="logo-link" href="{{ url_for('main.index')}}">
+            <img src="{{ url_for('static', filename='img/logo_majestic.png') }}">
+        </a>
+    </div>
+    <nav>
+        <a href="{{ url_for('main.database') }}">DATABASE</a>
+        <a class="button-account" href="{{ url_for('main.profile') }}">ACCOUNT</a>
+        <a class="button-home" href="{{ url_for('main.index') }}">HOME</a>
+    </nav>
+</header>
+<div class="navbar">
+<a href="#" class="nav-button" onclick="openmodal('.modal-setting-profile')">Settings</a>
+<a href="{{ url_for('main.audit')}}" class="nav-button" id="audit">Create Audit</a>
+<a href="{{ url_for('main.logout')}}" class="nav-button">Logout</a>
+</div>

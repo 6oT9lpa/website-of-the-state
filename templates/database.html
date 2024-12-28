@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ka-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/database-style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index-style.css') }}">
     <title>Majestic State</title>
 </head>
 <body>
     {% block header %}
-        {% include 'header/header-ka.html' %}
-    {% endblock %}
-
-    {% block main %}
-        {% include 'main/main-ka.html' %}
+        {% include 'header/header-account.html' %}
     {% endblock %}
     {% block content %}
         {% include 'main/new-year.html' %}
+    {% endblock %}
+    {% block main %}
+        {% include 'main/main-database.html' %}
     {% endblock %}
 
     {% block footer %}

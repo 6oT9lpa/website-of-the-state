@@ -1,0 +1,321 @@
+<main>
+<div class="search-container">
+    <div id="players">
+    <div class="tabs">
+        <button class="tab-button" onclick="showTab('users')">Пользователи</button>
+        <button class="tab-button" onclick="showTab('ranks')">Ранги</button>
+    </div>
+    <div id="users" class="tab-content">
+        <form class="search-form" action="{{ url_for('main.database') }}" method="GET">
+            <label for="name">Name</label>
+            <input type="text" name="name" id="name" value="{{ request.args.get('name', '') }}">
+            <label for="static">Static</label>
+            <input type="text" name="static" id="static" value="{{ request.args.get('static', '') }}">
+            <label for="discord">Discord</label>
+            <input type="text" name="discord" id="discord" value="{{ request.args.get('discord', '') }}">
+            <input type="submit" value="Search">
+        </form>
+        <table>
+            <tr>
+                <th>Никнейм</th>
+                <th>Static</th>
+                <th>Фракция</th>
+                <th>Ранг</th>
+                <th>Discord</th>
+            </tr>
+            {% for user in Users %}
+            <tr>
+                <td>{{ user.nikname }}</td>
+                <td>{{ user.static }}</td>
+                <td>{{ user.organ }}</td>
+                <td>{{ user.curr_rank }}</td>
+                <td>{{ user.discordname }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div id="ranks" class="tab-content" style="display:none;">
+        <label for="fraction">Фракция</label>
+        <select name="fraction" id="fraction" onchange="filterRanksByFraction(this.value)">
+            <option value="">Select Fraction</option>
+            <option value="LSPD">Los-Santos Police Department</option>
+            <option value="LSCSD">Los-Santos Country Sheriff Department</option>
+            <option value="FIB">Federal Investigation Bureau</option>
+            <option value="SANG">San-Andreas National Guard</option>
+            <option value="EMS">Emergency Medical Services</option>
+            <option value="GOV">Government</option>
+            <option value="WN">Weazel News</option>
+        </select>
+    
+        <div id="ranks-container" style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
+            {% for fraction, rank_list in groups.items() %}
+            <div class="fraction-group" data-fraction="{{ fraction }}">
+                <h3>{{ fraction }}</h3>
+                <ul id="{{ fraction }}-list" class="rank-list">
+                    {% for rank in rank_list %}
+                    <li class="rank-item" data-id="{{ rank.id }}" {% if rank.leader %} data-leader="true" {% endif %}>
+                        {% if rank.leader %}
+                        <!-- Лидерский ранг -->
+                        <input type="text" class="rank-id" value="{{ rank.id }}" readonly>
+                        <input type="text" class="rank-name" value="{{ rank.name }}" readonly>
+                        <span class="leader-label">Лидер</span>
+                        {% else %}
+                        <!-- Обычный ранг -->
+                        <input type="text" class="rank-id" value="{{ rank.id }}" readonly>
+                        <input type="text" class="rank-name" value="{{ rank.name }}"/>
+                        <button class="delete-rank" onclick="deleteRank('{{ fraction }}', {{ rank.id }})">Удалить</button>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                <button class="add-rank" onclick="addRank('{{ fraction }}')">Добавить ранг</button>
+            </div>
+            {% endfor %}
+        </div>
+        <button onclick="saveRanks()">Сохранить</button>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+<script>
+    // Инициализация сортировки для каждого списка
+    document.querySelectorAll('.rank-list').forEach(list => {
+        new Sortable(list, {
+            animation: 150,
+            handle: '.rank-item',
+            onStart(evt) {
+            // Находим элемент с лидером
+            const leaderItem = evt.from.querySelector('[data-leader="true"]');
+
+            if (leaderItem) {
+                const items = Array.from(evt.from.querySelectorAll('.rank-item'));
+                const leaderIndex = items.indexOf(leaderItem);
+                const draggedIndex = items.indexOf(evt.item);
+
+                // Проверка: если перетаскиваемый элемент выше лидера
+                if (draggedIndex < leaderIndex) {
+                    evt.item.setAttribute('draggable', 'false'); // Блокируем перетаскивание
+                }
+            }
+        },
+        onEnd(evt) {
+            // Восстановление возможности перетаскивания для всех элементов после завершения
+            evt.from.querySelectorAll('.rank-item').forEach(item => {
+                item.setAttribute('draggable', 'true');
+            });
+            updateRankIds(evt.from); // Обновляем ID после перетаскивания
+            console.log(`Item moved in ${evt.from.id}`);
+        }
+        });
+    });
+
+    // Обновление ID для ранга (реверсный расчет)
+    function updateRankIds(list) {
+        let index = list.querySelectorAll('.rank-item').length; // Начинаем с самого последнего ID
+        list.querySelectorAll('.rank-item').forEach(item => {
+            const newId = index--; // Присваиваем новые ID на основе позиции в списке (в обратном порядке)
+            item.querySelector('.rank-id').value = newId;
+        });
+    }
+
+    // Фильтрация по фракции
+    function filterRanksByFraction(fraction) {
+        document.querySelectorAll('.fraction-group').forEach(group => {
+            if (!fraction || group.dataset.fraction === fraction) {
+                group.style.display = '';
+            } else {
+                group.style.display = 'none';
+            }
+        });
+    }
+
+    // Добавление нового ранга
+    function addRank(fraction) {
+        const rankList = document.getElementById(`${fraction}-list`);
+        const newId = generateNewId(rankList);
+
+        const newItem = document.createElement('li');
+        newItem.className = 'rank-item';
+        newItem.setAttribute('data-id', newId);
+        newItem.setAttribute('data-leader', 'false'); // Обычный ранг
+        newItem.innerHTML = `
+            <input type="text" class="rank-id" value="${newId}" readonly>
+            <input type="text" class="rank-name" value="Новый ранг">
+            <button class="delete-rank" onclick="deleteRank('${fraction}', ${newId})">Удалить</button>
+        `;
+
+        rankList.appendChild(newItem);
+        updateRankIds(rankList); // Пересчитываем ID после добавления нового ранга
+    }
+
+    // Генерация нового ID
+    function generateNewId(rankList) {
+        let maxId = 0;
+        rankList.querySelectorAll('.rank-item').forEach(item => {
+            const id = parseInt(item.querySelector('.rank-id').value, 10);
+            if (id > maxId) maxId = id;
+        });
+        return maxId + 1;
+    }
+
+    // Удаление ранга
+    function deleteRank(fraction, id) {
+        const rankItem = document.querySelector(`[data-fraction="${fraction}"] [data-id="${id}"]`);
+        if (rankItem) {
+            rankItem.remove();
+            updateRankIds(document.getElementById(`${fraction}-list`)); // Пересчитываем ID после удаления
+        }
+    }
+
+    // Сохранение изменений
+    function saveRanks() {
+        const updatedRanks = {};
+
+        document.querySelectorAll('.fraction-group').forEach(group => {
+            const fraction = group.dataset.fraction;
+            const ranks = [];
+            group.querySelectorAll('.rank-item').forEach(item => {
+                const leaderSpan = item.querySelector('.leader-label');
+                const isLeader = leaderSpan !== null;
+
+                ranks.push({
+                    id: parseInt(item.querySelector('.rank-id').value),
+                    name: item.querySelector('.rank-name').value,
+                    leader: isLeader
+                });
+            });
+            updatedRanks[fraction] = ranks;
+        });
+
+        console.log('Saving ranks:', updatedRanks);
+        fetch('/save_ranks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedRanks)
+        }).then(response => {
+            if (response.ok) {
+                alert('Изменения сохранены!');
+            } else {
+                alert('Ошибка при сохранении.');
+            }
+        });
+    }
+    
+</script>
+
+
+    <style>
+        .sortable-ghost {
+            background-color: #f0f0f0;
+            opacity: 0.8;
+        }
+        ul.item-list {
+            list-style: none;
+            padding: 0;
+        }
+        ul.item-list li {
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            cursor: grab;
+        }
+        .group {
+            margin-bottom: 20px;
+        }
+    </style>        
+    </div>
+    <script>
+        function showTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+    });
+    document.getElementById(tabName).style.display = 'block';
+}
+
+// Enable drag and drop sorting for ranks
+document.querySelectorAll('.rank-list').forEach(rankList => {
+    new Sortable(rankList, {
+        animation: 150,
+        onEnd: function (evt) {
+            // Handle rank reordering
+            console.log('Rank reordered:', evt);
+        }
+    });
+});
+    </script>
+    </div>
+</div>
+</main>
+<style>
+    li {
+        color:rgb(68, 0, 255);
+        user-select: none;
+    }
+    main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .search-container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #f1f1f1;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+    .search-form {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .search-form > * {
+        margin: 10px;
+    }
+    .search-form > label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .search-form > label > * {
+        margin: 5px;
+    }
+    .search-form > input[type="text"] {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    .search-form > input[type="submit"] {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .search-form > input[type="submit"]:hover {
+        background-color: #45a049;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    td {
+        color: #45a049;  
+    }
+    th {
+        text-align: left;
+        background-color: #4CAF50;
+        color: white;
+    }
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+</style>
