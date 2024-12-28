@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animation-bg.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth-style.css') }}">
     <title>Login</title>
 </head>
@@ -59,6 +60,12 @@
                 {{ form.submit(class="form-button") }}
             </div>
         </form>
+    </div>
+
+    <div class="lines">
+        {% for i in range(40) %}
+        <div class="line"></div>
+        {% endfor %}
     </div>
 
     {% block footer %}

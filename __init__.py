@@ -97,7 +97,7 @@ class guestUsers(db.Model, UserMixin):
     def is_guest(self):
         return True
 
-    permissions = db.relationship('PermissionUsers', back_populates='guest_user')
+    permissions = db.relationship('PermissionUsers', back_populates='guest_user')     
 
 class PermissionUsers(db.Model, UserMixin):
     __tablename__ = 'permission'

@@ -28,7 +28,9 @@
                     <div class='text-header'>
                         <h4>District Court of the State of San Andreas</h4>
                         <p>Plaintiff: <b>{{ user.nikname if user else (guest.nickname if guest else 'Не найден') }}</b></p>
-                        <p>Attorney for the Plaintiff: <b></b></p>
+                        {% set user_plaintiff_c = Users.query.filter_by(id=district.lawerc).first() %}
+                        {% set guest_plaintiff_c = guestUsers.query.filter_by(id=district.lawerc).first() %}
+                        <p>Attorney for the Plaintiff: <b>{{ user_plaintiff_c.nikname if user_plaintiff_c else (guest_plaintiff_c.nickname if guest_plaintiff_c else 'Не найден') }}</b></p>
                         <p style="width: 90%;font-size: 16px;font-weight: 700;"> v. </p>
                         <div class='content-defendant'>
                             <p>Defendant:
@@ -43,7 +45,7 @@
             <div class='description-content'>
                 <h3>Исковое заявление № {{ "%03d" | format(district.id) }}</h3>
                 <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, пользуясь своими правами подаю исковое заявление в Окружной суд штата Сан-Андреас,
-                     объясняя всю ситуацию, а также прилагая все необходимые суду доказательства.</p>
+                    объясняя всю ситуацию, а также прилагая все необходимые суду доказательства.</p>
                 
                 <p>{{ district.discription }}</p>
 
@@ -225,7 +227,7 @@
                 </div>
             </div>
             {% elif item.type_doc == 'court_order' %}
-            {% set judge = Users.query.filter_by(id=district.judge).first() %}
+            {% set judge = Users.query.filter_by(id=item.id_judge).first() %}
             <div class='container-position-order'>
                 <div class='contanier-court-order'>
                     <div class='header-content-order'>
@@ -239,7 +241,9 @@
                             <div class='group-order'>
                                 <div class='content-Plaintiff'>
                                     <p>Plaintiff: <b>{{ user.nikname if user else (guest.nickname if guest else 'Не найден') }}</b></p>
-                                    <p>Attorney for the Plaintiff: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
+                                    {% set user_plaintiff_c = Users.query.filter_by(id=district.lawerc).first() %}
+                                    {% set guest_plaintiff_c = guestUsers.query.filter_by(id=district.lawerc).first() %}
+                                    <p>Attorney for the Plaintiff: <b>{{ user_plaintiff_c.nikname if user_plaintiff_c else (guest_plaintiff_c.nickname if guest_plaintiff_c else 'Не найден') }}</b></p>
                                 </div>
                             </div>
                             
@@ -247,10 +251,11 @@
                                 <h4>No. DC-{{ "%03d" | format(district.id) }}-2024</h4>
                                 <h4> ОПРЕДЕЛЕНИЕ No. DC-{{ "%03d" | format(district.id) }}-{{ "%02d" | format(item['id-court']) }} </h4>
                             </div>
-    
                             <div class='group-order'>
                                 <div class='content-Defendant'>
-                                    <p>Attorney for the Defendant: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
+                                    {% set user_plaintiff_d = Users.query.filter_by(id=district.lawerd).first() %}
+                                    {% set guest_plaintiff_d = guestUsers.query.filter_by(id=district.lawerd).first() %}
+                                    <p>Attorney for the Defendant: <b>{{ user_plaintiff_d.nikname if user_plaintiff_d else (guest_plaintiff_d.nickname if guest_plaintiff_d else 'Не найден') }}</b></p>
                                     <p>Defendant:
                                         {% for item in defendant %}
                                         <p><b> {{ item }}, </b></p>
@@ -282,9 +287,7 @@
                     </div>
                     <div class='footer-content'>
                         <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
-                           <!-- 
-                                judge.nikname.split()[1][0] + '. ' + judge.nikname.split()[0] if judge.nikname.split()|length > 1 else judge.nikname
-                            -->
+                        {{ judge.nikname.split()[1][0] + '. ' + judge.nikname.split()[0] if judge.nikname.split()|length > 1 else judge.nikname }}
                         </b></p>
                     </div>
                 </div>

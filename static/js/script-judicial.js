@@ -47,7 +47,7 @@ function showJudicialOffice() {
     prosecutionOfficeButton.classList.add('hidden-nav');
     otherDepartmentsButton.classList.add('hidden-nav');
     judicialOfficeButton.classList.add('hidden-nav');
-   
+    
     prosecutionOfficeButton.style.transform = 'translateX(300px)';
     otherDepartmentsButton.style.transform = 'translateX(-300px)';
     setTimeout(() => { 
@@ -381,22 +381,3 @@ function hideModal() {
     }
 }
 
-function showError(input, message) {
-    const formControl = input.parentElement; 
-    const errorSpan = formControl.parentElement.querySelector('#is-invalid'); 
-    if (errorSpan) {
-        errorSpan.innerText = message;
-        formControl.className = 'form-input-modal error'; 
-    } else {
-        console.error("Error span with id='is-invalid' not found in parent element");
-    }
-}
-
-function clearError(input) {
-    const formControl = input.parentElement; 
-    const errorSpan = formControl.parentElement.querySelector('#is-invalid'); 
-    if (errorSpan) {
-        errorSpan.innerText = ''; 
-        formControl.className = 'form-input-modal'; 
-    }
-}

@@ -1,5 +1,5 @@
 <div class="card-container">
-    {% for item in action_users %}
+    {% for item in resolution %}
         <div class="card">
             <iframe src="{{ item.current_document.content }}#toolbar=0&navpanes=0&scrollbar=0&view=FitW&zoom=41" 
                     type="application/pdf" 
@@ -13,4 +13,32 @@
             <a href="/resolution?uid={{ item.current_uid }}" class="open-link">Открыть</a>
         </div>
     {% endfor %}
+    {% for item in order %}
+        <div class="card">
+            <iframe src="{{ item.current_document.content }}#toolbar=0&navpanes=0&scrollbar=0&view=FitW&zoom=41" 
+                    type="application/pdf" 
+                    width="100%" 
+                    height="100%" 
+                    frameborder="0"
+                    scrolling="no">
+            </iframe>
+            <div class="overlay-text">
+            </div>
+            <a href="/resolution?uid={{ item.current_uid }}" class="open-link">Открыть</a>
+        </div>
+    {% endfor %}
+    {% for item in cust_resolution %}
+    <div class="card">
+        <iframe src="{{ item.current_document.content }}#toolbar=0&navpanes=0&scrollbar=0&view=FitW&zoom=41" 
+                type="application/pdf" 
+                width="100%" 
+                height="100%" 
+                frameborder="0"
+                scrolling="no">
+        </iframe>
+        <div class="overlay-text">
+        </div>
+        <a href="/resolution?uid={{ item.current_uid }}" class="open-link">Открыть</a>
+    </div>
+{% endfor %}
 </div>

@@ -333,6 +333,7 @@ def user_permission_moderation(f):
 
     return decorated_function
 
+
 CLIENT_ID = '63202ab8a29f3f1'
 def upload_image_to_imgur(image):
     import requests
@@ -596,8 +597,9 @@ def create_claim():
 
     static = None
     if lower:
-      static = lower.split(' ', 1)[1] if ' ' in lower else None
-    
+      static = lower.split(' ', 2)[2] if len(lower.split()) > 2 else None
+  
+      
     if static != None and lower:
       user_lower = Users.query.filter_by(static=static).first()
       guest_lower = guestUsers.query.filter_by(static=static).first()
@@ -607,14 +609,12 @@ def create_claim():
         return redirect(url_for('main.doc'))
 
       if user_lower:
-        permission = user_lower.permissions
-        if not permission or not permission.lawyer:
+        if not user_lower.permissions or not user_lower.permissions[0].lawyer:
           flash('Представитель не является адвокатом')
           return redirect(url_for('main.doc'))
 
       if guest_lower and not user_lower:
-        permission = guest_lower.permissions
-        if not permission or not permission.lawyer:
+        if not user_lower.permissions or not guest_lower.permissions[0].lawyer:
           flash('Представитель не является частным адвокатом')
           return redirect(url_for('main.doc'))
           
@@ -740,6 +740,9 @@ def create_claim():
       print(f'Ошибка {str(e)}')
       return redirect(url_for('main.doc'))
     
+    
+  return redirect(url_for('main.doc'))
+    
 @main.route('/judge_settings', methods=['POST'])
 def judge_settings():
   from __init__ import iskdis, isksup, repltoisks, Users, guestUsers, claimsStatement, db
@@ -776,7 +779,7 @@ def judge_settings():
     return redirect(url_for('main.doc'))
     
   return redirect(url_for('main.claim_state', uid=uid))
-
+      
 @main.route('/complaint', methods=['GET'])
 def claim_state():
   from __init__ import iskdis, isksup, repltoisks, Users, guestUsers, claimsStatement, courtOrder
@@ -803,7 +806,7 @@ def claim_state():
     {
         'id-replies': reply.id,
         'current_uid': reply.current_uid,
-        'author_id': reply.author_id,
+        'id_reply': reply.author_id,
         'replyik': reply.replyik,
         'moderation': reply.moderation,
         'type_doc': reply.type_doc,
@@ -814,7 +817,7 @@ def claim_state():
     {
         'id-court': order.id,
         'current_uid': order.current_uid,
-        'author_id': order.author_id,
+        'id_judge': order.author_id,
         'findings': order.findings,
         'consideration': order.consideration,
         'ruling': order.ruling,
@@ -1004,8 +1007,12 @@ def createProsecutor():
 
   type_document = request.form.get('type_document')
   if type_document == "complete_delo":
+    
     delo = request.form.get('delo')
     type_delo = request.form.get('type_delo')
+    if all([delo, type_delo]):
+      flash("Ошибка вы не заполнили все поля!")
+      return redirect(url_for('main.claim_state', uid=uid))
 
   replyik = {}
   if type_document == 'start_investigation':
@@ -1754,7 +1761,7 @@ def process_raise(user, form, reason):
   except SQLAlchemyError as e:
     db.session.rollback()
     logging.error(f"Ошибка обработки: {str(e)}")    
- 
+
   else:
     send_to_bot_ka('Raising', form.static.data, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, form.nikname.data, reason)
     flash('Пользователь успешно повышен!', 'success')
@@ -1777,7 +1784,7 @@ def process_demotion(user, form, reason):
     flash('Вы не можете понизить игрока другой фракции.')   
     return redirect(url_for('main.audit'))
   
-  if current_user.curr_rank <= user.curr_rank:
+  if current_user.curr_rank < user.curr_rank:
     flash('Вы не можете понизить игрока, если вы ниже или таким же рангом.')
     return redirect(url_for('main.audit'))
   
@@ -1978,7 +1985,6 @@ def create_doc():
     if static == '':
       flash('Неверный формат. Поле статик не может быть пустым!')
       return redirect(url_for('main.doc'))
- 
     if typeDoc == 'Order':
       def create_order_header(pdf, title, subtitle, subtitle2):
         pdf.setFont("TimesNewRoman-Bold", 14)
@@ -2053,8 +2059,8 @@ def create_doc():
         termImprisonment = formOrder.param2.data
 
         if not all([offwork, time, articlesAccusation, termImprisonment]):
-           flash('Неверный формат. Вы заполнили не все поля')
-           return redirect(url_for('main.doc'))
+          flash('Неверный формат. Вы заполнили не все поля')
+          return redirect(url_for('main.doc'))
 
         details = [
             "1. Цель. Проведение процедуры законного задержания гражданина штата Сан-Андреас, "
@@ -2113,7 +2119,7 @@ def create_doc():
           ]
 
         elif degreeRI == 'полностью':
-           details = [
+          details = [
               f"1. Цель. Полное снятие статуса неприкосновенности с гражданина {nickname if nickname != '' else ''}, паспортные данные "
               f"{static}, для задержания и проведения дальнейших процессуальных действий, включая арест.", 
 
@@ -2144,8 +2150,8 @@ def create_doc():
         articlesAccusation = formOrder.param1.data
 
         if not all([nameCrimeOrgam, adreasCrimeOrgan, offwork, time, articlesAccusation, static]):
-           flash('Неверный формат. Вы заполнили не все поля')
-           return redirect(url_for('main.doc'))
+          flash('Неверный формат. Вы заполнили не все поля')
+          return redirect(url_for('main.doc'))
         
         details = [
           "1. Цель: Прекращение преступной деятельности граждан, выявление и задержание лиц, "
@@ -2548,7 +2554,7 @@ def resolution():
       return render_template('preview_resolution.html', pdf_path=pdf_doc.content, uid=uid)
     
     if moder_custom_resolution and moder_custom_resolution.is_modertation:
-       return render_template('preview_resolution.html', pdf_path=pdf_doc.content, uid=uid)
+      return render_template('preview_resolution.html', pdf_path=pdf_doc.content, uid=uid)
 
     if is_moderation_link:
         if not current_user.is_authenticated:
@@ -2611,7 +2617,7 @@ def resolution():
         elif moder_order and rankuser_value >= 18:
           return handle_moderation(moder_order, 18, is_order=True, is_resolution=False, template_name='temporary_page.html')
         elif moder_custom_resolution and rankuser_value >= 11:
-           return handle_moderation(moder_custom_resolution, 11, is_order=False, is_resolution=True, template_name='temporary_page.html')
+          return handle_moderation(moder_custom_resolution, 11, is_order=False, is_resolution=True, template_name='temporary_page.html')
 
     # Если is_moderation=False, и отсутствует доступ к /moderation
     if not is_moderation_link:
@@ -2793,15 +2799,17 @@ def edit_resolution():
 
 @main.route('/get_prosecution_office_content')
 def get_prosecution_office_content():
-  from __init__ import ResolutionTheUser, Users
+  from __init__ import ResolutionTheUser, Users, OrderTheUser, CustomResolutionTheUser
   is_visibily_attoney = True
 
-  action_users = ResolutionTheUser.query.filter_by(is_modertation=True).all()
+  resolution = ResolutionTheUser.query.filter_by(is_modertation=True).all()
+  order = OrderTheUser.query.filter_by(is_modertation=True).all()
+  cust_resolution = CustomResolutionTheUser.query.filter_by(is_modertation=True).all()
   
   return render_template(
     'main/main-doc-attomey.html', 
     is_visibily_attoney=is_visibily_attoney, 
-    action_users=action_users, Users=Users)
+    resolution=resolution, Users=Users, order=order, cust_resolution=cust_resolution)
 
 
 @main.route('/district_court/information=<info_type>')
@@ -2848,3 +2856,4 @@ def district_court_info(info_type):
       )
 
     
+

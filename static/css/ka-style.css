@@ -25,24 +25,10 @@ body
 }
 
 
-.background
-{
-    position: absolute;
-	background: url("../img/background.jpg") !important;
-	background-repeat: no-repeat;
-    background-size: cover;
-	width: 110%;
-	height: 110%;
-	transition: all 0.1s ease;
-    z-index: -2;
-    overflow: scroll;
-    animation: abc 5s ease-in-out infinite;
-}
-
 .lightning
 {
     position: absolute;
-    width: 850px;
+    width: 700px;
     height: 50px;
     top: 50%;
     border-radius: 30px;
