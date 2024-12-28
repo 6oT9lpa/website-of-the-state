@@ -3,30 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/animation-bg.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ka-style.css') }}">
-    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/database-style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index-style.css') }}">
     <title>Majestic State</title>
 </head>
 <body>
     {% block header %}
-        {% include 'header/header-ka.html' %}
+        {% include 'header/header-account.html' %}
     {% endblock %}
-
+    {% block content %}
+        {% include 'main/new-year.html' %}
+    {% endblock %}
     {% block main %}
-        {% include 'main/main-ka.html' %}
+        {% include 'main/main-database.html' %}
     {% endblock %}
-
-    <div class="lines">
-        {% for i in range(40) %}
-        <div class="line"></div>
-        {% endfor %}
-    </div>
 
     {% block footer %}
         {% include 'footer/footer.html' %}
     {% endblock %}
+    <div class="background"></div>
     <script>
         const select = document.querySelector('.action');
         const list = document.querySelector('.action-list');
@@ -34,6 +29,13 @@
 
         select.addEventListener('click', () => {
             select.classList.toggle('open');
+        });
+
+        let bg = document.querySelector('.background');
+        window.addEventListener('mousemove', function(e) {
+            let x = e.clientX / window.innerWidth;
+            let y = e.clientY / window.innerHeight;  
+            bg.style.transform = 'translate(-' + x * 50 + 'px, -' + y * 50 + 'px)';
         });
 
         

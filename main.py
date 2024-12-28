@@ -1921,6 +1921,46 @@ def profile():
     return render_template('profile.html', rank_name=rank_name, color=color, current_user=current_user, is_guest=is_guest)
   else:
     return render_template('profile.html', current_user=current_user, is_guest=is_guest)
+  
+@main.route('/database', methods=['GET'])
+def database():
+  from __init__ import Users, guestUsers
+  organ = current_user.organ
+  rank = current_user.curr_rank
+  ranks = read_ranks("./python/name-ranks.json")
+  color = color_organ(organ)
+  users_t = Users.query.all()
+
+  filename = "./python/name-ranks.json"
+  ranks = read_ranks(filename)
+  rank_name = get_rank_info(ranks, organ, rank)
+  groups = {}
+  for group_name, rank_items in ranks.items():
+    groups[group_name] = rank_items
+
+  return render_template('database.html', rank_name=rank_name, color=color, current_user=current_user, Users=users_t, ranks=ranks, groups=groups)
+DATA_FILE = "./python/name-ranks.json"
+def write_data(data):
+    with open(DATA_FILE, 'w') as file:
+        json.dump(data, file, indent=4)
+@main.route('/save_ranks', methods=['POST'])
+def save_ranks():
+    data = request.json
+    write_data(data)
+    return jsonify({"status": "success"})
+
+@main.route('/profile_settings', methods=['POST'])
+@login_required
+def profile_settings():
+  from __init__ import Users, guestUsers,db
+  new_nickname = request.form.get('new-nickname')
+  if new_nickname:
+    current_user.nikname = new_nickname
+    print(current_user.nikname)
+    db.session.commit()
+    print(current_user.nikname)
+
+  return redirect(url_for('main.profile'))
 
   
 
