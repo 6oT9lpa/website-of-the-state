@@ -239,10 +239,8 @@ def get_rank_info(ranks, organization, rank_level):
   rank_info = None
   if organization in ranks:
     for rank_data in ranks[organization]:
-      for level, name in rank_data.items():
-        if level.strip("[]") == rank_level:
-          rank_info = name.strip()
-          break
+      if rank_data['id'] == rank_level:
+        return rank_data['name']
   return rank_info
 
 # подключение redis как обрабочик сообщений
@@ -759,6 +757,17 @@ def judge_settings():
       isk.supreme_court[0].judge = None
     else:
       return "Эта ошибка не должна произойти, но если вы её видите напишите в тех. поддержку", 400
+    replyik = {
+      'judge': current_user.nikname,
+      'type_log': 'samootvod'
+    }
+    new_log = repltoisks(
+      current_uid=uid,
+      author_id=current_user.id,
+      replyik=replyik,
+      type_doc='log'
+    )
+    db.session.add(new_log)
   elif setting == "otvodoth":
     isk = claimsStatement.query.filter_by(uid=uid).first()
     type_otvod = request.form.get('type_otvod')
@@ -1858,6 +1867,8 @@ def audit():
   organ = current_user.organ
   nikname = current_user.nikname
   color = color_organ(organ)
+  filename = "./python/name-ranks.json"
+  ranks = read_ranks(filename)
 
   if form.validate_on_submit():
     static = form.static.data
@@ -1893,7 +1904,7 @@ def audit():
         process_demotion(user, form, reason)
 
     return redirect(url_for('main.audit'))
-  return render_template('ka.html', form=form, organ=organ, color=color, nikname=nikname, action_users=action_users, current_user=current_user)
+  return render_template('ka.html', form=form, organ=organ, color=color, nikname=nikname, action_users=action_users, current_user=current_user, ranks=ranks)
 
 # выход с профиля 
 @main.route('/logout', methods=['GET', 'POST'])
@@ -1922,14 +1933,39 @@ def profile():
   else:
     return render_template('profile.html', current_user=current_user, is_guest=is_guest)
   
+def check_perm_changedata():
+  if current_user.permissions[0].tech:
+    return 4
+  elif current_user.permissions[0].admin:
+    return 3
+  elif current_user.permissions[0].lider:
+    return 2
+  elif current_user.permissions[0].high_staff:
+    return 1
+  return 0
 @main.route('/database', methods=['GET'])
 def database():
   from __init__ import Users, guestUsers
+  perm_level = check_perm_changedata()
+  if perm_level == 0:
+    return redirect(url_for('main.audit'))
   organ = current_user.organ
   rank = current_user.curr_rank
   ranks = read_ranks("./python/name-ranks.json")
   color = color_organ(organ)
-  users_t = Users.query.all()
+  search = request.args.get('search')
+  print(search)
+  if search:
+    filter = request.args.get('filter')
+    text = request.args.get('text')
+    if filter == "Nikname":
+      users_t = Users.query.filter_by(nikname=text).all()
+    elif filter == "Static":
+      users_t = Users.query.filter_by(static=text).all()
+    elif filter == "Discord":
+      users_t = Users.query.filter_by(discordname=text).all()
+  else:
+    users_t = Users.query.all()
 
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
@@ -1938,17 +1974,99 @@ def database():
   for group_name, rank_items in ranks.items():
     groups[group_name] = rank_items
 
-  return render_template('database.html', rank_name=rank_name, color=color, current_user=current_user, Users=users_t, ranks=ranks, groups=groups)
+  return render_template('database.html', rank_name=rank_name, color=color, current_user=current_user, Users=users_t, ranks=ranks, groups=groups, more_info=False)
+
 DATA_FILE = "./python/name-ranks.json"
 def write_data(data):
     with open(DATA_FILE, 'w') as file:
         json.dump(data, file, indent=4)
 @main.route('/save_ranks', methods=['POST'])
 def save_ranks():
-    data = request.json
-    write_data(data)
+    # Получаем данные из запроса
+    new_data = request.json
+    ranks_to_delete = new_data.get("ranks_to_delete", [])
+
+    # Загружаем текущие данные из JSON
+    with open(DATA_FILE, 'r') as file:
+        current_data = json.load(file)
+
+    # Обновляем JSON с новыми данными
+    write_data(new_data)
+
+    # Если есть ранги для удаления, выполняем корректировку
+    if ranks_to_delete:
+        for rank in ranks_to_delete:
+            organ = rank.get("organ")
+            rank_id = rank.get("id")
+            if organ and rank_id:
+                delete_rank_and_adjust_users(organ, rank_id, current_data)
+
     return jsonify({"status": "success"})
 
+
+def delete_rank_and_adjust_users(organ, rank_id, current_data):
+    from __init__ import Users, db
+    # Удаляем ранг из указанного органа
+    if organ in current_data:
+        current_data[organ] = [rank for rank in current_data[organ] if rank['id'] != rank_id]
+
+    # Понижаем пользователей с этим рангом
+    users_with_removed_rank = Users.query.filter_by(curr_rank=rank_id).all()
+    for user in users_with_removed_rank:
+        if rank_id > 1:  # Если ранг не минимальный
+            user.curr_rank -= 1
+
+    # Понижаем пользователей с рангами выше удалённого
+    higher_rank_users = Users.query.filter(Users.curr_rank > rank_id).all()
+    for user in higher_rank_users:
+        user.curr_rank -= 1
+
+    # Сохраняем изменения в базе данных
+    db.session.commit()
+
+
+@main.route('/database_change', methods=['POST'])
+@login_required
+def database_change():
+  from __init__ import Users, db
+  perm_level = check_perm_changedata()
+  if perm_level != 0:
+    user_id = request.form.get('user_id')
+    user = Users.query.get(user_id)
+    admin = request.form.get('admin')
+    lider = request.form.get('lider')
+    prosecutor = request.form.get('prosecutor')
+    high_staff = request.form.get('high_staff')
+    creation_doc = request.form.get('creation_doc')
+    create_news = request.form.get('create_news')
+    lawer = request.form.get('lawer')
+    discordname = request.form.get('discordname')
+    discordid = request.form.get('discordid')
+    if perm_level >= 2:
+      user.permissions[0].prosecutor = True if prosecutor == 'on' else False
+      user.permissions[0].high_staff = True if high_staff == 'on' else False
+      user.permissions[0].creation_doc = True if creation_doc == 'on' else False
+      user.permissions[0].lawer = True if lawer == 'on' else False
+      user.discordname = discordname
+      user.discordid = discordid
+    if perm_level >= 3:
+      user.permissions[0].create_news = True if create_news == 'on' else False
+    if perm_level == 4:
+      user.permissions[0].admin = True if admin == 'on' else False
+      user.permissions[0].lider = True if lider == 'on' else False
+    db.session.commit()
+  return redirect(url_for('main.database'))
+
+@main.route('/database_getdata', methods=['GET'])
+def database_getdata():
+  from __init__ import Users, ActionUsers
+  perm_change = check_perm_changedata()
+  if perm_change == 0:
+    return redirect(url_for('main.index'))
+  user_id = request.args.get('user_id')
+  user = Users.query.get(user_id)
+  ka_log = ActionUsers.query.filter_by(static=user.static).all()
+  return render_template('database.html', user=user, current_user=current_user, more_info=True, perm_change=perm_change, ka_log=ka_log)
 @main.route('/profile_settings', methods=['POST'])
 @login_required
 def profile_settings():

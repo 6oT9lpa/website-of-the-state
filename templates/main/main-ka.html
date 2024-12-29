@@ -61,7 +61,11 @@
                         <div class='form-control'>
                             <label for="phone">Rank</label>
                             <div class='form-input-modal' id='phone-plaintiff'>
-                                {{ form.rank(class="")}}
+                                <select name="rank" id="rank" class="rank">
+                                    {% for rank in ranks[organ] %}
+                                    <option value="{{ rank['id'] }}"{% if rank['id'] >= current_user.curr_rank %}disabled{%endif%}>{{ rank['id'] }} | {{ rank['name'] }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
