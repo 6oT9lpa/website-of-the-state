@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, request, flash, Blueprint,
 from functools import wraps
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import check_password_hash, generate_password_hash
-from form import FormAuditPush, FormAuthPush, Formchangepassword, Formforgetpassword1, Formforgetpassword2
+from form import FormAuditPush, FormAuthPush
 from flask_login import login_user, login_required, logout_user, current_user
 from datetime import datetime, timedelta
 from reportlab.pdfgen import canvas
@@ -127,6 +127,7 @@ def draw_multiline_text(pdf, text, x, y, max_width=95, font="TimesNewRoman", siz
   return y
 
 def generate_signature(pdf, y, current_user, state, page=1):
+    
     sing_font_path = os.path.join('static', 'fonts', 'Updock-Regular.ttf') 
     pdfmetrics.registerFont(TTFont('Updock', sing_font_path))
     pdf.setFont("Updock", 32)
@@ -363,7 +364,7 @@ def index():
   if current_user.is_authenticated:
     cancrnews = current_user.permissions[0]
     if cancrnews:
-       has_access = cancrnews is not None
+      has_access = cancrnews is not None
   if 'zagolovok' in request.form:
     last_request_time = session.get('last_request_time', 0)
     current_time = time.time()
@@ -1962,21 +1963,18 @@ def profile_settings():
 
   return redirect(url_for('main.profile'))
 
-  
-
 @main.route('/doc')
 def doc():
   if not current_user.is_authenticated:
-    flash('Вам необходимо находиться в государственной структуре и быть залогированным на сайте, чтобы создавать документации!')
-    return render_template('doc.html', is_permission=False, is_authenticated=False)
+    message = 'Вам необходимо залогироваться на сайте, дабы воспользоваться данной функцией!', 404
+    return render_template('doc.html', is_permission=False, is_authenticated=False, message=message)
 
   perm_user = current_user.permissions[0]
-  if not perm_user: 
-    flash('У вас отстутсвуют права для создания документации!')
-    return render_template('doc.html', is_permission=False, is_authenticated=True)
-  if not (perm_user.creation_doc or perm_user.lider or perm_user.tech): 
-    flash('У вас отстутсвуют права для создания документации!')
-    return render_template('doc.html', is_permission=False, is_authenticated=True)
+
+  if not perm_user or not (perm_user.creation_doc or perm_user.lider or perm_user.tech): 
+    message = 'У вас отстутсвуют права для использования данной функции!', 403
+    return render_template('doc.html', is_permission=False, is_authenticated=True, message=message)
+
 
   from form import FormCreateDoc, FormCreateResolution, FormCreateOrder
 
@@ -1992,7 +1990,7 @@ def doc():
   
 @main.route('/create_doc',  methods=['POST', 'GET'])
 def create_doc():
-  from __init__ import Users, PDFDocument, ResolutionTheUser, OrderTheUser, db, ResolutionNumberCounter
+  from __init__ import Users, PDFDocument, ResolutionTheUser, OrderTheUser, db, get_next_num_resolution, get_next_num_order
   from form import FormCreateDoc, FormCreateResolution, FormCreateOrder
   form = FormCreateDoc()
   formResolution = FormCreateResolution()
@@ -2080,8 +2078,9 @@ def create_doc():
       separator_path = os.path.join('static', 'img', 'text separator.png')
       pdf.drawImage(separator_path, 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
 
+      global record
       # Получение номера документа
-      record = ResolutionNumberCounter.increment(db.session)
+      record = get_next_num_order()
       new_resolution_number = increment_number_with_leading_zeros(record)
       draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
       draw_text(pdf, 30, 200, f"Doc. No: {new_resolution_number}")
@@ -2326,6 +2325,7 @@ def create_doc():
           articlesAccusation=formOrder.param1.data if formOrder.param1.data != '' else None,
           termImprisonment=formOrder.param2.data if formOrder.param2.data != '' else None,
           offWork=formOrder.param4.data if formOrder.param4.data != '' else None,
+          current_number=get_next_num_order()
       )
 
       db.session.add(new_order)
@@ -2354,8 +2354,8 @@ def create_doc():
         draw_text(pdf, 60, 225, "90001, г. Лос-Сантос, Рокфорд-Хиллз, Карцер-Вей")
 
         pdf.drawImage(os.path.join('static', 'img', 'text separator.png'), 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
-
-        record = ResolutionNumberCounter.increment(db.session)
+        global record
+        record = get_next_num_resolution()
         new_resolution_number = increment_number_with_leading_zeros(record)
         draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
         draw_text(pdf, 30, 200, f"Doc. No: {new_resolution_number}")
@@ -2412,6 +2412,7 @@ def create_doc():
         pdfmetrics.registerFont(TTFont('Updock', sing_font_path))
 
         # Генерация подписи
+        y += 20
         generate_signature(pdf, y, current_user, 'resolution', page=1)
         y -= 5
 
@@ -2457,7 +2458,8 @@ def create_doc():
         temporarily_suspend=formResolution.param6.data,
         victim_nickname=formResolution.param2_nickname.data if formResolution.param2_nickname.data != '' else '', 
         time_arrest=formResolution.arrest_time.data if formResolution.arrest_time.data != '' else '',
-        number_case=formResolution.case.data if formResolution.case.data != '' else ''
+        number_case=formResolution.case.data if formResolution.case.data != '' else '',
+        current_number=get_next_num_resolution()
         )
         
       db.session.add(new_resolution)
@@ -2505,8 +2507,8 @@ def create_doc():
       draw_text(pdf, 60, 225, "90001, г. Лос-Сантос, Рокфорд-Хиллз, Карцер-Вей")
 
       pdf.drawImage(os.path.join('static', 'img', 'text separator.png'), 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
-
-      record = ResolutionNumberCounter.increment(db.session)
+      
+      record = get_next_num_resolution()
       new_resolution_number = increment_number_with_leading_zeros(record)
       draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
       draw_text(pdf, 30, 200, f"Doc. No: {new_resolution_number}")
@@ -2543,7 +2545,8 @@ def create_doc():
       resolution = CustomResolutionTheUser(
         author_id=current_user.id, 
         current_uid=uid,
-        custom_fields=custom_fields_json
+        custom_fields=custom_fields_json,
+        current_number=get_next_num_resolution()
       )
       db.session.add(resolution)
       db.session.commit()
@@ -2842,14 +2845,40 @@ def get_prosecution_office_content():
   from __init__ import ResolutionTheUser, Users, OrderTheUser, CustomResolutionTheUser
   is_visibily_attoney = True
 
-  resolution = ResolutionTheUser.query.filter_by(is_modertation=True).all()
-  order = OrderTheUser.query.filter_by(is_modertation=True).all()
-  cust_resolution = CustomResolutionTheUser.query.filter_by(is_modertation=True).all()
+  resolutions = ResolutionTheUser.query.filter_by(is_modertation=True).all()
+  orders = OrderTheUser.query.filter_by(is_modertation=True).all()
+  custom_resolutions = CustomResolutionTheUser.query.filter_by(is_modertation=True).all()
+  
+  all_documents = []
+  for res in resolutions:
+      all_documents.append({
+          'type': 'Постановление',
+          'item': res,
+          'date_created': res.date_created,
+          'number': res.current_number
+      })
+
+  for ord in orders:
+      all_documents.append({
+          'type': 'Ордер',
+          'item': ord,
+          'date_created': ord.date_created,
+          'number': ord.current_number
+      })
+
+  for cust_res in custom_resolutions:
+      all_documents.append({
+          'type': 'Постановление',
+          'item': cust_res,
+          'date_created': cust_res.date_created,
+          'number': cust_res.current_number
+      })
+      
+  sorted_documents = sorted(all_documents, key=lambda x: x['date_created'], reverse=True)
   
   return render_template(
     'main/main-doc-attomey.html', 
-    is_visibily_attoney=is_visibily_attoney, 
-    resolution=resolution, Users=Users, order=order, cust_resolution=cust_resolution)
+    is_visibily_attoney=is_visibily_attoney, sorted_documents=sorted_documents)
 
 
 @main.route('/district_court/information=<info_type>')

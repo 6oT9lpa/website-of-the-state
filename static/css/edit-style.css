@@ -63,7 +63,7 @@ iframe {
 
 .button:hover{
     background-color: #373737;
-    color: white;
+    color: #f0f8ff;
     box-shadow:0px -8px 0 rgb(166, 166, 166) inset;
 }
 
@@ -108,7 +108,7 @@ iframe {
 }
 .sidebar input:active
 {
-    border: white solid 2px;
+    border: #f0f8ff solid 2px;
 }
 
 .sidebar .button {
@@ -157,7 +157,7 @@ iframe {
 .form-input.error input
 {
     background-color: #632525 !important;  
-    color: white;
+    color: #f0f8ff;
 }
 
 .button-form

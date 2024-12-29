@@ -39,7 +39,7 @@ main
 
 header {
     background: transparent; 
-    color: white;
+    color: #f0f8ff;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -64,7 +64,7 @@ nav
 }
 
 nav a {
-    color: white;
+    color: #f0f8ff;
     margin-left: 20px;
     text-decoration: none;
     font-weight: 800;
@@ -79,7 +79,7 @@ nav a {
 }
 
 .nav-button {
-    color: white;
+    color: #f0f8ff;
     text-decoration: none;
     position: relative;
     font-weight: 800;
@@ -108,8 +108,8 @@ nav a {
   
   .sidebar div {
     padding: 10px 0;
-    border-bottom: 4px solid white;
-    color: white;
+    border-bottom: 4px solid #f0f8ff;
+    color: #f0f8ff;
     font-weight: bold;
     font-size: 20px;
     padding: 10px 20px;
@@ -127,7 +127,7 @@ nav a {
 
 footer {
     padding: 100px 0 0;
-    color: white;
+    color: #f0f8ff;
     text-align: center;
     margin-top: auto;
 }

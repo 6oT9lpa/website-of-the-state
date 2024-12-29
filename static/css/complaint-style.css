@@ -74,7 +74,7 @@ body {
     border-radius: 10px;
     box-shadow: #e81c5924 0 0 15px 5px;
     border: #e81c5924 solid 2px;
-    color: white;
+    color: #f0f8ff;
     padding: 10px;
     transform: translateX(180px);
     z-index: 100;
@@ -149,7 +149,7 @@ body {
 }
 
 .header-statement {
-    color: white;
+    color: #f0f8ff;
     text-align: end;
     display: flex;
     flex-direction: row;
@@ -177,7 +177,7 @@ body {
 }
 
 .description-content {
-    color: white;
+    color: #f0f8ff;
     font-size: 14px;
     margin: 10px 0;
     display: flex;
@@ -214,7 +214,7 @@ body {
     align-items: flex-end;
     justify-content: flex-end;
     flex-direction: column;
-    color: white;
+    color: #f0f8ff;
     font-size: 14px;
 }
 
@@ -243,7 +243,7 @@ a.accept-judge {
 }
 
 .content-modal {
-    color: white;
+    color: #f0f8ff;
     display: flex;
     flex-direction: column;
     position: absolute;
@@ -352,7 +352,7 @@ a.accept-judge {
 
 .dropdown-btn {
     background: transparent;
-    color: white;
+    color: #f0f8ff;
     border: #141414 solid 2px;
     padding: 10px 15px;
     font-size: 14px;
@@ -403,7 +403,7 @@ a.accept-judge {
 .dropdown-select-isk {
     appearance: none; /* Убирает стандартный стиль браузера */
     background: transparent;
-    color: white;
+    color: #f0f8ff;
     border: #141414 solid 2px;
     padding: 10px 15px;
     font-size: 14px;
@@ -429,7 +429,7 @@ a.accept-judge {
 
 
 .contanier-court-order {
-    color: white;
+    color: #f0f8ff;
     background: #191919;
     padding: 20px;
     width: calc(var(--screen-width) - 330px);
@@ -534,7 +534,7 @@ a.accept-judge {
     border-radius: 5px;
     border: #1f1e1e;
     background: #1f1e1e;
-    color: white;
+    color: #f0f8ff;
 }
 
 .form-input.error {
@@ -548,7 +548,7 @@ a.accept-judge {
 
 .dropdown-btn-pettion-list {
     background: transparent;
-    color: white;
+    color: #f0f8ff;
     border: #141414 solid 2px;
     padding: 10px 15px;
     font-size: 14px;

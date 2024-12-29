@@ -1,302 +1,248 @@
-<div class="modal" data-modal="create-doc">
-    <div class="modal-content">
-        <span class="modal-close">&times;</span>
-        <div class="personal-date underline">
-            <div style="background-color:{{ color }} !important;" class="organ">{{ organ }}</div>
-            <div class="nikname">{{ nickname }}</div>
+<div class='modal-document-creater hidden-modal' id='modal-creater' style='display: none;'>
+    <div class='header-modal'>
+        <div class='head'>
+            <div class='text-header'>
+                <div class="personal-date underline">
+                    <div style="background-color:{{ color }} !important;" class="organ">{{ organ }}</div>
+                    <div class="nikname">{{ nickname }}</div>
+                </div>
+            </div>
+        </div> 
+        <div class='content-bl'>
+            <div class="dropdown" id="dropdown-1">
+                <button class="dropdown-btn" id="dropdown-btn-1">Тип документа</button>
+                <div class="dropdown-menu" id="dropdown-menu-1">
+                    <a data-action="Order">Ордер</a>
+                    <a data-action="Resolution">Постановление</a>
+                </div>
+            </div>   
+            <span class="btn-modal-close" id='close-modal-creater'>&times;</span>
         </div>
+    </div>
+    <div class='line-modal'></div>
+    <div class='main-content-modal'>
+        <form method="post" action="/create_doc" id='resolutionForm'>
+            {{ form.hidden_tag() }}
+            <input type='hidden' name="type_doc" id='action-1'>
 
-        <div>
-            <form method="post" action="/create_doc" id='resolutionForm'>
-                {{ form.hidden_tag() }}
-
-                <div class="game-info">
-                    <div class="form-input">
-                        <label for="static">STATIC</label>
-                        {{ form.static(class="static")}}
-                    </div>
-                    <div class="form-input">
-                        <label for="nickname">NICKNAME</label>
-                        {{ form.nickname(class=" is-valid")}}
-                    </div>
-
-                    <div id="select-box">
-                        <label name="doctype_" >TYPE DOC</label>
-                        <div id="select-button" class="select-button" onclick="toggleOptions()">
-                            <div id="selected-value">
-                                <span>Выберите тип документа</span>
-                            </div>
-                            <div id="chevrons">
-                                <i class="fas fa-chevron-up"></i>
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
+            <div class='group-creater'>
+                <div class='group-contaniner-modal-creater'>
+                    <div class='form-control'>
+                        <label for="static">Статик Обвиняемого</label>
+                        <div class='form-input-modal'>
+                            {{ form.static(placeholder='Введите статик (если требуется)', id='static') }}
                         </div>
-                
-                        <div id="options" class="hidden">
-                            {% for value, label in form.type_doc.choices %}
-                            <div class="option">
-                                <input type="radio" name="type_doc" value="{{ value }}" id="{{ value }}" class="radio-input" onclick="selectOption('{{ label }}')">
-                                <label for="{{ value }}" class="radio-label">{{ label }}</label>
-                            </div>
-                            {% endfor %}
+                        <span class="text-danger" id="is-invalid"></span>
+                    </div>
+                    <div class='form-control'>
+                        <label for="nickname">Ник Обвиняемого</label>
+                        <div class='form-input-modal'>
+                            {{ form.nickname(placeholder='Введите ник (если требуется)') }}
+                        </div>
+                        <span class="text-danger" id="is-invalid"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contanier-wrapper hidden-wrapper" id="contanier-wrapper_res">
+                <div class='container-custom-resolution'>
+                    <div class="custom-inputs hidden" id="custom-inputs-container">
+                        <div class='header-custom'>
+                            <a class="close-button" onclick="resetCustomForm()">Закрыть</a>
+                            <a class="add-input-button" onclick="addInput()">+</a>
+                        </div>
+                        <div class="input-container" id="dynamic-input-container">
                         </div>
                     </div>
                 </div>
-                <div class="contanier-wrapper" id="contanier-wrapper_res">
-                    <div class='container-custom-resolution'>
-                        <div class="custom-inputs hidden" id="custom-inputs-container">
-                            <div class='header-custom'>
-                                <a class="close-button" onclick="resetCustomForm()">Закрыть</a>
-                                <a class="add-input-button" onclick="addInput()">+</a>
+                <div class="wrapper-selector" id="resolution-wrapper">
+                    <div class="checkbox-wrapper">
+                        <div class="checkbox">
+                            <input type="checkbox" id="param1_checkbox" class="hidden-checkbox" name="param1"> 
+                            <label for="param1_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ formResolution.param1.label }}</span>
+                        </div>
+                        <div class='form-control-1' id='input_checkbox1' style='display: none;'>
+                            <div class='form-input-modal'>
+                                {{ formResolution.case(class="input-field", id="caseInput", placeholder='Введите номер кейса')}}
                             </div>
-                            <div class="input-container" id="dynamic-input-container">
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                    </div>                    
+                    <div class="checkbox-wrapper">
+                        <div class="checkbox">
+                            <input type="checkbox" id="param2_checkbox" class="hidden-checkbox" name="param2">
+                            <label for="param2_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ formResolution.param2.label }}</span>
+                        </div>
+
+                        <div class='form-control-1' id='input_checkbox2' style='display: none;'>
+                            <div class='form-input-modal'>
+                                {{ formResolution.arrest_time(class="input-field", id="arrest_time", placeholder='Введите время ареста')}}
                             </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                        <div class='form-control-1' id='input_checkbox2' style='display: none;'>
+                            <div class='form-input-modal'>
+                                {{ formResolution.arrest_time(class="input-field", id="param2_nickname", placeholder='Введите ник потерпевшего')}}
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
                         </div>
                     </div>
-                    <div class="wrapper-selector" id="resolution-wrapper">
-                        <div class="checkbox-wrapper">
-                            <div class="checkbox">
-                                <input type="checkbox" id="param1_checkbox" class="hidden-checkbox" name="param1"> 
-                                <label for="param1_checkbox" class="checkbox-label">
-                                    <div id="tick_mark"></div>
-                                </label>
-                                <span class="checkbox-text">{{ formResolution.param1.label }}</span>
-                            </div>
-
-                            <div class="form-input wrapper-input" style='display: none;' id="input_checkbox1">
-                                {{ formResolution.case(class="input-field", id="caseInput")}}
-                                <span class="text-danger" id="is-unvalid"></span>
-                            </div>
+                    <div class="checkbox-wrapper">
+                        <div class="checkbox">
+                            <input type="checkbox" id="param3_checkbox" class="hidden-checkbox" name="param3">
+                            <label for="param3_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ formResolution.param3.label }}</span>
                         </div>
-                                            
-                        <div class="checkbox-wrapper">
-                            <div class="checkbox">
-                                <input type="checkbox" id="param2_checkbox" class="hidden-checkbox" name="param2">
-                                <label for="param2_checkbox" class="checkbox-label">
-                                    <div id="tick_mark"></div>
-                                </label>
-                                <span class="checkbox-text">{{ formResolution.param2.label }}</span>
-                            </div>
-
-                            <div class="form-input" style='display: none;' id="input_checkbox2">
-                                <div class="input-wrapper">
-                                    {{ formResolution.arrest_time(class="input-field", id="arrest_time")}} 
-                                    <span class="text-danger" id="is-unvalid"></span>
-                                </div>
-                                <div class="input-wrapper">
-                                    {{ formResolution.param2_nickname(class="input-field", id="param2_nickname")}}
-                                    <span class="text-danger" id="is-unvalid"></span>
-                                </div>
-                            </div>
-                        </div>
-                    
-                        <div class="checkbox-wrapper">
-                            <div class="checkbox">
-                                <input type="checkbox" id="param3_checkbox" class="hidden-checkbox" name="param3">
-                                <label for="param3_checkbox" class="checkbox-label">
-                                    <div id="tick_mark"></div>
-                                </label>
-                                <span class="checkbox-text">{{ formResolution.param3.label }}</span>
-                            </div>
-                        </div>
-                    
-                        <div class="checkbox-wrapper">
-                            <div class="checkbox">
-                                <input type="checkbox" id="param4_checkbox" class="hidden-checkbox" name="param4">
-                                <label for="param4_checkbox" class="checkbox-label">
-                                    <div id="tick_mark"></div>
-                                </label>
-                                <span class="checkbox-text">{{ formResolution.param4.label }}</span>
-                            </div>
-                        </div>
-                    
-                        <div class="checkbox-wrapper">
-                            <div class="checkbox">
-                                <input type="checkbox" id="param5_checkbox" class="hidden-checkbox" name="param5">
-                                <label for="param5_checkbox" class="checkbox-label">
-                                    <div id="tick_mark"></div>
-                                </label>
-                                <span class="checkbox-text">{{ formResolution.param5.label }}</span>
-                            </div> 
-                        </div>
-                    
-                        <div class="checkbox-wrapper">
-                            <div class="checkbox">
-                                <input type="checkbox" id="param6_checkbox" class="hidden-checkbox" name="param6">
-                                <label for="param6_checkbox" class="checkbox-label">
-                                    <div id="tick_mark"></div>
-                                </label>
-                                <span class="checkbox-text">{{ formResolution.param6.label }}</span>
-                            </div>
-                        </div>  
                     </div>
-                </div>
                 
+                    <div class="checkbox-wrapper">
+                        <div class="checkbox">
+                            <input type="checkbox" id="param4_checkbox" class="hidden-checkbox" name="param4">
+                            <label for="param4_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ formResolution.param4.label }}</span>
+                        </div>
+                    </div>
+                
+                    <div class="checkbox-wrapper">
+                        <div class="checkbox">
+                            <input type="checkbox" id="param5_checkbox" class="hidden-checkbox" name="param5">
+                            <label for="param5_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ formResolution.param5.label }}</span>
+                        </div> 
+                    </div>
+                
+                    <div class="checkbox-wrapper">
+                        <div class="checkbox">
+                            <input type="checkbox" id="param6_checkbox" class="hidden-checkbox" name="param6">
+                            <label for="param6_checkbox" class="checkbox-label">
+                                <div id="tick_mark"></div>
+                            </label>
+                            <span class="checkbox-text">{{ formResolution.param6.label }}</span>
+                        </div>
+                    </div>  
+                </div>
+            </div>
                 <div class="contanier-wrapper" id="contanier-wrapper_order">
                     <div class="wrapper-selector" id="order-wrapper">
                         <div class="group">
-                            <div class="form-input">
-                                <label for="typeOrder">Тип Ордера</label>
-                                {% if formOrder.type_order.errors %}
-                                    {{ formOrder.type_order(class="") }} 
-                                    {% for error in formOrder.type_order.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                {% else %}
-                                    {{ formOrder.type_order(class="is-valid") }} 
-                                {% endif %}
-
-                                <span class="text-danger" id="is-unvalid"></span>
+                            <div class='form-control-1'>
+                                <div class='form-input-modal'>
+                                    {{ formOrder.type_order(placeholder='Введите тип ордера') }}
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
                             </div>
                         </div>
                         <div class="group">
-                            <div class="form-input hidden-input" style='display: none;' id="adreasSuspect">
+                            <div class="form-control-1 hidden-input" style='display: none;' id="adreasSuspect">
                                 <label for="param">Адреас проживания</label>
-                                {% if formOrder.adreas_suspect.errors %}
-                                    {{ formOrder.adreas_suspect(class="") }} 
-                                    {% for error in formOrder.adreas_suspect.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                {% else %}
-                                    {{ formOrder.adreas_suspect(class="is-valid") }} 
-                                {% endif %}
-
-                                <span class="text-danger" id="is-unvalid"></span>
+                                <div class='form-input-modal'>
+                                    {{ formOrder.adreas_suspect(placeholder='Введите адрес') }}
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
                             </div>
-                            <div class="form-input hidden-input" style='display: none;' id="articlesAccusation">
-                                <label for="param">Статьи Обвинения.</label>
-                                {% if formOrder.param1.errors %}
-                                    {{ formOrder.param1(class="") }} 
-                                    {% for error in formOrder.param1.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                {% else %}
-                                    {{ formOrder.param1(class="is-valid") }} 
-                                {% endif %}
 
-                                <span class="text-danger" id="is-unvalid"></span>
-                            </div> 
-                            <div class="form-input hidden-input" style='display: none;' id="nameOrganForOrder">
-                                <label for="param">Название организации.</label>
-                                {% if formOrder.name_organ_for_order.errors %}
-                                    {{ formOrder.name_organ_for_order(class="") }} 
-                                    {% for error in formOrder.name_organ_for_order.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                {% else %}
-                                    {{ formOrder.name_organ_for_order(class="is-valid") }} 
-                                {% endif %}
-
-                                <span class="text-danger" id="is-unvalid"></span>
-                            </div> 
-                            <div class="form-input hidden-input" style='display: none;' id='termImprisonment'>
-                                <label for="param">Срок заключения.</label>
-                                {% if formOrder.param2.errors %}
-                                    {{ formOrder.param2(class="is-valid")}}
-                                    {% for error in formOrder.param2.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formOrder.param2(class="")}}
-                                {% endif %}
-
-                                <span class="text-danger" id="is-unvalid"></span>
+                            <div class="form-control-1 hidden-input" style='display: none;' id="articlesAccusation">
+                                <label for="param">Статьи Обвинения</label>
+                                <div class='form-input-modal'>
+                                    {{ formOrder.param1(placeholder='Введите статьи обвинения') }}
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
                             </div>
-                            <div class="form-input hidden-input" style='display: none;' id='degree_ri'>
-                                <label for="degree_ri">Степень снятия неприкоса.</label>
-                                {% if formOrder.degree_ri.errors %}
-                                    {{ formOrder.degree_ri(class="is-valid")}}
-                                    {% for error in formOrder.degree_ri.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formOrder.degree_ri(class="")}}
-                                {% endif %}
 
-                                <span class="text-danger" id="is-unvalid"></span>
+                            <div class="form-control-1 hidden-input" style='display: none;' id="nameOrganForOrder">
+                                <label for="param">Название организации</label>
+                                <div class='form-input-modal'>
+                                    {{ formOrder.name_organ_for_order(placeholder='Введите название орги') }}
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
                             </div>
-                            <div class="form-input hidden-input" style='display: none;' id='adreasOrganForOrder'>
-                                <label for="adreas_organ_for_order">Адреас организации.</label>
-                                {% if formOrder.adreas_organ_for_order.errors %}
-                                    {{ formOrder.adreas_organ_for_order(class="is-valid")}}
-                                    {% for error in formOrder.adreas_organ_for_order.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formOrder.adreas_organ_for_order(class="")}}
-                                {% endif %}
+                            
+                            <div class="form-control-1 hidden-input" style='display: none;' id='termImprisonment'>
+                                <label for="param">Срок заключения</label>
+                                <div class='form-input-modal'>
+                                    {{ formOrder.param2(placeholder='Введите срок') }}
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
+                            </div>
 
-                                <span class="text-danger" id="is-unvalid"></span>
+                            <div class="form-control-1 hidden-input" style='display: none;' id='degree_ri'>
+                                <label for="param">Снятия неприкоса</label>
+                                <div class='form-input-modal'>
+                                    {{ formOrder.degree_ri(placeholder='Введите степень') }}
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
+                            </div>
+
+                            <div class="form-control-1 hidden-input" style='display: none;' id='adreasOrganForOrder'>
+                                <label for="param">Адреас организации</label>
+                                <div class='form-input-modal'>
+                                    {{ formOrder.adreas_organ_for_order(placeholder='Введите адреас орги') }}
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
                             </div>
                         </div>
                         <div class="group">
-                            <div class="form-input hidden-input" style='display: none;' id="carBrand">
+                            <div class="form-control-1 hidden-input" style='display: none;' id="carBrand">
                                 <label for="param">Марка т\с</label>
-                                {% if formOrder.car_brand.errors %}
-                                    {{ formOrder.car_brand(class="") }} 
-                                    {% for error in formOrder.car_brand.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                {% else %}
-                                    {{ formOrder.car_brand(class="is-valid") }} 
-                                {% endif %}
-
-                                <span class="text-danger" id="is-unvalid"></span>
+                                <div class='form-input-modal'>
+                                    {{ formOrder.car_brand(placeholder='Введите полную марку') }}
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
                             </div>
-                            <div class="form-input hidden-input" style='display: none;' id='time'>
-                                <label id='label-time' for="param">Срок исполения.</label>
-                                {% if formOrder.param3.errors %}
-                                    {{ formOrder.param3(class="is-valid")}}
-                                    {% for error in formOrder.param3.errors %}
-                                        <span class="focus-input100 text-danger">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formOrder.param3(class="")}}
-                                {% endif %}
 
-                                <span class="text-danger" id="is-unvalid"></span>
+                            <div class="form-control-1 hidden-input" style='display: none;' id='time'>
+                                <label for="param">Срок исполения</label>
+                                <div class='form-input-modal'>
+                                    {{ formOrder.param3(placeholder='Введите срок') }}
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
                             </div>
-                            <div class="form-input hidden-input" style='display: none;' id='number_offWork'>
-                                <label for="param">Номер дела.</label>
-                                {% if formOrder.param4.errors %}
-                                    {{ formOrder.param4(class="")}}
-                                    {% for error in formOrder.param4.errors %}
-                                        <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formOrder.param4(class="")}}
-                                {% endif %}
-
-                                <span class="text-danger" id="is-unvalid"></span>
+                            
+                            <div class="form-control-1 hidden-input" style='display: none;' id='number_offWork'>
+                                <label for="param">Номер дела</label>
+                                <div class='form-input-modal'>
+                                    {{ formOrder.param4(placeholder='Введите номер дела') }}
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
                             </div>
-                            <div class="form-input hidden-input" style='display: none;' id='application_num'>
-                                <label for="application_num">Номер заявления.</label>
-                                {% if formOrder.application_num.errors %}
-                                    {{ formOrder.application_num(class="")}}
-                                    {% for error in formOrder.application_num.errors %}
-                                        <span class="focus-input100 text-danger" id="is-unvalid">{{ error }}</span>
-                                    {% endfor %}
-                                    {% else %}
-                                    {{ formOrder.application_num(class="")}}
-                                {% endif %}
-
-                                <span class="text-danger" id="is-unvalid"></span>
+                        
+                            <div class="form-control-1 hidden-input" style='display: none;' id='application_num'>
+                                <label for="param">Номер заявления</label>
+                                <div class='form-input-modal'>
+                                    {{ formOrder.application_num(placeholder='Введите номер заявы') }}
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
                             </div>
                         </div>
                     </div>
                 </div>
+                
                 <div class="form-button-container">
-                    <div class='container-btn-custom'>
-                        {{ form.submit(class="form-button", id="btn") }}
+                    <div class='submit-btn-contanier'>
+                        <div class='submit-btn'>
+                            {{ form.submit(id="btn") }} 
+                        </div>   
                     </div>
-                    <div class='container-btn-custom' id='btn-custom-resolution' style='display: none;'>
-                        {{ formResolution.custom_button_pressed(type="hidden", value="false") }}
-                        <a class='btn-custom' onclick="toggleCustomForm()">создать кастом</a>
+                    <div class='submit-btn-contanier'>
+                        <div class='submit-btn' id='btn-custom-resolution' style='display: none;'>
+                            {{ formResolution.custom_button_pressed(type="hidden", value="false") }}
+                            <a class='custom' onclick="toggleCustomForm()">создать кастом</a>
+                        </div>   
                     </div>
                 </div>
-
-                <span id="loadingText" style="display: none;">Отправка...</span>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 </div>

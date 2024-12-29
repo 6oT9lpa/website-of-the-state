@@ -5,8 +5,17 @@
         </a>
     </div>
     <nav>
-        <a class="modal-button" data-modal="create-doc">CREATE DOC</a>
-        <a class="modal-home" href="{{ url_for('main.index') }}">HOME</a>
+        <a class="modal-button" id='open-modal-creater'
+        {% if not is_authenticated or not is_permission %} 
+            onclick="notification()" 
+        {% endif %}>
+            CREATE DOC
+        </a>
+        {% if current_user.is_authenticated %} 
+            <a href="{{ url_for('main.auth')}}">ACCOUNT</a> 
+        {% else %}
+            <a href="{{ url_for('main.auth')}}">LOGIN</a> 
+        {% endif %}
         <a class="modal-complaint" href="{{ url_for('main.doc') }}">BACK</a>
     </nav>
 </header>
@@ -16,5 +25,4 @@
     <a class="nav-button fade-in-nav" id='load-other-office'>Другие Ведомства</a>
     <a class='nav-button hidden-nav' id='load-claim-district' style='display: none;'>Окружной Суд</a>
     <a class='nav-button hidden-nav' id='load-claim-supreme' style='display: none;'>Верховный Суд</a>
-
 </div>

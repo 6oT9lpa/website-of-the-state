@@ -1,9 +1,3 @@
-<div class='all-content'>
-    {% if access_denied %}
-        <script>
-        showAccessDenied();
-        </script>
-    {% endif %}
 
     <div class="container">
         <div class="profile-card">
@@ -36,51 +30,62 @@
             </div>
         </div>
     </div>
-    <div class='modal-setting-profile' style='display:none;'>
-            <div class='content-modal'>
-                <div class="header-modal">
-                    <span class="btn-modal-close" id="btn-modal-close" onclick="CloseModal('.modal-setting-profile')">&times;</span>
-                </div>
-                <div class='form-control'>
-                    <label for="nicknamech">Сменить имя фамилию.</label>
-                    <div class='submit-btn'>
-                        <button id="nicknamech" onclick="showNicknameInput()">Вазер</button>
-                    </div>
-                </div>
-                <div class="input-group hidden" id="nickname-change">
-                    <form method='POST' action='/profile_settings'>
-                    <label for="new-nickname">Введите новый ник:</label>
-                    <input type="text" id="new-nickname" name="new-nickname" placeholder="Новый ник">
-                    <div class="submit-btn">
-                        <button class="btn" type="button" id="back-btn" onclick="hideNicknameInput()">Назад</button>
-                        <button class="btn" type="submit">Отправить</button>
-                    </div>
-                </div> 
-            </div> 
-        </form>
-    </div>
-    <script>
-        function openmodal(modal) {
-            document.querySelector(modal).style.display = 'block'
-            document.querySelectorAll('#overlay').forEach(o => {
-                o.classList.add('active');
-            });
-            setTimeout(() => {
-                document.querySelector(modal).classList.remove('hidden-modal-district');
-                document.querySelector(modal).classList.add('show-modal-district');
-            }, 10)
-        }
-        function showNicknameInput() {
-            document.getElementById('nickname-change').classList.remove('hidden'); // Показываем поле ввода
-            document.getElementById('change-nick-btn').classList.add('hidden'); // Скрываем кнопку "Сменить имя"
-            document.getElementById('other-btn').classList.add('hidden'); // Скрываем другую кнопку
-        }
 
-        // Прячет поле ввода и возвращает исходные кнопки
-        function hideNicknameInput() {
-            document.getElementById('nickname-change').classList.add('hidden'); // Скрываем поле ввода
-            document.getElementById('change-nick-btn').classList.remove('hidden'); // Показываем кнопку "Сменить имя"
-            document.getElementById('other-btn').classList.remove('hidden'); // Показываем другую кнопку
-        }
-    </script>
-</div>
+    <div class='modal-settings' id='modal-1' style='display:none;'>
+        <div class='content-modal'>
+            <div class="header-modal">
+                <span class="btn-modal-close" id="close-btn-1">&times;</span>
+            </div>
+            <div class='form-container' id='complaint'>
+            <form method='POST' action='/profile_settings'>
+                <input type="hidden" name="action" id="action-0">
+                <div class='group-contaniner-modal'>
+                    <div class='settings-nickname' style='display:none;'>
+                        <div class='form-control'>
+                            <label for="phone">Введите новый nickname</label>
+                            <div class='form-input-modal'>
+                                <input name="nickname" placeholder='Введите новый nickname'>
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                    </div>
+                
+                    <div class='settings-password' style='display:none;'> 
+                        <div class='form-control'>
+                            <label for="phone">Старый пароль</label>
+                            <div class='form-input-modal'>
+                                <input name="password-s" placeholder='Введите текущий пароль'>
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+
+                        <div class='form-control'>
+                            <label for="phone">Новый пароль</label>
+                            <div class='form-input-modal'>
+                                <input name="password-n" placeholder='Введите новый пароль'>
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                    </div>
+                
+                    <div class='settings-discordID' style='display:none;'>
+                        <div class='form-control'>
+                            <label for="phone">Введите новый discordID</label>
+                            <div class='form-input-modal'>
+                                <input name="password-n" placeholder='Введите новый discordID'>
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class='submit-btn-contanier'>
+                    <div class='submit-btn'>
+                        <input type="submit" value="Сохранить">   
+                    </div>   
+                </div>
+            </form>
+            </div> 
+        </div> 
+    </div>
+
+

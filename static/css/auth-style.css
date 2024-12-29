@@ -140,7 +140,7 @@ body {
     font-size: 28px;
     text-align: center;
     margin-bottom: 20px;
-    color: white;
+    color: #f0f8ff;
 }
 
 .container p {
@@ -159,14 +159,14 @@ input[type="password"] {
     border: 2px solid #a7171745;
     border-radius: 10px;
     background-color: #484848;
-    color: white;
+    color: #f0f8ff;
     font-weight: 750;
     font-size:  12px;
 }
 
 .container a
 {
-    color: white;
+    color: #f0f8ff;
     font-weight: 700;
     transition: 0.5s;
 }
@@ -206,7 +206,7 @@ input[type="password"] {
     display: flex;
     text-decoration: none;
     padding: 15px 0;
-    color: white;
+    color: #f0f8ff;
     font-weight: 800;
     position: absolute;
     bottom: 30%;
@@ -237,7 +237,7 @@ input[type="password"] {
 }
 
 footer {
-    color: white;
+    color: #f0f8ff;
     text-align: center;
     margin-top: auto;
 }
@@ -248,7 +248,7 @@ footer {
     justify-content: center;
     text-align: center;
     background: #141414;
-    color: white;
+    color: #f0f8ff;
     padding: 20px;
     border-radius: 10px;
     box-shadow: #2a2929 0 0 10px 5px;
@@ -275,7 +275,7 @@ footer {
     border-radius: 5px;
     border: #1f1e1e;
     background: #1f1e1e;
-    color: white;
+    color: #f0f8ff;
     outline: none;
 }
 
@@ -296,9 +296,11 @@ footer {
     justify-content: center;
 }
 .line-reg {
-    background: #4a4a4a;
-    height: 2px;
-    margin-bottom: 25px;
+    background: #0e0e0e;
+    height: 3px;
+    border-radius: 10px;
+    margin: 7px 5px 7px 5px;
+    box-shadow: #0e0e0e 0 0 5px 2px;
 }
 
 .header-container p {
@@ -321,7 +323,7 @@ footer {
 .submit-btn-contanier input {
     padding: 10px 60px;
     border-radius: 5px;
-    color: white;
+    color: #f0f8ff;
     background: #1f1f1f;
     border: none;
     box-shadow: #0f0e0e 3px 5px 3px 4px;
@@ -370,6 +372,20 @@ footer {
     background: #e81c5a8c;
 }
 
+a.change_pasw {
+    font-size: 12px;
+    display: flex;
+    justify-content: end;
+    font-weight: 600;
+    color: #bababa;
+    padding: 10px 5px;
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+}
+
+a.change_pasw:hover {
+    color: #f0f8ff;
+}
 
 @media (max-width: 768px) {
     .circle-1 {

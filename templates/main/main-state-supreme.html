@@ -1,6 +1,10 @@
 <div class="contanier-content">
     <div class='create-container-button' id='create-container-button'>
-        <a class='create-btn' id='create-btn-district'>Создать Обращение</a>
+        <a class='create-btn' id='create-btn-district'
+            {% if not current_user.is_authenticated %} 
+            onclick="notification()" 
+            {% endif %}
+        >Создать Обращение</a>
     </div>
     <div class='header-container'>
         <a class='precedents-btn btn-court' href="{{ url_for('main.district_court_info', info_type='precedents') }}">

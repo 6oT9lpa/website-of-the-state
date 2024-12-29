@@ -1,6 +1,6 @@
 body
 {
-    color: white;
+    color: #f0f8ff;
     overflow-x: hidden;
     overflow-y: hidden;
 }
@@ -276,7 +276,7 @@ main
 .action {
     background-color: #838383;
     padding: 5px;
-    color: white;
+    color: #f0f8ff;
     font-weight: 700;
     font-size: 16px;
     border-radius: 25px;
@@ -354,7 +354,7 @@ main
     border-radius: 5px;
     border: #1f1e1e;
     background: #1f1e1e;
-    color: white;
+    color: #f0f8ff;
 }
 
 .form-control {
@@ -432,6 +432,6 @@ main
     font-size: 14px;
     background: #141414;
     border: none;
-    color: white;
+    color: #f0f8ff;
     font-weight: 600;
 }

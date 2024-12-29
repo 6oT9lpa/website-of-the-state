@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index-style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/animation-bg.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/doc-style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile-style.css') }}">
     <title>Majestic State</title>
 </head>
@@ -14,23 +15,9 @@
     {% endblock %}
 
     <main>
-    {% with messages = get_flashed_messages() %}
-        {% if messages %} 
-            <div id="access-message" class='access-message'>
-                <span class="modal-close-error">&times;</span>
-                <p><strong>Внимание!</strong> {{ messages[0] }}<p>
-                {% if not current_user.is_authenticated %} 
-                    <br>
-                    <a class='alert-button' href="{{ url_for('main.auth') }}">Войти в аккаунт</a>
-                {% endif %}
-            </div> <script src="{{ url_for('static', filename='js/script-error.js') }}" ></script>
-        {% endif %}
-    {% endwith %}
-
     {% block main %}
         {% include 'main/main-profile.html' %}
     {% endblock %}
-    
     </main>
 
     <div class="lines">
@@ -38,35 +25,9 @@
         <div class="line"></div>
         {% endfor %}
     </div>
-    {% block footer %}
-        {% include 'footer/footer.html' %}
-    {% endblock %}
-    
-    <div class="background"></div>
-    <script>
-        let ClsBtn = document.querySelector('.modal-close');
-        let MessangerWindow = document.querySelector('#messanger');
-        let ClicksBtn = 0;
 
-        MessangerWindow.onclick = function () {
-            ClicksBtn++
-            alert('hello');
-            if(ClicksBtn > 1 & ClicksBtn < 3) {
-                alert('2 or more')
-            }
-            if(ClicksBtn > 2) {
-                ClicksBtn = 0;
-            }
-        }
-
-        let bg = document.querySelector('.background');
-        window.addEventListener('mousemove', function(e) {
-            let x = e.clientX / window.innerWidth;
-            let y = e.clientY / window.innerHeight;  
-            bg.style.transform = 'translate(-' + x * 50 + 'px, -' + y * 50 + 'px)';
-        });
-
-    </script>
+    <div class="overlay" id='overlay'></div>
+    <script src="{{ url_for('static', filename='js/script-profile.js') }}"></script>
 </body>
 </html>
 

@@ -44,7 +44,6 @@
         {% if not session.get('isVerification') %}
         <div class='header-container'>
             <h4>Регистрация</h4>
-            <p>получение доступа к аккаунту</p>
         </div>
         <div class='line-reg'></div>
         <div class='main-contanier'>
@@ -94,26 +93,10 @@
         </div>
         {% endif %}
     </div>
-    
-
-    {% with messages = get_flashed_messages() %}
-            {% if messages %} 
-            <div id="access-message" class='access-message'>
-                <span class="modal-close-error">&times;</span>
-                <p><strong>Внимание!</strong> {{ messages[0] }}<p>
-                {% if not current_user.is_authenticated %} 
-                    <br>
-                    <a class='alert-button' href="{{ url_for('main.auth') }}">Войти в аккаунт</a>
-                {% endif %}
-            </div> <script src="{{ url_for('static', filename='js/script-error.js') }}" ></script>
-        {% endif %}
-    {% endwith %}
 
     {% if isVerification %}
         <div class='overlay'></div>
     {% endif %}
-
-    <script src="{{ url_for('static', filename='js/script-error.js') }}"></script>
     <script src="{{ url_for('static', filename='js/script-auth.js') }}"></script>
 </body>
 </html>

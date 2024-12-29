@@ -20,16 +20,11 @@ const hideElement = (element) => {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    const modalButtons = document.querySelectorAll('.modal-button');
-    const closeButton = document.querySelector('.modal-close');
-    const overlay = document.querySelector('.overlay');
-    const body = document.body; 
     const checkbox1 = document.getElementById('param1_checkbox');
     const checkbox2 = document.getElementById('param2_checkbox');
     const input_checkbox1 = document.getElementById('input_checkbox1');
-    const input_checkbox2 = document.getElementById('input_checkbox2');
+    const input_checkbox2 = document.querySelectorAll('#input_checkbox2');
     const caseInput = document.getElementById('caseInput');
-    const access_message = document.querySelector('#access-message');
 
     if (checkbox1 && input_checkbox1) {
         checkbox1.addEventListener('change', function() {
@@ -47,78 +42,85 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox2.addEventListener('change', function() {
             if (this.checked) {
                 enableFields([arrest_time, param2_nickname]);
-                showElement(input_checkbox2)
+                input_checkbox2.forEach(i => showElement(i));
             } else {
                 disableFields([arrest_time, param2_nickname]);
-                hideElement(input_checkbox2)
+                input_checkbox2.forEach(i => hideElement(i));
             }
         });
-    }
-    
-    modalButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            const modalId = button.getAttribute('data-modal');
-            const modalElem = document.querySelector(`.modal[data-modal="${modalId}"]`);
-    
-            if (isAuthenticated && isPermission) { 
-                modalElem.classList.add('active');
-                document.querySelectorAll('#overlay').forEach(o => {
-                    o.classList.add('active');
-                });
-                body.style.position = 'fixed'; 
-                body.style.width = '100%'; 
-            }
-            else{
-                access_message.classList.add('hidden'); 
-                access_message.style.display = 'block'; 
-                access_message.style.transform = 'translateY(30px)';
-                setTimeout(() => {
-                    access_message.style.transform = 'translateY(0px)';
-                    access_message.classList.add('show');
-                    access_message.classList.remove('hidden'); 
-                }, 10); 
-            }
-        });
-    });
-
-    if (isAuthenticated && isPermission) {
-        closeButton.addEventListener('click', closeModal);
-        overlay.addEventListener('click', closeModal);
-    } 
-    else{
-        document.querySelector('.modal-close-error')?.addEventListener('click', closeModal_error);
     }
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            closeModal();
-            closeModal_error();
+            hideModal(document.querySelector('#modal-creater'));
         }
     });
 
-    function closeModal_error() {
-        if (access_message) {
-            access_message.classList.remove('show');
-            access_message.style.transform = 'translateY(-30px)';
-            access_message.classList.add('hidden');
-            setTimeout(() => {
-                access_message.style.display = 'none'; 
-            }, 500); 
-        }
+    function showModal(modal) {
+        modal.style.display = 'flex';
+        document.querySelectorAll('#overlay').forEach(o => {
+            o.classList.add('active');
+        });
+
+        setTimeout(() => {
+            modal.classList.remove('hidden-modal');
+            modal.classList.add('show-modal');
+        }, 10);
     }
 
-    function closeModal() {
-        const activeModal = document.querySelector('.modal.active');
-        if (activeModal) {
-            activeModal.classList.remove('active');
+    function hideModal(modal) {
+        modal.classList.remove('show-modal');
+        modal.classList.add('hidden-modal');
+
+        setTimeout(() => {
+            modal.style.display = 'none';
             document.querySelectorAll('#overlay').forEach(o => {
                 o.classList.remove('active');
             });
-            body.style.position = ''; 
-            body.style.width = '';
-        }
+        }, 450);
     }
+
+    if (isAuthenticated && isPermission) {
+        document.getElementById('open-modal-creater').addEventListener('click', function(event) {
+            event.preventDefault();
+            showModal(document.querySelector('#modal-creater'));
+        })
+        document.getElementById('close-modal-creater').addEventListener('click', function(event) {
+            event.preventDefault();
+            hideModal(document.querySelector('#modal-creater'));
+        })
+    }
+
+    function setupDropdown(dropdown, dropdownBtn, dropdownMenu, hiddenInputId) {
+        if (!dropdown || !dropdownBtn || !dropdownMenu) return;
+    
+        dropdownBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            dropdown.classList.toggle('open');
+            dropdownBtn.classList.toggle('active');
+        });
+    
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target) && !dropdownBtn.contains(e.target)) {
+                dropdown.classList.remove('open');
+                dropdownBtn.classList.remove('active');
+            }
+        });
+    
+        dropdownMenu.addEventListener('click', (e) => {
+            e.preventDefault();
+            const action = e.target.dataset.action;
+            dropdownBtn.textContent = e.target.textContent;
+            document.getElementById(hiddenInputId).value = action;
+            dropdown.classList.remove('open');
+            dropdownBtn.classList.remove('active');
+            console.log(document.querySelector('#action-1').value);
+
+            selectOption(document.querySelector('#action-1').value) 
+        });
+    }
+    setupDropdown(document.querySelector('#dropdown-1'), document.querySelector('#dropdown-btn-1'), document.querySelector('#dropdown-menu-1'), 'action-1');
+
 }); 
 
 function toggleOptions() {
@@ -149,34 +151,30 @@ const input_degreeRI = document.getElementById('degreeRI');
 const input_applicationNum = document.getElementById('applicationNum');
 const input_nameCrimeOrgan = document.getElementById('nameCrimeOrgan');
 const input_adreasCrimeOrgan = document.getElementById('adreasCrimeOrgan');
-const wrapperOrder = document.getElementById('order-wrapper');
 const termImprisonment = document.getElementById('termImprisonment');
-const wrapperResolution = document.getElementById('resolution-wrapper');
-const wrapperAgenda = document.getElementById('agenda-wrapper');
-const contanier_res = document.getElementById('contanier-wrapper_res');
-const contanier_order = document.getElementById('contanier-wrapper_order');
-const contanier_agenda = document.getElementById('contanier-wrapper_agenda');
 const formBtn = document.getElementById('btn');
 const case_input = document.getElementById('caseInput');
 const arrest_time = document.getElementById('arrest_time');
 
 function showError(input, message) {
-    const formControl = input.parentElement;
-    formControl.className = 'form-input error';
-    const errorSpan = formControl.querySelector('#is-unvalid');
-    errorSpan.innerText = message;
+    const formControl = input.parentElement; 
+    const errorSpan = formControl.parentElement.querySelector('#is-invalid'); 
+    if (errorSpan) {
+        errorSpan.innerText = message;
+        formControl.className = 'form-input-modal error'; 
+    } 
 }
 
 function clearError(input) {
-    const formControl = input.parentElement;
-    formControl.className = 'form-input'; 
-    const errorSpan = formControl.querySelector('#is-unvalid');
+    const formControl = input.parentElement; 
+    const errorSpan = formControl.parentElement.querySelector('#is-invalid'); 
     if (errorSpan) {
-        errorSpan.innerText = '';
+        errorSpan.innerText = ''; 
+        formControl.className = 'form-input-modal'; 
     }
 }
 
-function VaidateFormParam2Nickname(input){
+function VaidateFormParam2Nickname(input) {
     if (input.value === '') {
         showError(input, 'Поле не может быть пустым');
         return false;
@@ -398,7 +396,6 @@ function ValidFormTypeOrder(input) {
         elements.forEach(element => hideElement(element));
         disableFields([input_degreeRI, input_applicationNum, param1, param2, param3, param4]);
 
-        // Анимация в зависимости от типа ордера
         switch (input.value) {
             case 'SA':
             case 'Search Access':
@@ -556,8 +553,12 @@ function removeValidationListener(field) {
     }
 }
 
+const contanier_res = document.getElementById('contanier-wrapper_res');
+const contanier_order = document.getElementById('contanier-wrapper_order');
+const wrapperResolution = document.getElementById('resolution-wrapper');
+const wrapperOrder = document.getElementById('order-wrapper');
+
 function selectOption(label) {
-    const selectedValue = document.getElementById('selected-value').getElementsByTagName('span')[0];
 
     [wrapperOrder, wrapperResolution].forEach(wrapper => {
         wrapper.classList.remove('hidden-wrapper');
@@ -570,23 +571,29 @@ function selectOption(label) {
         container.style.display = 'none';
     });
 
-    selectedValue.textContent = label;
-    toggleOptions();
-
     disableFields([param2_nickname, typeOrder, case_input, arrest_time, param1, param2, param3, param4, param5, param6, param7, input_degreeRI, input_applicationNum, input_adreasCrimeOrgan, input_nameCrimeOrgan]);
     let selectedWrapper;
+    let contanier_wrapper;
     switch(label){
-        case 'Ордер':
+        case 'Order':
             selectedWrapper = wrapperOrder;
             contanier_wrapper = contanier_order;
             wrapperOrder.classList.add('hidden-wrapper');
+
+            contanier_order.style.display = 'block';
+            contanier_order.style.height = 'auto';
+
             enableFields([typeOrder]);
             toggleCustomButton(false);
             break;
         
-        case 'Постановление':
+        case 'Resolution':
             selectedWrapper = wrapperResolution;
             contanier_wrapper = contanier_res;
+
+            contanier_res.style.display = 'block';
+            contanier_res.style.height = 'auto';
+
             wrapperResolution.classList.add('hidden-wrapper');
             toggleCustomButton(true);
             break;
@@ -594,9 +601,7 @@ function selectOption(label) {
 
     if (selectedWrapper) {
         selectedWrapper.style.display = 'block';
-        contanier_wrapper.style.display = 'flex';
-        selectedWrapper.style.height = selectedWrapper.scrollHeight + 'px';
-        contanier_wrapper.style.height = selectedWrapper.scrollHeight + 'px';
+        selectedWrapper.style.height = selectedWrapper.scrollHeight + 'px'
 
         selectedWrapper.addEventListener('transitionend', function handler() {
             selectedWrapper.style.height = 'auto';
@@ -607,37 +612,28 @@ function selectOption(label) {
 }
 
 const static = document.getElementById('static')
+const checkbox1 = document.getElementById('param1_checkbox');
+const checkbox2 = document.getElementById('param2_checkbox');
 
 if (isAuthenticated && isPermission) {
     formBtn.addEventListener('click', function(event) {
         if (static.value === '' && !ValidFormTypeOrder(typeOrder)) {
             event.preventDefault();
+            console.log('static', static);
             return;
         }
 
+        let isValid = true;
         if (wrapperResolution.classList.contains('hidden-wrapper')) {
-            document.getElementById('param1_checkbox').addEventListener('change', function () {
-                const caseInput = document.getElementById('case');
-                
-            });
-            
-            document.getElementById('param2_checkbox').addEventListener('change', function () {
-                const arrestTime = document.getElementById('arrest_time');
-                if (this.checked) {
-                    enableFields([arrestTime]);
-                } else {
-                    disableFields([arrestTime]);
-                }
-            });
-            
-            if(!ValidFormResolutionCaseInput(case_input) || !ValidFormResolutionArrestTime(arrest_time)) {
-                event.preventDefault();
-                return;
-            }
+            if (!ValidFormResolutionCaseInput(case_input) && checkbox1.checked) { isValid = false; }
+            if (!VaidateFormParam2Nickname(param2_nickname) && checkbox2.checked) { isValid = false; }
+            if (!ValidFormResolutionArrestTime(arrest_time) && checkbox2.checked) { isValid = false; }
         }
 
-        if (wrapperAgenda.classList.contains('hidden-wrapper')) {
+        if (!isValid) {
+            event.preventDefault();
         }
+
     });
 
     document.getElementById('resolutionForm').addEventListener('submit', function() {

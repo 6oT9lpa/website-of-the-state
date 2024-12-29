@@ -17,6 +17,10 @@
         {% include 'main/main.html' %}
     {% endblock %}
 
+    {% block error %}
+        {% include 'api/error.html' %}
+    {% endblock %}
+
     
     <main> 
         {% with messages = get_flashed_messages() %}

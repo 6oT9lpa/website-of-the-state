@@ -6,7 +6,7 @@ with open('./python/config.json', 'r') as f:
     config = json.load(f)
     
 def setup_cogs(bot):
-     for extension in disnake.utils.search_directory("python/cogs"):
+    for extension in disnake.utils.search_directory("python/cogs"):
         try:
             bot.load_extension(extension)
         except Exception as error:

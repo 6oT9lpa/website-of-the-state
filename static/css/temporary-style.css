@@ -31,14 +31,14 @@ iframe {
 }
 .button-approve {
     background-color: #4caf50;
-    color: white;
+    color: #f0f8ff;
 }
 .button-approve:hover {
     background-color: #45a049;
 }
 .button-reject {
     background-color: #f44336;
-    color: white;
+    color: #f0f8ff;
 }
 .button-reject:hover {
     background-color: #e53935;
@@ -84,12 +84,12 @@ input.obl2{
 
 input.obl1:hover{
     box-shadow:0px -5px 0 #088 inset;
-    color: white;
+    color: #f0f8ff;
     font-size: 16px !important;
 }
 input.obl2:hover{
     box-shadow:0px -5px 0 rgb(118, 1, 48) inset;
-    color: white;
+    color: #f0f8ff;
     font-size: 16px !important; 
 }
 

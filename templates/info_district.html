@@ -14,9 +14,6 @@
     {% block header %}
         {% include 'header/header-doc.html' %}
     {% endblock %}
-    {% block content %}
-        {% include 'main/new-year.html' %}
-    {% endblock %}
 
     {% if info_type == 'considered_claims' %}
     <div id="judicial-content">
@@ -48,7 +45,7 @@
 
     {% if info_type == 'precedents' %}
     {% endif %}
-
+    
     {% if info_type == 'rules' %}
     <div id="judicial-content">
         <div class="contanier-content">
@@ -136,20 +133,6 @@
         <div class="line"></div>
         {% endfor %}
     </div>
-
-    {% with messages = get_flashed_messages() %}
-    {% if messages %} 
-    <div id="access-message" class='access-message'>
-        <span class="modal-close-error">&times;</span>
-        <p><strong>Внимание!</strong> {{ messages[0] }}<p>
-        {% if not current_user.is_authenticated %} 
-            <br>
-            <a class='alert-button' href="{{ url_for('main.auth') }}">Войти в аккаунт</a>
-        {% endif %}
-    </div> <script src="{{ url_for('static', filename='js/script-error.js') }}" ></script>
-    {% endif %}
-    {% endwith %}
-
     <script src="{{ url_for('static', filename='js/script-complaint.js')}}"></script>
 </body>
 </html>

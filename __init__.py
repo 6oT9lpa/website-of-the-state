@@ -41,7 +41,25 @@ def get_next_id_user():
         return (last_id_user or 0) + 1
 
     return (last_id_guest or 0) + 1
+
+def get_next_num_resolution():
+    last_custom = db.session.query(func.max(CustomResolutionTheUser.current_number)).scalar()
+    last_resolution = db.session.query(func.max(ResolutionTheUser.current_number)).scalar()
+
+    if not last_custom:
+        return (last_resolution or 0) + 1
     
+    if not last_resolution:
+        return (last_custom or 0) + 1
+
+    if last_custom > last_resolution:
+        return (last_custom or 0) + 1
+
+    return (last_resolution or 0) + 1
+    
+def get_next_num_order():
+    last_order = db.session.query(func.max(OrderTheUser.current_number)).scalar()
+    return (last_order or 0) + 1
 
 def get_next_id_permission():
     last_id = db.session.query(func.max(PermissionUsers.id)).scalar()
@@ -79,8 +97,6 @@ class Users(db.Model, UserMixin):
     create_document = db.relationship('PDFDocument', back_populates='user')
     action_log = db.relationship('ActionUsers', back_populates='user')
     order = db.relationship('OrderTheUser', back_populates='user')
-
-
 
 class guestUsers(db.Model, UserMixin):
     __tablename__ = 'guest_users'
@@ -150,23 +166,6 @@ class PDFDocument(db.Model, UserMixin):
     user = db.relationship('Users', back_populates='create_document')
     order = db.relationship('OrderTheUser', back_populates='current_document')
 
-class ResolutionNumberCounter(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    current_number = db.Column(db.Integer, default=1, nullable=False)
-
-    @classmethod
-    def increment(cls, session):
-        counter = session.query(cls).first()
-        if not counter:
-            counter = cls(current_number=1)
-            session.add(counter)
-            session.commit()
-            logging.info("Initialized current_number with 1")
-        else:
-            counter.current_number += 1
-            session.commit()
-            logging.info(f"Incremented current_number to {counter.current_number}")
-        return counter.current_number
 
 class CustomResolutionTheUser(db.Model):
     __tablename__ = 'customer_resolution'
@@ -174,6 +173,7 @@ class CustomResolutionTheUser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     current_uid = db.Column(db.String(26), db.ForeignKey('pdf_document.uid'), nullable=False)
+    current_number = db.Column(db.Integer)
 
     custom_fields = db.Column(db.JSON)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
@@ -188,6 +188,7 @@ class ResolutionTheUser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     current_uid = db.Column(db.String(26), db.ForeignKey('pdf_document.uid'), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    current_number = db.Column(db.Integer)
 
     nickname_accused = db.Column(db.String(52), default='Гражданин')
     static_accused = db.Column(db.String(7))
@@ -209,13 +210,15 @@ class ResolutionTheUser(db.Model):
     user = db.relationship('Users', back_populates='resolution')
     current_document = db.relationship('PDFDocument', back_populates='resolution')
 
+
 class OrderTheUser(db.Model):
     __tablename__ = 'order'
 
     id = db.Column(db.Integer, primary_key=True)
     current_uid = db.Column(db.String(26), db.ForeignKey('pdf_document.uid'), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    
+    current_number = db.Column(db.Integer)
+
     nickname_accused = db.Column(db.String(52), default='Гражданин')
     static_accused = db.Column(db.String(7))
     discord_accused = db.Column(db.String(20))
@@ -227,12 +230,13 @@ class OrderTheUser(db.Model):
     articlesAccusation = db.Column(db.String(60), default='null')
     time = db.Column(db.String(60), default='null')
     type_order = db.Column(db.String(20), nullable=False)
-    
+
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     is_modertation = db.Column(db.Boolean, default=False)
 
     current_document = db.relationship('PDFDocument', back_populates='order')
     user = db.relationship('Users', back_populates='order')
+
 
 class News(db.Model):
     __tablename__ = 'news'
