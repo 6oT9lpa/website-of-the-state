@@ -33,13 +33,6 @@
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
-                        <div class='form-control'>
-                            <label for="phone">Discord Name</label>
-                            <div class='form-input-modal' id='phone-plaintiff'>
-                                {{ form.discordName(class="discord-id")}}
-                            </div>
-                            <span class="text-danger" id="is-invalid"></span>
-                        </div>
                     </div>
                     <div class='group-contaniner-modal'>
                         <div class='form-control'>
@@ -60,8 +53,8 @@
                     <div class='group-contaniner-modal'>
                         <div class='form-control'>
                             <label for="phone">Rank</label>
-                            <div class='form-input-modal' id='phone-plaintiff'>
-                                <select name="rank" id="rank" class="rank">
+                            <div class='form-input-modal' id='lower'>
+                                <select name="rank" id="rank" class="dropdown-select-ka">
                                     {% for rank in ranks[organ] %}
                                     <option value="{{ rank['id'] }}"{% if rank['id'] >= current_user.curr_rank %}disabled{%endif%}>{{ rank['id'] }} | {{ rank['name'] }}</option>
                                     {% endfor %}

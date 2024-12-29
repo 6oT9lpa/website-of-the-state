@@ -125,6 +125,18 @@
                             </div> 
                         {% endif %}
 
+                        {% if district.status != 'Waitting' and not district.judge %}
+                            <div class='submit-btn-contanier'>
+                                <div class='submit-btn'>
+                                    <form id="judgeForm" action="/judge_settings" method="POST">
+                                        <input type="hidden" name="uid" id="uidcompliant">
+                                        <input type="hidden" name="setting" value="prinatisk">
+                                        <input type="submit" class='accept-judge' value="Взять иск">
+                                        </form>      
+                                </div>   
+                            </div> 
+                        {% endif %}
+
                         {% if repltoisk | selectattr('moderation', 'equalto', false) | list | length > 0  and district.status != 'Waitting' %}
                             <div class='submit-btn-contanier'>
                                 <div class='submit-btn'>
@@ -359,7 +371,8 @@
             <div class='hodataistvo-complaint'>
                 <div class='main-content-complaint'>
                     <div class='description-content'>
-                        <h4 style='text-align: center;'>Судья {{ item.replyik['judge'] }} заявил самоотвод. Решение было принято в рамках установленных процедур с целью соблюдения беспристрастности и объективности в рассмотрении дела. Таким образом, дальнейшее разбирательство будет продолжено с участием другого судьи, назначенного в установленном порядке.</h4>
+                        {% if item.replyik['type_log'] == "samootvod" %}<h4 style='text-align: center;'>Судья {{ item.replyik['judge'] }} заявил самоотвод. Решение было принято в рамках установленных процедур с целью соблюдения беспристрастности и объективности в рассмотрении дела. Таким образом, дальнейшее разбирательство будет продолжено с участием другого судьи, назначенного в установленном порядке.</h4>
+                        {% elif item.replyik['type_log'] == "prinatisk" %}<h4 style='text-align: center;'>Судья {{ item.replyik['judge'] }} принял иск. Решение было оформлено и зарегистрировано в установленном порядке для дальнейшего судебного разбирательства.</h4>{% endif %}
                     </div>                    
                     <div class='footer-content'>
                         <p style='margin-top: -5px; font-size: 14px;'>Дата: 

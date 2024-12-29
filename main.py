@@ -263,6 +263,16 @@ def send_to_bot_log_dump(header, text):
   }
   redis_client.publish('log_dump', json.dumps(message))
 
+def send_to_bot_get_dsname(discordid):
+  message = {
+      'discordid': discordid
+  }
+  redis_client.publish('get_dsname', json.dumps(message))
+  response = redis_client.get(f'dsname_response_{discordid}') 
+  if response: 
+    return response.decode('utf-8') 
+  return 'Не определен'
+
 def send_to_bot_permission_none(is_permission):
     message = {'permission_none': is_permission}
     redis_client.publish('user_permission', json.dumps(message))
@@ -780,6 +790,28 @@ def judge_settings():
           del otherme_dict[key_to_delete]
       else:
         setattr(isk.district_court[0], type_otvod, None)
+  elif setting == "prinatisk":
+    isk = claimsStatement.query.filter_by(uid=uid).first()
+    status = check_isk_status(isk.district_court[0]) if isk.district_court else check_isk_status(isk.supreme_court[0])
+    if status == 'Judge':
+      if isk.district_court:
+        isk.district_court[0].judge = current_user.id
+      elif isk.supreme_court:
+        isk.supreme_court[0].judge = current_user.id
+      else:
+        return "Эта ошибка не должна произойти, но если вы её видите напишите в тех. поддержку", 400
+      replyik = {
+        'judge': current_user.nikname,
+        'type_log': 'prinatisk'
+      }
+      new_log = repltoisks(
+        current_uid=uid,
+        author_id=current_user.id,
+        replyik=replyik,
+        type_doc='log'
+      )
+      db.session.add(new_log)
+
   try:
     db.session.commit()
   except Exception as e:
@@ -1873,8 +1905,8 @@ def audit():
   if form.validate_on_submit():
     static = form.static.data
     action = form.action.data
-    discord_name = form.discordName.data
     discord_id = form.discordID.data
+    discord_name = send_to_bot_get_dsname(discord_id)
     reason = form.reason.data
 
     user = Users.query.filter_by(static=static).first()
