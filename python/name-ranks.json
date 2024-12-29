@@ -1,9 +1,9 @@
 {
     "SANG": [
         {
-            "id": 17,
+            "id": 5,
             "name": "Colonel",
-            "leader": false
+            "leader": true
         },
         {
             "id": 4,
@@ -12,12 +12,12 @@
         },
         {
             "id": 3,
-            "name": "Private First Class",
+            "name": "Private Second Class",
             "leader": false
         },
         {
             "id": 2,
-            "name": "Private Second Class",
+            "name": "Private First Class",
             "leader": false
         },
         {
@@ -30,7 +30,7 @@
         {
             "id": 13,
             "name": "Director",
-            "leader": false
+            "leader": true
         },
         {
             "id": 12,
@@ -96,174 +96,164 @@
     "GOV": [
         {
             "id": 21,
-            "name": "Governor",
-            "leader": false
+            "name": "Губернатор",
+            "leader": true
         },
         {
             "id": 20,
-            "name": "Deputy Governor",
+            "name": "\u0412\u0438\u0446\u0435-\u0413\u0443\u0431\u0435\u0440\u043d\u0430\u0442\u043e\u0440",
             "leader": false
         },
         {
             "id": 19,
-            "name": "Minister",
+            "name": "\u041c\u0438\u043d\u0438\u0441\u0442\u0440",
             "leader": false
         },
         {
             "id": 18,
-            "name": "Deputy Minister",
+            "name": "\u0417\u0430\u043c. \u041c\u0438\u043d\u0438\u0441\u0442\u0440\u0430",
             "leader": false
         },
         {
             "id": 17,
-            "name": "Head of Department",
+            "name": "\u0413\u043b\u0430\u0432\u0430 \u0414\u0435\u043f\u0430\u0440\u0442\u0430\u043c\u0435\u043d\u0442\u0430",
             "leader": false
         },
         {
             "id": 16,
-            "name": "Deputy Head of Department",
+            "name": "\u0417\u0430\u043c. \u0413\u043b\u0430\u0432\u044b \u0414\u0435\u043f\u0430\u0440\u0442\u0430\u043c\u0435\u043d\u0442\u0430",
             "leader": false
         },
         {
             "id": 15,
-            "name": "Chairman of the Supreme Court",
+            "name": "\u041f\u0440\u0435\u0434\u0441\u0435\u0434\u0430\u0442\u0435\u043b\u044c \u0412\u0435\u0440\u0445\u043e\u0432\u043d\u043e\u0433\u043e \u0421\u0443\u0434\u0430",
             "leader": false
         },
         {
             "id": 14,
-            "name": "Supreme Court Judge",
+            "name": "\u0412\u0435\u0440\u0445\u043e\u0432\u043d\u044b\u0439 \u0441\u0443\u0434\u044c\u044f",
             "leader": false
         },
         {
             "id": 13,
-            "name": "District Court Judge",
+            "name": "\u041e\u043a\u0440\u0443\u0436\u043d\u043e\u0439 \u0421\u0443\u0434\u044c\u044f",
             "leader": false
         },
         {
             "id": 12,
-            "name": "Assistant District Attorney",
+            "name": "\u0421\u0442. \u0410\u0433\u0435\u043d\u0442 USSS",
             "leader": false
         },
         {
             "id": 11,
-            "name": "Deputy District Attorney",
+            "name": "\u0421\u0442\u0430\u0440\u0448\u0438\u0439 \u041f\u0440\u043e\u043a\u0443\u0440\u043e\u0440",
             "leader": false
         },
         {
             "id": 10,
-            "name": "Prosecutor",
+            "name": "\u041f\u0440\u043e\u043a\u0443\u0440\u043e\u0440",
             "leader": false
         },
         {
             "id": 9,
-            "name": "Senior Prosecutor",
+            "name": "\u0421\u043f\u0435\u0446. \u0410\u0433\u0435\u043d\u0442 USSS",
             "leader": false
         },
         {
             "id": 8,
-            "name": "Deputy Prosecutor",
+            "name": "\u041c\u0435\u043d\u0435\u0434\u0436\u0435\u0440",
             "leader": false
         },
         {
             "id": 7,
-            "name": "Assistant Prosecutor",
+            "name": "\u0410\u0434\u0432\u043e\u043a\u0430\u0442",
             "leader": false
         },
         {
             "id": 6,
-            "name": "Trainee",
+            "name": "\u0410\u0433\u0435\u043d\u0442 USSS",
             "leader": false
         },
         {
             "id": 5,
-            "name": "Intern",
+            "name": "\u0422\u0438\u043f\u043e \u0425\u0417",
             "leader": false
         },
         {
             "id": 4,
-            "name": "Apprentice",
+            "name": "\u041c\u043b. \u0410\u0433\u0435\u043d\u0442 USSS",
             "leader": false
         },
         {
             "id": 3,
-            "name": "Assistant",
+            "name": "\u041f\u043e\u043c. \u041f\u0440\u043e\u043a\u0443\u0440\u043e\u0440\u0430",
             "leader": false
         },
         {
             "id": 2,
-            "name": "Probationer",
+            "name": "\u042e\u0440\u0438\u0441\u0442",
             "leader": false
         },
         {
             "id": 1,
-            "name": "Cadet",
+            "name": "\u0421\u0442\u0430\u0436\u0451\u0440",
             "leader": false
         }
     ],
     "LSPD": [
         {
-            "id": 16,
+            "id": 14,
             "name": "Chief",
             "leader": true
         },
         {
-            "id": 15,
+            "id": 13,
             "name": "Assistant Chief",
             "leader": false
         },
         {
-            "id": 14,
+            "id": 12,
             "name": "Curator of Department",
             "leader": false
         },
         {
-            "id": 13,
-            "name": "\u042f \u0441\u043e\u0441\u0430\u043b",
-            "leader": false
-        },
-        {
-            "id": 12,
+            "id": 11,
             "name": "Head of Department",
             "leader": false
         },
         {
-            "id": 11,
+            "id": 10,
             "name": "Deputy of Department",
             "leader": false
         },
         {
-            "id": 10,
+            "id": 9,
             "name": "Instructor",
             "leader": false
         },
         {
-            "id": 9,
+            "id": 8,
             "name": "Senior Lieutenant",
             "leader": false
         },
         {
-            "id": 8,
+            "id": 7,
             "name": "Lieutenant",
             "leader": false
         },
         {
-            "id": 7,
+            "id": 6,
             "name": "Senior Sergeant",
             "leader": false
         },
         {
-            "id": 6,
+            "id": 5,
             "name": "Sergeant",
             "leader": false
         },
         {
-            "id": 5,
-            "name": "Senior Lead Officer",
-            "leader": false
-        },
-        {
             "id": 4,
-            "name": "Officer III",
+            "name": "Senior Lead Officer",
             "leader": false
         },
         {
@@ -286,7 +276,7 @@
         {
             "id": 15,
             "name": "Sheriff",
-            "leader": false
+            "leader": true
         },
         {
             "id": 11,
@@ -348,7 +338,7 @@
         {
             "id": 15,
             "name": "Chief Physician",
-            "leader": false
+            "leader": true
         },
         {
             "id": 14,
@@ -420,5 +410,13 @@
             "name": "Apprentice",
             "leader": false
         }
-    ]
+    ],
+    "WN": [
+        {
+            "id": 1,
+            "name": "Director",
+            "leader": true
+        }
+    ],
+    "ranks_to_delete": []
 }

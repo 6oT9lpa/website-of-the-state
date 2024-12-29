@@ -40,6 +40,8 @@ body
 
 }
 
+
+
 @keyframes lights
 {
     0% {
@@ -355,6 +357,38 @@ main
     border: #1f1e1e;
     background: #1f1e1e;
     color: #f0f8ff;
+}
+
+.dropdown-select-ka {
+    appearance: none; /* Убирает стандартный стиль браузера */
+    background: #1f1e1e;
+    color: gray;
+    border: #1f1e1e solid 2px;
+    padding: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 5px;
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+    width: 95%; /* Задайте ширину, если нужно */
+    box-sizing: border-box;
+}
+
+.dropdown-select-ka:hover, .dropdown-select-ka:focus {
+    outline: none; /* Убирает стандартный outline */
+}
+
+.dropdown-select-ka option {
+    background-color: #141414;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+}
+.dropdown-select-ka option:disabled {
+    background-color: #141414;
+    color: gray;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .form-control {

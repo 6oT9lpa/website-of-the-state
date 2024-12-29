@@ -1,18 +1,82 @@
 <main>
 <div class="search-container">
+    {% if more_info %}
+    <div id="more_info" style="display: flex;">
+    <div style="display: block;">
+    <a href="/database" style="color:red;text-decoration: none;">&times;</a>
+    <div id="playerDetails" style="color:red;">
+        <form method="POST" action="/database_change">
+        <h2>Подробная информация</h2>
+        <p><strong>Никнейм:</strong> {{ user.nikname }}</p>
+        <p><strong>Static:</strong> {{ user.static }}</p>
+        <p><strong>Фракция:</strong> {{ user.organ }}</p>
+        <p><strong>Ранг:</strong> {{ user.curr_rank }}</p>
+        <p><strong>Discord:</strong> <input type="text" name="discordname" value="{{ user.discordname }}" {% if perm_change >= 3 %}{% else %} readonly {% endif %}></p>
+        <p><strong>Discord ID:</strong> <input type="text" name="discordid" value="{{ user.discordid }}" {% if perm_change >= 3 %}{% else %} readonly {% endif %}></p>
+    </div>
+    <div id="permissions" style="color:red; display: block;">
+        <h2>Права пользователя</h2>
+            <input type="hidden" name="user_id" value="{{ user.id }}">
+            <p><label>
+                <input type="checkbox" name="tech" {% if user.permissions[0].tech %}checked{% endif %} onclick="return false;">
+                Технический доступ
+            </label></p>
+            <p><label>
+                <input type="checkbox" name="prosecutor" {% if user.permissions[0].prosecutor %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
+                Прокурорский доступ
+            </label></p>
+            <p><label>
+                <input type="checkbox" name="lider" {% if user.permissions[0].lider %}checked{% endif %} {% if perm_change >= 4 %}{% else %} onclick="return false;" {% endif %}>
+                Лидерский доступ
+            </label></p>
+            <p><label>
+                <input type="checkbox" name="admin" {% if user.permissions[0].admin %}checked{% endif %} {% if perm_change >= 4 %}{% else %} onclick="return false;" {% endif %}>
+                Доступ Администратора
+            </label></p>
+            <p><label>
+                <input type="checkbox" name="high_staff" {% if user.permissions[0].high_staff %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
+                Старший состав
+            </label></p>
+            <p><label>
+                <input type="checkbox" name="creation_doc" {% if user.permissions[0].creation_doc %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
+                Доступ к созданию документов
+            </label></p>
+            <p><label>
+                <input type="checkbox" name="create_news" {% if user.permissions[0].create_news %}checked{% endif %} {% if perm_change >= 3 %}{% else %} onclick="return false;" {% endif %}>
+                Доступ к созданию новостей
+            </label></p>
+            <p><label>
+                <input type="checkbox" name="lawyer" {% if user.permissions[0].lawyer %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
+                Адвокатский доступ
+            </label></p>
+            {% if perm_change <= 1 %}{% else %} <button type="submit">Сохранить</button> {% endif %}</div>
+        </form></div>
+        <div id="ka" style="color:red; display: block; margin-left: 150px; overflow-y: auto;">
+        <h2>История КА</h2>
+        {% for log in ka_log %}
+            <div class="history-item" style="color:red;">
+                <p>{{ log.timespan }}</p>
+                <p>Name: {{ log.nikname }} | Discord Name: {{ log.discordname }}</p>
+                <p>Static: {{ log.static }} | DS ID: {{ log.discordid }}</p>
+                <p>Rank prev: {{  log.prev_rank }} | Rank curr: {{  log.curr_rank }}  | Action: {{ log.action }}</p>
+                <p>КА написал - {{ log.user.nikname }} | {{ log.user.static }}</p>
+            </div>
+            {% endfor %}</div></div>
+    {% else %}
     <div id="players">
     <div class="tabs">
         <button class="tab-button" onclick="showTab('users')">Пользователи</button>
         <button class="tab-button" onclick="showTab('ranks')">Ранги</button>
     </div>
     <div id="users" class="tab-content">
-        <form class="search-form" action="{{ url_for('main.database') }}" method="GET">
-            <label for="name">Name</label>
-            <input type="text" name="name" id="name" value="{{ request.args.get('name', '') }}">
-            <label for="static">Static</label>
-            <input type="text" name="static" id="static" value="{{ request.args.get('static', '') }}">
-            <label for="discord">Discord</label>
-            <input type="text" name="discord" id="discord" value="{{ request.args.get('discord', '') }}">
+        <form class="search-form" action="/database" method="GET">
+            <input type="hidden" name="search" value="True">
+            <select name="filter" id="filter">
+                <option value="Nikname">Имя Фамилия</option>
+                <option value="Static">Статик</option>
+                <option value="Discord">Дискорд</option>
+            </select>
+            <input type="text" name="text" id="text">
             <input type="submit" value="Search">
         </form>
         <table>
@@ -24,7 +88,7 @@
                 <th>Discord</th>
             </tr>
             {% for user in Users %}
-            <tr>
+            <tr class="user-row" data-user-id="{{ user.id }}">
                 <td>{{ user.nikname }}</td>
                 <td>{{ user.static }}</td>
                 <td>{{ user.organ }}</td>
@@ -34,10 +98,37 @@
             {% endfor %}
         </table>
     </div>
+    <div id="userDetails" style="display: none; margin-top: 20px;">
+        <h2>Подробная информация</h2>
+        <p><strong>Никнейм:</strong> <span id="userName"></span></p>
+        <p><strong>Static:</strong> <span id="userStatic"></span></p>
+        <p><strong>Фракция:</strong> <span id="userOrgan"></span></p>
+        <p><strong>Ранг:</strong> <span id="userRank"></span></p>
+        <p><strong>Discord:</strong> <span id="userDiscord"></span></p>
+    </div>
+    
+    <script>
+        // Открытие подробной информации о пользователе при двойном клике на строку таблицы
+        document.querySelectorAll('.user-row').forEach(row => {
+        row.addEventListener('dblclick', function() {
+            const userId = this.getAttribute('data-user-id');
+
+            // Отправляем GET-запрос на сервер для получения полной информации о пользователе
+            function openUserProfile(userId) {
+                    window.location.href = `/database_getdata?user_id=${userId}`;
+            }
+            document.querySelectorAll('.user-row').forEach(row => {
+                row.addEventListener('dblclick', () => {
+                    const userId = row.getAttribute('data-user-id'); // Получаем ID пользователя
+                    openUserProfile(userId);
+                });
+            });
+        });
+    });
+    </script>
     <div id="ranks" class="tab-content" style="display:none;">
         <label for="fraction">Фракция</label>
         <select name="fraction" id="fraction" onchange="filterRanksByFraction(this.value)">
-            <option value="">Select Fraction</option>
             <option value="LSPD">Los-Santos Police Department</option>
             <option value="LSCSD">Los-Santos Country Sheriff Department</option>
             <option value="FIB">Federal Investigation Bureau</option>
@@ -52,20 +143,26 @@
             <div class="fraction-group" data-fraction="{{ fraction }}">
                 <h3>{{ fraction }}</h3>
                 <ul id="{{ fraction }}-list" class="rank-list">
+                    <!-- Лидерский ранг -->
                     {% for rank in rank_list %}
-                    <li class="rank-item" data-id="{{ rank.id }}" {% if rank.leader %} data-leader="true" {% endif %}>
                         {% if rank.leader %}
-                        <!-- Лидерский ранг -->
-                        <input type="text" class="rank-id" value="{{ rank.id }}" readonly>
-                        <input type="text" class="rank-name" value="{{ rank.name }}" readonly>
-                        <span class="leader-label">Лидер</span>
-                        {% else %}
-                        <!-- Обычный ранг -->
-                        <input type="text" class="rank-id" value="{{ rank.id }}" readonly>
-                        <input type="text" class="rank-name" value="{{ rank.name }}"/>
-                        <button class="delete-rank" onclick="deleteRank('{{ fraction }}', {{ rank.id }})">Удалить</button>
+                        <li class="rank-item leader" data-id="{{ rank.id }}" data-leader="true">
+                            <input type="text" class="rank-id" value="{{ rank.id }}" readonly>
+                            <input type="text" class="rank-name" value="{{ rank.name }}" readonly>
+                            <span class="leader-label">Лидер</span>
+                        </li>
                         {% endif %}
-                    </li>
+                    {% endfor %}
+                    
+                    <!-- Обычные ранги -->
+                    {% for rank in rank_list %}
+                        {% if not rank.leader %}
+                        <li class="rank-item" data-id="{{ rank.id }}" data-leader="false">
+                            <input type="text" class="rank-id" value="{{ rank.id }}" readonly>
+                            <input type="text" class="rank-name" value="{{ rank.name }}"/>
+                            <button class="delete-rank" onclick="deleteRank('{{ fraction }}', {{ rank.id }})">Удалить</button>
+                        </li>
+                        {% endif %}
                     {% endfor %}
                 </ul>
                 <button class="add-rank" onclick="addRank('{{ fraction }}')">Добавить ранг</button>
@@ -78,46 +175,39 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 <script>
     // Инициализация сортировки для каждого списка
-    document.querySelectorAll('.rank-list').forEach(list => {
-        new Sortable(list, {
-            animation: 150,
-            handle: '.rank-item',
-            onStart(evt) {
-            // Находим элемент с лидером
+    document.querySelectorAll('.rank-list').forEach(rankList => {
+    new Sortable(rankList, {
+        animation: 150,
+        onStart(evt) {
+            // Если элемент с data-leader="true" перетаскивается, заблокировать перемещение
             const leaderItem = evt.from.querySelector('[data-leader="true"]');
-
-            if (leaderItem) {
-                const items = Array.from(evt.from.querySelectorAll('.rank-item'));
-                const leaderIndex = items.indexOf(leaderItem);
-                const draggedIndex = items.indexOf(evt.item);
-
-                // Проверка: если перетаскиваемый элемент выше лидера
-                if (draggedIndex < leaderIndex) {
-                    evt.item.setAttribute('draggable', 'false'); // Блокируем перетаскивание
-                }
+            if (leaderItem && evt.item === leaderItem) {
+                // Заблокировать перетаскивание лидера
+                evt.item.setAttribute('draggable', 'false');
             }
         },
         onEnd(evt) {
-            // Восстановление возможности перетаскивания для всех элементов после завершения
+            // Восстановление перетаскивания для всех элементов
             evt.from.querySelectorAll('.rank-item').forEach(item => {
                 item.setAttribute('draggable', 'true');
             });
-            updateRankIds(evt.from); // Обновляем ID после перетаскивания
-            console.log(`Item moved in ${evt.from.id}`);
+
+            // Пересчитываем ID после перетаскивания
+            updateRankIds(evt.from);
         }
-        });
     });
+});
+
 
     // Обновление ID для ранга (реверсный расчет)
     function updateRankIds(list) {
-        let index = list.querySelectorAll('.rank-item').length; // Начинаем с самого последнего ID
+        let index = list.querySelectorAll('.rank-item').length; 
         list.querySelectorAll('.rank-item').forEach(item => {
-            const newId = index--; // Присваиваем новые ID на основе позиции в списке (в обратном порядке)
+            const newId = index--; 
             item.querySelector('.rank-id').value = newId;
         });
     }
 
-    // Фильтрация по фракции
     function filterRanksByFraction(fraction) {
         document.querySelectorAll('.fraction-group').forEach(group => {
             if (!fraction || group.dataset.fraction === fraction) {
@@ -128,7 +218,6 @@
         });
     }
 
-    // Добавление нового ранга
     function addRank(fraction) {
         const rankList = document.getElementById(`${fraction}-list`);
         const newId = generateNewId(rankList);
@@ -136,7 +225,7 @@
         const newItem = document.createElement('li');
         newItem.className = 'rank-item';
         newItem.setAttribute('data-id', newId);
-        newItem.setAttribute('data-leader', 'false'); // Обычный ранг
+        newItem.setAttribute('data-leader', 'false'); 
         newItem.innerHTML = `
             <input type="text" class="rank-id" value="${newId}" readonly>
             <input type="text" class="rank-name" value="Новый ранг">
@@ -144,7 +233,7 @@
         `;
 
         rankList.appendChild(newItem);
-        updateRankIds(rankList); // Пересчитываем ID после добавления нового ранга
+        updateRankIds(rankList); 
     }
 
     // Генерация нового ID
@@ -157,19 +246,29 @@
         return maxId + 1;
     }
 
-    // Удаление ранга
+    // Массив для хранения удалённых рангов
+    let ranksToDelete = [];
+
+    // Функция для удаления ранга
     function deleteRank(fraction, id) {
         const rankItem = document.querySelector(`[data-fraction="${fraction}"] [data-id="${id}"]`);
         if (rankItem) {
+            // Добавляем ранг в массив удаляемых
+            ranksToDelete.push({
+                organ: fraction,
+                id: id
+            });
+
             rankItem.remove();
-            updateRankIds(document.getElementById(`${fraction}-list`)); // Пересчитываем ID после удаления
+            updateRankIds(document.getElementById(`${fraction}-list`)); 
         }
     }
 
-    // Сохранение изменений
+    // Функция для сохранения рангов
     function saveRanks() {
         const updatedRanks = {};
-
+        
+        // Собираем обновленные ранги
         document.querySelectorAll('.fraction-group').forEach(group => {
             const fraction = group.dataset.fraction;
             const ranks = [];
@@ -186,13 +285,23 @@
             updatedRanks[fraction] = ranks;
         });
 
-        console.log('Saving ranks:', updatedRanks);
+        // Добавляем массив для удаления в запрос
+        const dataToSend = {
+            ...updatedRanks,
+            ranks_to_delete: ranksToDelete
+        };
+
+        console.log('Saving ranks:', dataToSend);
+
+        // Очищаем массив для удаления после отправки
+        ranksToDelete = [];
+
         fetch('/save_ranks', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(updatedRanks)
+            body: JSON.stringify(dataToSend)
         }).then(response => {
             if (response.ok) {
                 alert('Изменения сохранены!');
@@ -201,9 +310,8 @@
             }
         });
     }
-    
 </script>
-
+{% endif %}
 
     <style>
         .sortable-ghost {
@@ -223,6 +331,9 @@
         }
         .group {
             margin-bottom: 20px;
+        }
+        #userDetails  {
+            color: red;
         }
     </style>        
     </div>

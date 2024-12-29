@@ -352,6 +352,27 @@ async def process_information_resolution_message(dm_message):
                 traceback.print_exc()
         await asyncio.sleep(1)
 
+async def process_get_dsname(bot):
+    pubsub = redis_client.pubsub()
+    pubsub.subscribe('get_dsname')
+    
+    while True:
+        message = pubsub.get_message()
+        if message and message['type'] == 'message':
+            try:
+                print(f"Получено сообщение: {message['data']}")
+                data = json.loads(message['data'])
+                
+                discordid = data['discordid']
+                
+                user = await bot.fetch_user(discordid)
+                redis_client.set(f'dsname_response_{discordid}', user.name)
+                
+            except Exception as e:
+                print(f"Ошибка обработки сообщения: {e}")
+                traceback.print_exc()
+        await asyncio.sleep(1)
+
 def setup(bot):
     dm_message = SendDmMessage(bot)
     bot.loop.create_task(process_invite_messages(dm_message))
@@ -360,4 +381,5 @@ def setup(bot):
     bot.loop.create_task(process_information_resolution_message(dm_message))
     bot.loop.create_task(process_invite_changepass(dm_message))
     bot.loop.create_task(process_notifdm(dm_message))
+    bot.loop.create_task(process_get_dsname(bot))
     bot.add_cog(SendDmMessage(bot))
