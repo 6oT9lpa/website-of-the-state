@@ -18,7 +18,7 @@
         <h2>Права пользователя</h2>
             <input type="hidden" name="user_id" value="{{ user.id }}">
             <p><label>
-                <input type="checkbox" name="tech" {% if user.permissions[0].tech %}checked{% endif %} onclick="return false;">
+                <input type="checkbox" name="tech" {% if user.permissions[0].tech %}checked{% endif %} onclick="return false;" >
                 Технический доступ
             </label></p>
             <p><label>

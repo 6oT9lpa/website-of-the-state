@@ -1,9 +1,14 @@
 {
     "SANG": [
         {
-            "id": 5,
+            "id": 6,
             "name": "Colonel",
             "leader": true
+        },
+        {
+            "id": 5,
+            "name": "Major",
+            "leader": false
         },
         {
             "id": 4,
@@ -96,7 +101,7 @@
     "GOV": [
         {
             "id": 21,
-            "name": "Губернатор",
+            "name": "\u0413\u0443\u0431\u0435\u0440\u043d\u0430\u0442\u043e\u0440",
             "leader": true
         },
         {
