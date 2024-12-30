@@ -10,7 +10,7 @@ class ModerationDoc(commands.Cog):
         self.bot = bot     
         self.data_file_path = os.path.join(os.getcwd(), "message_data.json")
         self.messages = {}
-        self.channel_id = 1286759030257221714
+        self.channel_id = 1323283005086760991
         self.message_data = {}
         
     def save_message_data(self):

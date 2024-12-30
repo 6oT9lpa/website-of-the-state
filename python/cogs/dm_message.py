@@ -8,7 +8,7 @@ import os, time, sys
 class SendDmMessage(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.channel_id = 1286759030257221714
+        self.channel_id = 1323283005086760991
         
     async def send_dm_resolution(self, uid, nickname, static, discordid):
         try:

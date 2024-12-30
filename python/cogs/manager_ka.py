@@ -8,7 +8,7 @@ import os, time, sys
 class ManagerAuditMessage(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.channel_id = 1286759030257221714
+        self.channel_id = 1323282948316725372
     
     async def handle_action(self, action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason):
         channel = self.bot.get_channel(self.channel_id)
