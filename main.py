@@ -2049,14 +2049,14 @@ def database_change():
     high_staff = request.form.get('high_staff')
     creation_doc = request.form.get('creation_doc')
     create_news = request.form.get('create_news')
-    lawer = request.form.get('lawer')
+    lawer = request.form.get('lawyer')
     discordname = request.form.get('discordname')
     discordid = request.form.get('discordid')
     if perm_level >= 2:
       user.permissions[0].prosecutor = True if prosecutor == 'on' else False
       user.permissions[0].high_staff = True if high_staff == 'on' else False
       user.permissions[0].creation_doc = True if creation_doc == 'on' else False
-      user.permissions[0].lawer = True if lawer == 'on' else False
+      user.permissions[0].lawyer = True if lawer == 'on' else False
       user.discordname = discordname
       user.discordid = discordid
     if perm_level >= 3:
@@ -2496,7 +2496,7 @@ def create_doc():
         num = 1
         if formResolution.param1.data:
           text = (f"{num}. Возбудить уголовное дело в отношении {'сотрудника ' + user.organ if user else 'гражданина'} "
-                  f"{nickname if nickname != '' else ''}, с номером паспортные данные {static}. Присвоить делу идентификатор {formResolution.case.data} и принять его к производству прокуратурой штата.")
+                  f"{nickname if nickname != '' else ''}, с номером паспорта {static}. Присвоить делу идентификатор {formResolution.case.data} и принять его к производству прокуратурой штата.")
           y = draw_multiline_text(pdf, text, 15, y)
           y -= 5
           num += 1
@@ -2784,7 +2784,6 @@ def resolution():
         send_to_bot_permission_none(False)
         return handle_moderation(moder_custom_resolution, 11, is_order=False, is_resolution=True, template_name='temporary_page.html')
 
-    # Если is_moderation=False, и отсутствует доступ к /moderation
     if not is_moderation_link:
       return redirect(url_for('main.resolution', uid=f"{base_uid}/moderation"))
 

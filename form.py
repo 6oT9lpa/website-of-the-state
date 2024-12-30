@@ -40,7 +40,7 @@ class FormCreateDoc(FlaskForm):
     
 class FormCreateResolution(FormCreateDoc):   
     param1 = BooleanField(label="Возбуждение уголовного дела.")
-    param2 = BooleanField(label="Запрос видеофиксации задеражания.")
+    param2 = BooleanField(label="Запрос видеофиксации задержания.")
     param3 = BooleanField(label="Запрос перснональных данных.")
     param4 = BooleanField(label="Запрет на смену перснональных данных.")
     param5 = BooleanField(label="Запрет на увольнение, перевод в другую фракцию.")
