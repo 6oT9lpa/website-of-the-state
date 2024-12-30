@@ -2497,7 +2497,7 @@ def create_doc():
         num = 1
         if formResolution.param1.data:
           text = (f"{num}. Возбудить уголовное дело в отношении {'сотрудника ' + user.organ if user else 'гражданина'} "
-                  f"{nickname if nickname != '' else ''}, с номером паспортные данные {static}. Присвоить делу идентификатор {formResolution.case.data} и принять его к производству прокуратурой штата.")
+                  f"{nickname if nickname != '' else ''}, с номером паспорта {static}. Присвоить делу идентификатор {formResolution.case.data} и принять его к производству прокуратурой штата.")
           y = draw_multiline_text(pdf, text, 15, y)
           y -= 5
           num += 1
