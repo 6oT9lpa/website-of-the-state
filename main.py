@@ -320,28 +320,6 @@ def check_user_action(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def user_permission_moderation(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        from __init__ import Users
-        if not current_user.is_authenticated:
-            flash('Необходимо войти для доступа к этой странице.')
-            return redirect(url_for('main.auth'))
-
-        user = Users.query.get(current_user.id)
-        uid = request.args.get('uid')
-        rankuser_value = int(user.rankuser) if user.rankuser.isdigit() else 0
-
-        if user.organ == 'GOV' and rankuser_value >= 11 and rankuser_value != 12:
-            send_to_bot_permission_none(False)
-            return f(*args, **kwargs)
-
-        send_to_bot_permission_none(True)
-        flash('У вас нет доступа к модерации постановлений!')
-        return redirect(url_for('main.index'))
-
-    return decorated_function
-
 
 CLIENT_ID = '63202ab8a29f3f1'
 def upload_image_to_imgur(image):
@@ -2715,7 +2693,6 @@ def resolution():
     from __init__ import PDFDocument, ResolutionTheUser, OrderTheUser, Users, CustomResolutionTheUser, db
     from form import FormModerationResolution
 
-    # Получаем UID и проверяем наличие /moderation
     uid = request.args.get('uid')
     if not uid:
       return "No UID provided", 400
@@ -2724,13 +2701,11 @@ def resolution():
     base_uid = uid_parts[0]
     is_moderation_link = len(uid_parts) > 1 and uid_parts[1] == 'moderation'
 
-    # Получаем PDF и проверяем его наличие
     pdf_doc = PDFDocument.query.filter_by(uid=base_uid).first()
     if not pdf_doc or not os.path.exists(pdf_doc.content):
       text_error = "PDF not found or invalid UID"
       return render_template('api/404.html', text_error=text_error)
 
-    # Получаем записи для модерации и проверяем их
     moder_resolution = ResolutionTheUser.query.filter_by(current_uid=base_uid).first()
     moder_order = OrderTheUser.query.filter_by(current_uid=base_uid).first()
     moder_custom_resolution = CustomResolutionTheUser.query.filter_by(current_uid=base_uid).first()
@@ -2739,7 +2714,6 @@ def resolution():
 
     form = FormModerationResolution()
 
-    # Проверка на статус модерации
     if moder_order and moder_order.is_modertation:
       return render_template('preview_resolution.html', pdf_path=pdf_doc.content, uid=uid)
 
@@ -2750,67 +2724,66 @@ def resolution():
       return render_template('preview_resolution.html', pdf_path=pdf_doc.content, uid=uid)
 
     if is_moderation_link:
-        if not current_user.is_authenticated:
-          flash('Для модерации постановлений требуется войти в аккаунт!')
-          send_to_bot_permission_none(True)
-          return redirect(url_for('main.index'))
+      if not current_user.is_authenticated and current_user.user_type == 'user' and current_user.curr_rank > 11 and current_user.curr_rank != 12:
+        flash('Для модерации постановлений требуется войти в аккаунт!')
+        send_to_bot_permission_none(True)
+        return redirect(url_for('main.index'))
 
-        if not current_user:
-          flash('User not found!')
-          return redirect(url_for('main.index'))
+      if not current_user:
+        flash('User not found!')
+        return redirect(url_for('main.index'))
 
-        rankuser_value = current_user.curr_rank
+      rankuser_value = current_user.curr_rank
 
-        def handle_moderation(moder_obj, min_rank, is_order, is_resolution, template_name):
-            if current_user.organ == 'GOV' and min_rank <= rankuser_value != 12:
-                send_to_bot_permission_none(False)
+      def handle_moderation(moder_obj, min_rank, is_order, is_resolution, template_name):
+        if current_user.organ == 'GOV' and min_rank <= rankuser_value != 12:
+          if form.validate_on_submit():
+            moderation = form.success.data
+            reason = 'None' if form.success.data else form.reason.data
+            user = Users.query.get(moder_obj.author_id)
+            send_to_bot_information_resolution(user.discordid, current_user.discordid, moderation, reason, base_uid)
 
-                if form.validate_on_submit():
-                    moderation = form.success.data
-                    reason = 'None' if form.success.data else form.reason.data
-                    user = Users.query.get(moder_obj.author_id)
-                    send_to_bot_information_resolution(user.discordid, current_user.discordid, moderation, reason, base_uid)
+            if form.success.data: 
+              if is_order and current_user.organ == 'GOV' and (current_user.curr_rank == 18 or current_user.curr_rank == 21):
+                pdf_path = os.path.join(pdf_doc.content)
+                generate_signature_order(pdf_path, current_user)
+                moder_obj.is_modertation = True
+                db.session.commit()
 
-                    if form.success.data: 
-                      if is_order and current_user.organ == 'GOV' and (current_user.curr_rank == 18 or current_user.curr_rank == 21):
-                        pdf_path = os.path.join(pdf_doc.content)
-                        generate_signature_order(pdf_path, current_user)
-                        moder_obj.is_modertation = True
-                        db.session.commit()
+              elif is_resolution:
+                moder_obj.is_modertation = True
+                db.session.commit()
 
-                      elif is_resolution:
-                        moder_obj.is_modertation = True
-                        db.session.commit()
+              else:
+                flash('Вы неможе подписывать данные документы!')
+                return redirect(url_for('main.doc'))
+            else:
+              if is_order:
+                file_path = os.path.join(pdf_doc.content)
+                os.remove(file_path)
 
-                      else:
-                        flash('Вы неможе подписывать данные документы!')
-                        return redirect(url_for('main.doc'))
-                    else:
-                      if is_order:
-                          file_path = os.path.join(pdf_doc.content)
-                          os.remove(file_path)
+                db.session.delete(moder_obj)
+                db.session.delete(pdf_doc)
+                db.session.commit()
+              else:
+                moder_obj.is_modertation = False
+              db.session.commit()
 
-                          db.session.delete(moder_obj)
-                          db.session.delete(pdf_doc)
-                          db.session.commit()
-                          
-                      else:
-                          moder_obj.is_modertation = False
-                      db.session.commit()
+            return redirect(url_for('main.doc' if form.rejected.data else 'main.resolution', uid=base_uid))
+          return render_template(template_name, pdf_path=pdf_doc.content, form=form, uid=uid)
+        return redirect(url_for('main.index'))
 
-                    return redirect(url_for('main.doc' if form.rejected.data else 'main.resolution', uid=base_uid))
-                return render_template(template_name, pdf_path=pdf_doc.content, form=form, uid=uid)
-
-            flash('У вас отсутствуют права на модерацию постановлений!')
-            send_to_bot_permission_none(True)
-            return redirect(url_for('main.index'))
-
-        if moder_resolution and rankuser_value >= 11:
-          return handle_moderation(moder_resolution, 11, is_order=False, is_resolution=True, template_name='temporary_page.html')
-        elif moder_order and rankuser_value >= 18:
-          return handle_moderation(moder_order, 18, is_order=True, is_resolution=False, template_name='temporary_page.html')
-        elif moder_custom_resolution and rankuser_value >= 11:
-          return handle_moderation(moder_custom_resolution, 11, is_order=False, is_resolution=True, template_name='temporary_page.html')
+      if moder_resolution and rankuser_value >= 11:
+        send_to_bot_permission_none(False)
+        return handle_moderation(moder_resolution, 11, is_order=False, is_resolution=True, template_name='temporary_page.html')
+      
+      elif moder_order and rankuser_value >= 18:
+        send_to_bot_permission_none(False)
+        return handle_moderation(moder_order, 18, is_order=True, is_resolution=False, template_name='temporary_page.html')
+      
+      elif moder_custom_resolution and rankuser_value >= 11:
+        send_to_bot_permission_none(False)
+        return handle_moderation(moder_custom_resolution, 11, is_order=False, is_resolution=True, template_name='temporary_page.html')
 
     # Если is_moderation=False, и отсутствует доступ к /moderation
     if not is_moderation_link:
