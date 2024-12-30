@@ -452,7 +452,7 @@
                             <div class="dropdown-menu-pettion-list" id='dropdown-menu-4'>
                                 {% for item in repltoisk %}
                                     {% if not item.moderation %}
-                                        <a data-action="{{ loop.index }}">Ходатайство {{ loop.index }}</a>
+                                        <a data-action="{{ item.replyik['№-pettion'] }}">Ходатайство {{ item.replyik['№-pettion'] }}</a>
                                     {% endif %}  
                                 {% endfor %}   
                             </div>

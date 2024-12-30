@@ -94,10 +94,10 @@ def check_isk_status(isk):
   if current_user.is_authenticated:
     if any(current_user.static == defenda['static'] for defenda in result):
       status = 'Defenda'
-
+      
     elif current_user.user_type == 'user' and (current_user.id == isk.judge or (not isk.judge and current_user.curr_rank in [13, 15, 21])):
       status = 'Judge'
-
+      
     elif ((isk.prosecutor and current_user.id == isk.prosecutor) or (not isk.prosecutor and current_user.permissions[0].prosecutor)) and current_user.user_type == 'user':
       status = 'Prosecutor'
 
@@ -319,7 +319,6 @@ def check_user_action(f):
 
         return f(*args, **kwargs)
     return decorated_function
-
 
 CLIENT_ID = '63202ab8a29f3f1'
 def upload_image_to_imgur(image):
@@ -1111,7 +1110,7 @@ def courtPettion():
   id_entry = None
 
   for e in entries:
-    if e.replyik['№-pettion'] == int(pettion):
+    if '№-pettion' in e.replyik and e.replyik['№-pettion'] == int(pettion):
       id_entry = e.id
       entry = e.replyik['№-pettion']
 
@@ -2785,7 +2784,6 @@ def resolution():
         send_to_bot_permission_none(False)
         return handle_moderation(moder_custom_resolution, 11, is_order=False, is_resolution=True, template_name='temporary_page.html')
 
-    # Если is_moderation=False, и отсутствует доступ к /moderation
     if not is_moderation_link:
       return redirect(url_for('main.resolution', uid=f"{base_uid}/moderation"))
 
