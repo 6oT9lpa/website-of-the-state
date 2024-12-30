@@ -7,3 +7,5 @@
 /static/uploads
 /python/cogs/__pycache__
 /message_data.json
+python/cogs/__pycache__/ka_cog.cpython-312.pyc
+python/cogs/__pycache__/lid_cog.cpython-312.pyc
