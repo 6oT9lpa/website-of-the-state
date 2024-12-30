@@ -44,7 +44,7 @@ class FormCreateResolution(FormCreateDoc):
     param3 = BooleanField(label="Запрос перснональных данных.")
     param4 = BooleanField(label="Запрет на смену перснональных данных.")
     param5 = BooleanField(label="Запрет на увольнение, перевод в другую фракцию.")
-    param6 = BooleanField(label="Запрет на ведении службы на время расследования.")  
+    param6 = BooleanField(label="Запрет на ведение службы на время расследования.")  
     custom_button_pressed = HiddenField('Custom Button Pressed', default="false")
     button_custom = SubmitField("создать кастом")
     
@@ -62,11 +62,11 @@ class FormCreateOrder(FormCreateDoc):
     
     application_num = StringField(label="Номер заявления.", render_kw={"placeholder": "Введите номер заявления", "id": "applicationNum"})  
     name_organ_for_order = StringField(label="Название организации", render_kw={"placeholder": "Введите название организации", "id": "nameCrimeOrgan"})  
-    adreas_organ_for_order = StringField(label="Адреас организации", render_kw={"placeholder": "Введите адреас организации", "id": "adreasCrimeOrgan"}) 
-    adreas_suspect = StringField(label="Адреас проживания", render_kw={"placeholder": "Введите адреас проживания", "id": "adreasSuspect"}) 
+    adreas_organ_for_order = StringField(label="Адрес организации", render_kw={"placeholder": "Введите адрес организации", "id": "adreasCrimeOrgan"}) 
+    adreas_suspect = StringField(label="Адрес проживания", render_kw={"placeholder": "Введите адреас проживания", "id": "adreasSuspect"}) 
     car_brand = StringField(label="Марка авто", render_kw={"placeholder": "Введите марка т\с", "id": "carBrand"}) 
     time_ml = StringField(label="Время ВП", render_kw={"placeholder": "Введите время дейстивя ВП", "id": "timeML"})
-    areas_under_ml = StringField(label="Время ВП", render_kw={"placeholder": "Введите время дейстивя ВП", "id": "areasUnderML"})
+    areas_under_ml = StringField(label="Время ВП", render_kw={"placeholder": "Введите время действия ВП", "id": "areasUnderML"})
     degree_ri = StringField(label="Степень снятия неприкоса", render_kw={"placeholder": "Введите степень", "id": "degreeRI"})
 
 class FormModerationResolution(FlaskForm):

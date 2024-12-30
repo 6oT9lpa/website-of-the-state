@@ -270,11 +270,10 @@ def send_to_bot_get_dsname(discordid):
       'discordid': discordid
   }
   redis_client.publish('get_dsname', json.dumps(message))
-  for _ in range(3):  
-        response = redis_client.get(f'dsname_response_{discordid}')
-        if response:
-            return response.decode('utf-8')
-        time.sleep(0.2) 
+  time.sleep(0.3)
+  response = redis_client.get(f'dsname_response_{discordid}')
+  if response:
+  	return response.decode('utf-8') 
   return 'Не определен'
 
 def send_to_bot_permission_none(is_permission):
