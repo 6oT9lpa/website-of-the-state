@@ -24,7 +24,6 @@
         <form method="post" action="/create_doc" id='resolutionForm'>
             {{ form.hidden_tag() }}
             <input type='hidden' name="type_doc" id='action-1'>
-
             <div class='group-creater'>
                 <div class='group-contaniner-modal-creater'>
                     <div class='form-control'>
@@ -88,7 +87,7 @@
                         </div>
                         <div class='form-control-1' id='input_checkbox2' style='display: none;'>
                             <div class='form-input-modal'>
-                                {{ formResolution.arrest_time(class="input-field", id="param2_nickname", placeholder='Введите ник потерпевшего')}}
+                                {{ formResolution.param2_nickname(class="input-field", id="param2_nickname", placeholder='Введите ник потерпевшего')}}
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
@@ -152,7 +151,6 @@
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
-
                             <div class="form-control-1 hidden-input" style='display: none;' id="articlesAccusation">
                                 <label for="param">Статьи Обвинения</label>
                                 <div class='form-input-modal'>
@@ -160,7 +158,6 @@
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
-
                             <div class="form-control-1 hidden-input" style='display: none;' id="nameOrganForOrder">
                                 <label for="param">Название организации</label>
                                 <div class='form-input-modal'>
@@ -176,7 +173,6 @@
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
-
                             <div class="form-control-1 hidden-input" style='display: none;' id='degree_ri'>
                                 <label for="param">Снятия неприкоса</label>
                                 <div class='form-input-modal'>
@@ -184,7 +180,6 @@
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
-
                             <div class="form-control-1 hidden-input" style='display: none;' id='adreasOrganForOrder'>
                                 <label for="param">Адреас организации</label>
                                 <div class='form-input-modal'>
@@ -201,7 +196,6 @@
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
-
                             <div class="form-control-1 hidden-input" style='display: none;' id='time'>
                                 <label for="param">Срок исполения</label>
                                 <div class='form-input-modal'>
