@@ -2072,14 +2072,14 @@ def database_change():
     high_staff = request.form.get('high_staff')
     creation_doc = request.form.get('creation_doc')
     create_news = request.form.get('create_news')
-    lawer = request.form.get('lawer')
+    lawer = request.form.get('lawyer')
     discordname = request.form.get('discordname')
     discordid = request.form.get('discordid')
     if perm_level >= 2:
       user.permissions[0].prosecutor = True if prosecutor == 'on' else False
       user.permissions[0].high_staff = True if high_staff == 'on' else False
       user.permissions[0].creation_doc = True if creation_doc == 'on' else False
-      user.permissions[0].lawer = True if lawer == 'on' else False
+      user.permissions[0].lawyer = True if lawer == 'on' else False
       user.discordname = discordname
       user.discordid = discordid
     if perm_level >= 3:
