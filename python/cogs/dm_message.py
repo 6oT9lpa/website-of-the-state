@@ -355,22 +355,34 @@ async def process_information_resolution_message(dm_message):
 async def process_get_dsname(bot):
     pubsub = redis_client.pubsub()
     pubsub.subscribe('get_dsname')
-    
+
     while True:
         message = pubsub.get_message()
         if message and message['type'] == 'message':
             try:
                 print(f"Получено сообщение: {message['data']}")
                 data = json.loads(message['data'])
-                
                 discordid = data['discordid']
-                
-                user = await bot.fetch_user(discordid)
-                redis_client.set(f'dsname_response_{discordid}', user.name)
-                
+
+                for attempt in range(3):
+                    try:
+                        user = await bot.fetch_user(discordid)
+                        if user:
+                            redis_client.set(f'dsname_response_{discordid}', user.name)
+                            print(f"Успешно обработан пользователь {discordid} на попытке {attempt + 1}")
+                            break
+                    except Exception as e:
+                        print(f"Попытка {attempt + 1}: Ошибка при получении пользователя с ID {discordid}: {e}")
+
+                    if attempt < 2: 
+                        await asyncio.sleep(5)
+                else:
+                    print(f"Не удалось получить пользователя с ID {discordid} после 3 попыток")
+
             except Exception as e:
                 print(f"Ошибка обработки сообщения: {e}")
                 traceback.print_exc()
+
         await asyncio.sleep(1)
 
 def setup(bot):
