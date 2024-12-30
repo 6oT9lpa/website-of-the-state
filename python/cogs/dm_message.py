@@ -76,12 +76,12 @@ class SendDmMessage(commands.Cog):
 
             button1 = Button(
                 label="Сменить пароль",
-                url="http://26.120.213.68:8000/auth?next=http://26.120.213.68:8000/change_password",
+                url="http://217.114.0.37:8000/auth?next=http://217.114.0.37:8000/change_password",
                 style=ButtonStyle.link
             )
             button2 = Button(
                 label="Перейти на сайт",
-                url="http://26.120.213.68:8000/",
+                url="http://217.114.0.37:8000/",
                 style=ButtonStyle.link
             )
 
@@ -135,7 +135,7 @@ class SendDmMessage(commands.Cog):
                 
                 button = Button(
                     label="Осмотреть постановление",
-                    url=f"http://26.120.213.68:8000/resolution?uid={ uid }",
+                    url=f"http://217.114.0.37:8000/resolution?uid={ uid }",
                     style=ButtonStyle.link
                 )
 
@@ -166,7 +166,7 @@ class SendDmMessage(commands.Cog):
                 
                 button = Button(
                     label="Исправить постановление",
-                    url=f"http://26.120.213.68:8000/auth?next=http://26.120.213.68:8000/edit_doc?uid={uid}",
+                    url=f"http://217.114.0.37:8000/auth?next=http://217.114.0.37:8000/edit_doc?uid={uid}",
                     style=ButtonStyle.link
                 )
 

@@ -7,6 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import logging, uuid
 from cryptography.fernet import Fernet
 
+
 from main import main
 
 app = Flask(__name__)
@@ -16,7 +17,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_AS_ASCII'] = False
 app.config['WTF_CSRF_ENABLED'] = True
 app.config['DEBUG'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty1234!@localhost:3306/db_majestic'
 app.config['FERNET_KEY'] = b'RZP6DxiYrL_hz7fX1IN0v4YAtfMwwz5Gp53JRVvLw6M='
 cipher = Fernet(app.config['FERNET_KEY'])
 app.register_blueprint(main)
@@ -344,8 +345,8 @@ class courtOrder(db.Model):
 with app.app_context():
     db.create_all()
 
-    
     """
+    
     characters = string.ascii_letters + string.digits + string.punctuation
     password = ''.join(random.choice(characters) for i in range(10))
     print(password)
