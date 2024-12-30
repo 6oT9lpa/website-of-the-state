@@ -371,7 +371,6 @@ async def process_get_dsname(bot):
             except Exception as e:
                 print(f"Ошибка обработки сообщения: {e}")
                 traceback.print_exc()
-        await asyncio.sleep(1)
 
 def setup(bot):
     dm_message = SendDmMessage(bot)

@@ -265,13 +265,16 @@ def send_to_bot_log_dump(header, text):
   redis_client.publish('log_dump', json.dumps(message))
 
 def send_to_bot_get_dsname(discordid):
+  import time
   message = {
       'discordid': discordid
   }
   redis_client.publish('get_dsname', json.dumps(message))
-  response = redis_client.get(f'dsname_response_{discordid}') 
-  if response: 
-    return response.decode('utf-8') 
+  for _ in range(3):  
+        response = redis_client.get(f'dsname_response_{discordid}')
+        if response:
+            return response.decode('utf-8')
+        time.sleep(0.2) 
   return 'Не определен'
 
 def send_to_bot_permission_none(is_permission):
