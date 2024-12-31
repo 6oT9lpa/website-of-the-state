@@ -11,36 +11,56 @@
                     <p><strong>Фракция:</strong> {{ user.organ }}</p>
                     <p><strong>Ранг:</strong> {{ user.curr_rank }}</p>
                     <p><strong>Discord:</strong> 
-                        <input type="text" name="discordname" value="{{ user.discordname }}" {% if perm_change >= 3 %}{% else %} readonly {% endif %}>
+                        <input type="text" class="inputdsdb" name="discordname" value="{{ user.discordname }}" {% if perm_change >= 3 %}{% else %} readonly {% endif %}>
                     </p>
                     <p><strong>Discord ID:</strong> 
-                        <input type="text" name="discordid" value="{{ user.discordid }}" {% if perm_change >= 3 %}{% else %} readonly {% endif %}>
+                        <input type="text" class="inputdsdb" name="discordid" value="{{ user.discordid }}" {% if perm_change >= 3 %}{% else %} readonly {% endif %}>
                     </p>
             </div>
     
             <div id="permissions" class="permissions-section">
                 <h2 class="section-title">Права пользователя</h2>
                 <input type="hidden" name="user_id" value="{{ user.id }}">
-                <p><label>
-                    <input type="checkbox" name="tech" {% if user.permissions[0].tech %}checked{% endif %} onclick="return false;">
+                <label class="container">
+                    <input type="checkbox" name="tech" {% if user.permissions[0].tech %}checked="checked"{% endif %} disabled>
                     Технический доступ
-                </label></p>
-                <p><label>
-                    <input type="checkbox" name="prosecutor" {% if user.permissions[0].prosecutor %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
+                    <div class="checkmark"></div>
+                </label>
+                <label class="container">
+                    <input type="checkbox" name="prosecutor" {% if user.permissions[0].prosecutor %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
                     Прокурорский доступ
-                </label></p>
-                <p><label>
-                    <input type="checkbox" name="lider" {% if user.permissions[0].lider %}checked{% endif %} {% if perm_change >= 4 %}{% else %} onclick="return false;" {% endif %}>
+                    <div class="checkmark"></div>
+                </label>
+                <label class="container">
+                    <input type="checkbox" name="lider" {% if user.permissions[0].lider %}checked="checked"{% endif %} {% if perm_change >= 4 %}{% else %} disabled {% endif %}>
                     Лидерский доступ
-                </label></p>
-                <p><label>
-                    <input type="checkbox" name="admin" {% if user.permissions[0].admin %}checked{% endif %} {% if perm_change >= 4 %}{% else %} onclick="return false;" {% endif %}>
+                    <div class="checkmark"></div>
+                </label>
+                <label class="container">
+                    <input type="checkbox" name="admin" {% if user.permissions[0].admin %}checked="checked"{% endif %} {% if perm_change >= 4 %}{% else %} disabled {% endif %}>
                     Доступ Администратора
-                </label></p>
-                <p><label>
-                    <input type="checkbox" name="high_staff" {% if user.permissions[0].high_staff %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
+                    <div class="checkmark"></div>
+                </label>
+                <label class="container">
+                    <input type="checkbox" name="high_staff" {% if user.permissions[0].high_staff %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
                     Старший состав
-                </label></p>
+                    <div class="checkmark"></div>
+                </label>
+                <label class="container">
+                    <input type="checkbox" name="creation_doc" {% if user.permissions[0].creation_doc %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
+                    Доступ к созданию документов
+                    <div class="checkmark"></div>
+                </label>
+                <label class="container">
+                    <input type="checkbox" name="create_news" {% if user.permissions[0].create_news %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
+                    Доступ к созданию новостей
+                    <div class="checkmark"></div>
+                </label>
+                <label class="container">
+                    <input type="checkbox" name="lawyer" {% if user.permissions[0].lawyer %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
+                    Доступ адвоката
+                    <div class="checkmark"></div>
+                </label>
                 {% if perm_change <= 1 %}{% else %}  <div class='container-submit-btn'> <button type="submit">Сохранить</button> </div> {% endif %}
             </div>
         </form>
