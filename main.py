@@ -1964,8 +1964,9 @@ def database():
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
   rank_name = get_rank_info(ranks, organ, rank)
+  updated_ranks = ranks.get("updated_ranks", {})
   groups = {}
-  for group_name, rank_items in ranks.items():
+  for group_name, rank_items in updated_ranks.items():
     groups[group_name] = rank_items
 
   return render_template('database.html', rank_name=rank_name, color=color, current_user=current_user, Users=users_t, ranks=ranks, groups=groups, more_info=False)
@@ -1979,6 +1980,7 @@ def save_ranks():
     # Получаем данные из запроса
     new_data = request.json
     ranks_to_delete = new_data.get("ranks_to_delete", [])
+    ranks_to_add = new_data.get("ranks_to_add", [])
 
     # Загружаем текущие данные из JSON
     with open(DATA_FILE, 'r') as file:
@@ -1995,9 +1997,36 @@ def save_ranks():
             if organ and rank_id:
                 delete_rank_and_adjust_users(organ, rank_id, current_data)
 
+    # Если есть ранги для добавления, выполняем корректировку
+    if ranks_to_add:
+        for rank in ranks_to_add:
+            organ = rank.get("organ")
+            rank_id = rank.get("id")
+            if organ and rank_id:
+                add_rank_and_adjust_users(organ, rank_id, current_data)
+
     return jsonify({"status": "success"})
 
+def add_rank_and_adjust_users(organ, rank_id, current_data):
+    from __init__ import Users, db
+    # Удаляем ранг из указанного органа
+    if organ in current_data:
+        current_data[organ] = [rank for rank in current_data[organ] if rank['id'] != rank_id]
 
+    # Понижаем пользователей с этим рангом
+    users_with_removed_rank = Users.query.filter_by(curr_rank=rank_id).all()
+    for user in users_with_removed_rank:
+        if rank_id > 1:  # Если ранг не минимальный
+            user.curr_rank += 1
+
+    # Понижаем пользователей с рангами выше удалённого
+    higher_rank_users = Users.query.filter(Users.curr_rank > rank_id).all()
+    for user in higher_rank_users:
+        user.curr_rank += 1
+
+    # Сохраняем изменения в базе данных
+    db.session.commit()
+    
 def delete_rank_and_adjust_users(organ, rank_id, current_data):
     from __init__ import Users, db
     # Удаляем ранг из указанного органа
