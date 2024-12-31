@@ -1921,9 +1921,10 @@ def profile():
 
     filename = "./python/name-ranks.json"
     ranks = read_ranks(filename)
-    rank_name = get_rank_info(ranks, organ, rank)
+    ranks = get_rank_info(ranks, organ, rank)
+    updated_ranks = ranks.get("updated_ranks", {})
 
-    return render_template('profile.html', rank_name=rank_name, color=color, current_user=current_user, is_guest=is_guest)
+    return render_template('profile.html', rank_name=updated_ranks, color=color, current_user=current_user, is_guest=is_guest)
   else:
     return render_template('profile.html', current_user=current_user, is_guest=is_guest)
   
