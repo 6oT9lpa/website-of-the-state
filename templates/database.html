@@ -227,18 +227,11 @@
         document.querySelectorAll('.user-row').forEach(row => {
             row.addEventListener('dblclick', function() {
                 const userId = this.getAttribute('data-user-id');
-    
-                function openUserProfile(userId) {
-                        window.location.href = `/database_getdata?user_id=${userId}`;
-                }
-                document.querySelectorAll('.user-row').forEach(row => {
-                    row.addEventListener('dblclick', () => {
-                        const userId = row.getAttribute('data-user-id');
-                        openUserProfile(userId);
-                    });
-                });
+                
+                window.location.href = `/database_getdata?user_id=${userId}`;
             });
         });
+        
 
         function showTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => {
