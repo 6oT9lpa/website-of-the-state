@@ -1948,8 +1948,6 @@ def get_search_data():
     input_val = request.args.get('inputVal', '').strip()
     filter_val = request.args.get('filterVal', '').strip()
 
-    print(f"Input Value: {input_val}, Filter Value: {filter_val}")  # Debugging line
-
     query = Users.query
     if filter_val == 'nickname':
       query = query.filter(Users.nikname.ilike(f"%{input_val}%"))

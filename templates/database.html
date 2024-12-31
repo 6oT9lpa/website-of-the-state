@@ -307,9 +307,6 @@
                 return;
             }
         
-            console.log(`Search Input: ${searchInput}`);
-            console.log(`Filter Value: ${filterValue}`);
-        
             fetch(`/getSearchUser?inputVal=${encodeURIComponent(searchInput)}&filterVal=${encodeURIComponent(filterValue)}`)
                 .then(response => {
                     if (!response.ok) {
