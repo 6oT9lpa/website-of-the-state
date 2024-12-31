@@ -1860,6 +1860,7 @@ def audit():
   color = color_organ(organ)
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
+  updated_ranks = ranks.get("updated_ranks", {})
 
   if request.method == 'POST':
     static = request.form.get('static')
@@ -1899,7 +1900,7 @@ def audit():
       flash("Произошла ошибка попробуйте снова.")
       return redirect(url_for('main.audit'))
     
-  return render_template('ka.html', organ=organ, color=color, ranks=ranks)
+  return render_template('ka.html', organ=organ, color=color, ranks=updated_ranks)
 
 @main.route('/logout', methods=['GET', 'POST'])
 @login_required
