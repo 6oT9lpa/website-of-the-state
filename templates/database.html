@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/database-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animation-bg.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/database-style.css') }}">
     <title>Majestic State</title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
@@ -16,26 +17,207 @@
     {% block header %}
         {% include 'header/header-account.html' %}
     {% endblock %}
+
     {% block main %}
         {% include 'main/main-database.html' %}
     {% endblock %}
 
-    
-    <script>
-        const select = document.querySelector('.action');
-        const list = document.querySelector('.action-list');
-        const isl = document.querySelector(".content");
+    <div class="lines">
+        {% for i in range(40) %}
+        <div class="line"></div>
+        {% endfor %}
+    </div>
 
-        select.addEventListener('click', () => {
-            select.classList.toggle('open');
+    <div class="overlay" id='overlay'></div>
+<script>
+        document.querySelectorAll('.rank-list').forEach(rankList => {
+            new Sortable(rankList, {
+                animation: 150,
+                onStart(evt) {
+                    const leaderItem = evt.from.querySelector('[data-leader="true"]');
+                    if (leaderItem && evt.item === leaderItem) {
+                        evt.item.setAttribute('draggable', 'false');
+                    }
+                },
+                onEnd(evt) {
+                    evt.from.querySelectorAll('.rank-item').forEach(item => {
+                        item.setAttribute('draggable', 'true');
+                    });
+                    
+                    updateRankIds(evt.from);
+                }
+            });
+        });
+        function updateRankIds(list) {
+            let index = list.querySelectorAll('.rank-item').length; 
+            list.querySelectorAll('.rank-item').forEach(item => {
+                const newId = index--; 
+                item.querySelector('.rank-id').value = newId;
+            });
+        }
+        function filterRanksByFraction(fraction) {
+            document.querySelectorAll('.fraction-group').forEach(group => {
+                if (!fraction || group.dataset.fraction === fraction) {
+                    group.style.display = '';
+                } else {
+                    group.style.display = 'none';
+                }
+            });
+        }
+        function addRank(fraction) {
+            const rankList = document.getElementById(`${fraction}-list`);
+            const newId = generateNewId(rankList);
+    
+            const newItem = document.createElement('li');
+            newItem.className = 'rank-item';
+            newItem.setAttribute('data-id', newId);
+            newItem.setAttribute('data-leader', 'false'); 
+            newItem.innerHTML = `
+                <input type="text" class="rank-id" value="${newId}" readonly>
+                <input type="text" class="rank-name" value="Новый ранг">
+                <button class="delete-rank" onclick="deleteRank('${fraction}', ${newId})">Удалить</button>
+            `;
+            rankList.appendChild(newItem);
+            updateRankIds(rankList); 
+        }
+        function generateNewId(rankList) {
+            let maxId = 0;
+            rankList.querySelectorAll('.rank-item').forEach(item => {
+                const id = parseInt(item.querySelector('.rank-id').value, 10);
+                if (id > maxId) maxId = id;
+            });
+            return maxId + 1;
+        }
+        let ranksToDelete = [];
+        function deleteRank(fraction, id) {
+            const rankItem = document.querySelector(`[data-fraction="${fraction}"] [data-id="${id}"]`);
+            if (rankItem) {
+                ranksToDelete.push({
+                    organ: fraction,
+                    id: id
+                });
+                rankItem.remove();
+                updateRankIds(document.getElementById(`${fraction}-list`)); 
+            }
+        }
+    
+        function saveRanks() {
+            const updatedRanks = {};
+            document.querySelectorAll('.fraction-group').forEach(group => {
+                const fraction = group.dataset.fraction;
+                const ranks = [];
+                group.querySelectorAll('.rank-item').forEach(item => {
+                    const leaderSpan = item.querySelector('.leader-label');
+                    const isLeader = leaderSpan !== null;
+    
+                    ranks.push({
+                        id: parseInt(item.querySelector('.rank-id').value),
+                        name: item.querySelector('.rank-name').value,
+                        leader: isLeader
+                    });
+                });
+                updatedRanks[fraction] = ranks;
+            });
+            const dataToSend = {
+                ...updatedRanks,
+                ranks_to_delete: ranksToDelete
+            };
+            console.log('Saving ranks:', dataToSend);
+            ranksToDelete = [];
+            fetch('/save_ranks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataToSend)
+            }).then(response => {
+                if (response.ok) {
+                    alert('Изменения сохранены!');
+                } else {
+                    alert('Ошибка при сохранении.');
+                }
+            });
+        }
+        
+        document.querySelectorAll('.rank-list').forEach(rankList => {
+            new Sortable(rankList, {
+                animation: 150,
+                onEnd: function (evt) {
+                    console.log('Rank reordered:', evt);
+                }
+            });
         });
 
-        
-        window.onload = function() {
-            isl.style.display = "flex";
-        };
+        document.querySelectorAll('.user-row').forEach(row => {
+            row.addEventListener('dblclick', function() {
+                const userId = this.getAttribute('data-user-id');
+    
+                function openUserProfile(userId) {
+                        window.location.href = `/database_getdata?user_id=${userId}`;
+                }
+                document.querySelectorAll('.user-row').forEach(row => {
+                    row.addEventListener('dblclick', () => {
+                        const userId = row.getAttribute('data-user-id');
+                        openUserProfile(userId);
+                    });
+                });
+            });
+        });
 
-        
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            const selectedTab = document.getElementById(tabName);
+            if (selectedTab) {
+                selectedTab.style.display = 'block';
+            }
+        }
+        function filterRanksByFraction(fraction) {
+            document.querySelectorAll('.fraction-group').forEach(group => {
+                if (!fraction || group.dataset.fraction === fraction) {
+                    group.style.display = '';
+                } else {
+                    group.style.display = 'none';
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            showTab('users');
+            filterRanksByFraction('LSPD');
+        });
+
+
+        document.getElementById('toggleKaHistoryBtn').addEventListener('click', function() {
+            var kaHistory = document.getElementById('kaHistory');
+            var button = document.getElementById('toggleKaHistoryBtn');
+            
+            if (kaHistory.style.display === 'none') {
+                kaHistory.style.display = 'flex';
+                document.querySelectorAll('#overlay').forEach(o => {
+                    o.classList.add('active');
+                });
+            
+                setTimeout(() => {
+                    kaHistory.classList.remove('hidden-modal');
+                    kaHistory.classList.add('show-modal');
+                }, 10);
+
+                button.textContent = 'Скрыть Историю КА'; 
+            } else {
+                kaHistory.classList.remove('show-modal');
+                kaHistory.classList.add('hidden-modal');
+
+                setTimeout(() => {
+                    kaHistory.style.display = 'none';
+                    document.querySelectorAll('#overlay').forEach(o => {
+                        o.classList.remove('active');
+                    });
+                }, 450);
+                button.textContent = 'Показать Историю КА';
+            }
+        });
     </script>
 </body>
 </html>

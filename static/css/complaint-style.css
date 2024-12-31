@@ -401,7 +401,7 @@ a.accept-judge {
 }
 
 .dropdown-select-isk {
-    appearance: none; /* Убирает стандартный стиль браузера */
+    appearance: none; 
     background: transparent;
     color: #f0f8ff;
     border: #141414 solid 2px;

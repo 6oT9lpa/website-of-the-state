@@ -17,10 +17,17 @@
     {% block header %}
         {% include 'header/header-ka.html' %}
     {% endblock %}
+    <main>
+        {% block error %}
+            {% include 'api/error.html' %}
+        {% endblock %}
 
-    {% block main %}
-        {% include 'main/main-ka.html' %}
-    {% endblock %}
+        {% block main %}
+            {% include 'main/main-ka.html' %}
+        {% endblock %}
+    </main>
+
+
 
     <div class="lines">
         {% for i in range(40) %}
@@ -28,24 +35,114 @@
         {% endfor %}
     </div>
 
-    {% block footer %}
-        {% include 'footer/footer.html' %}
-    {% endblock %}
-    <script>
-        const select = document.querySelector('.action');
-        const list = document.querySelector('.action-list');
-        const isl = document.querySelector(".content");
 
-        select.addEventListener('click', () => {
-            select.classList.toggle('open');
+    <script>
+        ranks = {{ ranks | tojson }};
+    
+        const fractionSelect = document.getElementById('organ_change');
+        const rankSelect = document.getElementById('rank-select');
+    
+        function updateRanks() {
+            const selectedFraction = fractionSelect.value;
+            rankSelect.innerHTML = '';
+    
+            if (ranks[selectedFraction]) {
+                ranks[selectedFraction]
+                    .sort((a, b) => a.id - b.id)
+                    .forEach(rank => {
+                        const option = document.createElement('option');
+                        option.value = rank.id;
+                        option.textContent = `${rank.id} | ${rank.name}`;
+                        rankSelect.appendChild(option);
+                    });
+            } else {
+                const option = document.createElement('option');
+                option.textContent = 'No ranks available';
+                option.disabled = true;
+                rankSelect.appendChild(option);
+            }
+        }
+    
+        fractionSelect.addEventListener('change', updateRanks);
+        document.addEventListener('DOMContentLoaded', updateRanks);
+
+
+        document.getElementById('static').addEventListener('input', function(event) {
+            const staticValue = event.target.value;
+        
+            if (staticValue.trim() === '') {
+                return;
+            }
+        
+            fetch(`/getPlayerData?static=${staticValue}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(data.action)
+                    
+                    document.getElementById('discord').value = data.discord;
+                    document.getElementById('nickname').value = data.nickname;
+                    document.getElementById('discord').disabled = true;
+                    document.getElementById('nickname').disabled = true;
+                    if (data.action !== 'Dismissal') {
+                        const container = document.querySelector('.form-button-container');
+                        const fireButtonWrapper = document.createElement('div');
+                        fireButtonWrapper.classList.add('submit-btn-contanier');
+
+                        const fireButtonDiv = document.createElement('div');
+                        fireButtonDiv.classList.add('submit-btn');
+
+                        const fireButton = document.createElement('input');
+                        fireButton.type = 'submit';
+                        fireButton.value = 'Уволить';
+                        fireButton.classList.add('fire-btn');
+                        fireButtonDiv.appendChild(fireButton);
+                        fireButtonWrapper.appendChild(fireButtonDiv);
+                        container.appendChild(fireButtonWrapper);
+
+                        fireButton.addEventListener('click', function(event) { 
+                            event.preventDefault();
+                            fireButton.classList.toggle('red');
+                            fireButtonDiv.classList.toggle('red');
+
+                            const dismissalField = document.getElementById('dismissal');
+                            if (dismissalField.value === 'dismissal') {
+                                dismissalField.value = 'none';
+                            } else {
+                                dismissalField.value = 'dismissal';
+                            }
+                        });
+                    }
+                } else {
+                    document.getElementById('discord').value = '';
+                    document.getElementById('nickname').value = '';
+                    document.getElementById('discord').disabled = false;
+                    document.getElementById('nickname').disabled = false;
+
+                    const fireButtonWrapper = document.querySelector('.form-button-container .submit-btn-contanier .fire-btn');
+                    if (fireButtonWrapper) {
+                        fireButtonWrapper.closest('.submit-btn-contanier').remove(); 
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при запросе:', error);
+            });
+
         });
 
-        
-        window.onload = function() {
-            isl.style.display = "flex";
-        };
-
-        
+        document.getElementById('submit-btn').addEventListener('submit', function(event) {
+            if (
+                static.value.trim() === '' && 
+                discord.value.trim() === '' && 
+                nickname.value.trim() === '' && 
+                reason.value.trim() === ''
+            ) {
+                event.preventDefault()
+                alert('Пожалуйста, заполните все обязательные поля!')
+                return
+            }            
+        });     
     </script>
 </body>
 </html>

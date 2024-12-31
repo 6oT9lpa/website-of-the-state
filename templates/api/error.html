@@ -12,6 +12,11 @@
                 <span class="text text-1">Отказано в доступе</span>
                 <span class="text text-2">{{ message[0] }}</span>
             </div>
+            {% else %}
+                <div class="message">
+                    <span class="text text-1">Уведомление</span>
+                    <span class="text text-2">{{ message[0] }}</span>
+                </div>
             {% endif %}
         </div>
         <span class="close">&times;</span>

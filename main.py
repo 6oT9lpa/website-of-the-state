@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, request, flash, Blueprint,
 from functools import wraps
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import check_password_hash, generate_password_hash
-from form import FormAuditPush, FormAuthPush
+from form import FormAuthPush
 from flask_login import login_user, login_required, logout_user, current_user
 from datetime import datetime, timedelta
 from reportlab.pdfgen import canvas
@@ -270,10 +270,11 @@ def send_to_bot_get_dsname(discordid):
       'discordid': discordid
   }
   redis_client.publish('get_dsname', json.dumps(message))
-  time.sleep(0.3)
-  response = redis_client.get(f'dsname_response_{discordid}')
-  if response:
-  	return response.decode('utf-8') 
+  for _ in range(3):  
+    response = redis_client.get(f'dsname_response_{discordid}')
+    if response:
+        return response.decode('utf-8')
+    time.sleep(0.2) 
   return 'Не определен'
 
 def send_to_bot_permission_none(is_permission):
@@ -1476,11 +1477,10 @@ def generate_random_password():
   characters = string.ascii_letters + string.digits + string.punctuation
   return ''.join(random.choice(characters) for i in range(10))
 
-def existing_discord_in_multiple_organizations(discord_id, discord_name):
+def existing_discord_in_multiple_organizations(discord_id):
   from __init__ import Users
   """Проверка на 2+ дискорда в Гос. фракции"""
-  return (Users.query.filter_by(discordid=discord_id).count() > 1 or 
-          Users.query.filter_by(discordname=discord_name).count() > 1)
+  return (Users.query.filter_by(discordid=discord_id).count() > 1  and Users.query.filter_by(discordid=discord_id).first().action != 'Dismissal')
 
 def send_to_bot_ka(action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason):
   """Redis отправка формы КА в discord bot"""
@@ -1514,327 +1514,226 @@ def send_to_bot_dismissal(discord_id, static, organ):
   }
   redis_client.publish('dismissal_channel', json.dumps(message))
 
-def process_invite_action(user, form, reason, discord_id, static):
+def process_invite_action(user, rank, reason, fraction):
   from __init__ import db, ActionUsers
   """Обрабатывает Инвайт если пользователя есть в БД"""
   password = generate_random_password()
   hash_password = generate_password_hash(password)
 
   try:
-    try:
-      user.password = hash_password
-      user.prev_rank = 0
-      user.curr_rank = 1
-      user.action = 'Invite'
-      user.organ = current_user.organ
-      user.nikname = form.nikname.data
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      flash('Произошла ошибка при сохранении данных. Попробуйте снова.', 'error')
-      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
-      
-    try:
-      new_action = ActionUsers(
-        discordid = discord_id,
-        discordname = user.discordname,
-        static = static,
-        nikname = form.nikname.data,
-        action = 'Invite',
-        curr_rank = 1,
-        prev_rank = 0,
-        author_id = current_user.id
-      )
-      db.session.add(new_action)
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+    user.password = hash_password
+    user.prev_rank = 0
+    user.curr_rank = 1
+    user.action = 'Invite'
+    user.organ = fraction
+    db.session.commit()
 
   except SQLAlchemyError as e:
     db.session.rollback()
-    logging.error(f"Ошибка обработки: {str(e)}")     
+    logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+    flash("Произошла ошибка при сохранении данных. Попробуйте снова.")
+    return redirect(url_for('main.audit'))
+    
+  try:
+    new_action = ActionUsers(
+      discordid = user.discordid,
+      discordname = user.discordname,
+      static = user.static,
+      nikname = user.nikname,
+      action = 'Invite',
+      curr_rank = 1,
+      prev_rank = 0,
+      author_id = current_user.id
+    )
+    db.session.add(new_action)
+    db.session.commit()
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
 
   else:
-    send_to_bot_ka('Invite', static, current_user.discordid, discord_id, user.curr_rank, user.prev_rank, current_user.nikname, form.nikname.data, reason)
-    send_to_bot_invite(password, discord_id, static, user.organ)
-    flash('Пользователь успешно добавлен!', 'success')
+    send_to_bot_ka('Invite', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason)
+    send_to_bot_invite(password, user.discordid, user.static, user.organ)
     logging.info('Пользователь был успешно добавлен в бд Users.')
-
-  if int(form.rank.data) > 1:
-    process_raise(user, form, reason)
+    
+    if int(rank) > 1:
+      process_raise(user, rank, reason)
+      return redirect(url_for('main.audit'))
+    
+    flash("Пользователь успешно добавлен!")
     return redirect(url_for('main.audit'))
 
-def process_new_invite(static, discord_id, discord_name, form, reason):
+def process_new_invite(static, rank, nickname, discord_id, reason, fraction):
   from __init__ import db, Users, ActionUsers, PermissionUsers, get_next_id_user, get_next_id_permission
   """Обрабатывает Инвайт если пользователя нет в БД"""
-  if existing_discord_in_multiple_organizations(discord_id, discord_name):
-    flash('Данный дискорд уже состоит в 2-ух гос. структурах!', 'error')
-    return
+  discord_name = send_to_bot_get_dsname(discord_id)
+  if existing_discord_in_multiple_organizations(discord_id):
+    flash("Данный дискорд уже состоит в 2-ух гос. структурах!")
+    return redirect(url_for('main.audit'))
 
   password = generate_random_password()
   hash_password = generate_password_hash(password)
   
   try:
-    try:
-      new_user = Users(
-        id=get_next_id_user(),
-        discordid=discord_id,
-        discordname=discord_name,
-        static=static,
-        nikname=form.nikname.data,
-        action='Invite',
-        organ=current_user.organ,
-        prev_rank=0,
-        curr_rank=1,
-        password=hash_password
-      )
-      db.session.add(new_user)
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      flash('Произошла ошибка при сохранении данных. Попробуйте снова.', 'error')
-      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
-
-    user = Users.query.filter_by(static=static).first()
-    try:
-      new_permission = PermissionUsers(
-        id=get_next_id_permission(),
-        author_id=user.id
-      )
-      db.session.add(new_permission)
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      logging.error(f"Ошибка сохранения в базе данных (PermissionUsers): {str(e)}")
-      
-    try:
-      new_action = ActionUsers(
-        discordid = discord_id,
-        discordname = discord_name,
-        static = static,
-        nikname = form.nikname.data,
-        action = 'Invite',
-        curr_rank = 1,
-        prev_rank = 0,
-        author_id = current_user.id
-      )
-      db.session.add(new_action)
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+    new_user = Users(
+      id=get_next_id_user(),
+      discordid=discord_id,
+      discordname=discord_name,
+      static=static,
+      nikname=nickname,
+      action='Invite',
+      organ=fraction,
+      prev_rank=0,
+      curr_rank=1,
+      password=hash_password
+    )
+    db.session.add(new_user)
+    db.session.commit()
 
   except SQLAlchemyError as e:
     db.session.rollback()
-    logging.error(f"Ошибка обработки: {str(e)}")
-
-  else:
-    send_to_bot_ka('Invite', static, current_user.discordid, discord_id, user.curr_rank, user.prev_rank, current_user.nikname, form.nikname.data, reason)
-    send_to_bot_invite(password, discord_id, static, user.organ)
-    flash('Пользователь успешно добавлен!', 'success')
-    logging.info('Пользователь был успешно добавлен в бд Users.')
-
-  if int(form.rank.data) > 1:
-    process_raise(user, form, reason)
+    logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+    flash("Произошла ошибка при сохранении данных. Попробуйте снова.")
     return redirect(url_for('main.audit'))
 
-
-def process_dismissal(user, form, reason):
-  from __init__ import db, ActionUsers
-  """Обрабатывает увольнение пользователя."""
-  
-  permission_current = current_user.permissions[0]
-  permission_user = user.permissions[0]
-  if permission_user and (permission_user.admin or permission_user.tech) \
-    and permission_current and (not permission_current.admin or not permission_current.tech):
-    flash('Вы не можете уволить админа/разработчика.')
-    return redirect(url_for('main.audit'))
-  
-  if current_user.organ != user.organ:
-    flash('Вы не можете уволить игрока другой фракции.')   
-    return redirect(url_for('main.audit'))
-  
-  if current_user.curr_rank < user.curr_rank:
-    flash('Вы не можете уволить игрока, если вы ниже рангом.')
-    return redirect(url_for('main.audit'))
-  
-  if user.action == 'Dismissal':
-    flash('Игрок уже был уволен.')
-    return redirect(url_for('main.audit'))
-
+  user = Users.query.filter_by(static=static).first()
   try:
-    try:
-      user.action = 'Dismissal'
-      user.prev_rank = user.curr_rank
-      user.curr_rank = 0
-      db.session.commit()
-    
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      flash('Произошла ошибка при сохранении данных. Попробуйте снова.', 'error')
-      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
-
-    try:
-      permission_user.tech = False
-      permission_user.admin = False
-      permission_user.lider = False
-      permission_user.high_staff = False
-      permission_user.creation_doc = False
-      db.session.commit()
-    
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      logging.error(f"Ошибка сохранения в базе данных (PermissionUsers): {str(e)}")   
-
-    try:
-      new_action = ActionUsers(
-        discordid = user.discordid,
-        discordname = user.discordname,
-        static = form.static.data,
-        nikname = form.nikname.data,
-        action = 'Dismissal',
-        curr_rank = user.curr_rank,
-        prev_rank = user.prev_rank,
-        author_id = current_user.id
-      )
-      db.session.add(new_action)
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")    
+    new_permission = PermissionUsers(
+      id=get_next_id_permission(),
+      author_id=user.id
+    )
+    db.session.add(new_permission)
+    db.session.commit()
 
   except SQLAlchemyError as e:
     db.session.rollback()
-    logging.error(f"Ошибка обработки: {str(e)}")    
+    logging.error(f"Ошибка сохранения в базе данных (PermissionUsers): {str(e)}")
+    
+  try:
+    new_action = ActionUsers(
+      discordid = discord_id,
+      discordname = discord_name,
+      static = static,
+      nikname = nickname,
+      action = 'Invite',
+      curr_rank = 1,
+      prev_rank = 0,
+      author_id = current_user.id
+    )
+    db.session.add(new_action)
+    db.session.commit()
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
 
   else:
-    send_to_bot_dismissal(user.discordid, user.static, user.organ)
-    send_to_bot_ka('Dismissal', form.static.data, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, form.nikname.data, reason)
-    flash('Пользователь успешно уволен!', 'success')
-    logging.info('Пользователь был успешно обновлен в бд Users.')
+    send_to_bot_ka('Invite', static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason)
+    send_to_bot_invite(password, discord_id, static, user.organ)
+    logging.info('Пользователь был успешно добавлен в бд Users.')
+    
+    if int(rank) > 1:
+      process_raise(user, rank, reason)
+      return redirect(url_for('main.audit'))
+    
+    flash("Пользователь успешно добавлен!")
+    return redirect(url_for('main.audit'))
+  
 
-
-def process_raise(user, form, reason):
+def process_raise(user, rank, reason):
   from __init__ import db, ActionUsers
   """Обрабатывает повышение пользователя."""
-  new_rank = form.rank.data
 
   permission_current = current_user.permissions[0]
   permission_user = user.permissions[0]
-  if permission_user and (permission_user.admin or permission_user.tech) \
-    and permission_current and (not permission_current.admin or not permission_current.tech):
-    flash('Вы не можете повысить админа/разработчика.')
-    return redirect(url_for('main.audit'))
-  
-  if current_user.organ != user.organ:
-    flash('Вы не можете повысить игрока другой фракции.')   
-    return redirect(url_for('main.audit'))
-  
-  if current_user.curr_rank <= user.curr_rank:
-    flash('Вы не можете повысить игрока, если вы ниже или таким же рангом.')
-    return redirect(url_for('main.audit'))
-  
-  if user.action == 'Dismissal':
-    flash('Игрок не находится во фракции.')
-    return redirect(url_for('main.audit'))
-  
-  if user.curr_rank >= int(new_rank):
-    flash('Вы не можете повысить на текущий/ниже ранг')
-    return redirect(url_for('main.audit'))
-
-  try:
-    try:
-      user.action = 'Raising'
-      user.prev_rank = user.curr_rank
-      user.curr_rank = new_rank
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      flash('Произошла ошибка при сохранении данных. Попробуйте снова.', 'error')
-      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+  if not permission_current.tech or not permission_current.admin:
+    if permission_user and (permission_user.admin or permission_user.tech):
+      flash("Вы не можете уволить админа/разработчика.")
+      return redirect(url_for('main.audit'))
     
-    try:
-      new_action = ActionUsers(
-        discordid = user.discordid,
-        discordname = user.discordname,
-        static = form.static.data,
-        nikname = form.nikname.data,
-        action = 'Raising',
-        curr_rank = user.curr_rank,
-        prev_rank = user.prev_rank,
-        author_id = current_user.id
-      )
-      db.session.add(new_action)
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")    
+    if current_user.organ != user.organ:
+      flash("Вы не можете уволить игрока другой фракции.")
+      return redirect(url_for('main.audit'))
+    
+    if current_user.curr_rank <= user.curr_rank:
+      flash("Вы не можете повысить игрока, если вы ниже рангом.")
+      return redirect(url_for('main.audit'))
+  
+  try:
+    user.action = 'Raising'
+    user.prev_rank = user.curr_rank
+    user.curr_rank = rank
+    db.session.commit()
 
   except SQLAlchemyError as e:
     db.session.rollback()
-    logging.error(f"Ошибка обработки: {str(e)}")    
+    logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+    flash("Произошла ошибка, попробуйте позже.")
+    return redirect(url_for('main.audit'))
+  
+  try:
+    new_action = ActionUsers(
+      discordid = user.discordid,
+      discordname = user.discordname,
+      static = user.static,
+      nikname = user.nikname,
+      action = 'Raising',
+      curr_rank = user.curr_rank,
+      prev_rank = user.prev_rank,
+      author_id = current_user.id
+    )
+    db.session.add(new_action)
+    db.session.commit()
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")    
 
   else:
-    send_to_bot_ka('Raising', form.static.data, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, form.nikname.data, reason)
-    flash('Пользователь успешно повышен!', 'success')
+    send_to_bot_ka('Raising', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason)
     logging.info('Пользователь был успешно обновлен в бд Users.')
+    flash("Пользователь был повышен!")
+    return redirect(url_for('main.audit'))
 
-
-def process_demotion(user, form, reason):
+def process_demotion(user, rank, reason):
   from __init__ import db, ActionUsers
   """Обрабатывает понижение пользователя."""
-  new_rank = form.rank.data
 
   permission_current = current_user.permissions[0]
   permission_user = user.permissions[0]
-  if permission_user and (permission_user.admin or permission_user.tech) \
-    and permission_current and (not permission_current.admin or not permission_current.tech):
-    flash('Вы не можете понизить админа/разработчика.')
-    return redirect(url_for('main.audit'))
-  
-  if current_user.organ != user.organ:
-    flash('Вы не можете понизить игрока другой фракции.')   
-    return redirect(url_for('main.audit'))
-  
-  if current_user.curr_rank < user.curr_rank:
-    flash('Вы не можете понизить игрока, если вы ниже или таким же рангом.')
-    return redirect(url_for('main.audit'))
-  
-  if user.action == 'Dismissal':
-    flash('Игрок не находится во фракции.')
-    return redirect(url_for('main.audit'))
-  
-  if user.curr_rank <= int(new_rank):
-    flash('Вы не можете понизить на текущий/выше ранг')
-    return redirect(url_for('main.audit'))
+  if not permission_current.tech or not permission_current.admin:
+    if permission_user and (permission_user.admin or permission_user.tech):
+      flash("Вы не можете уволить админа/разработчика.")
+      return redirect(url_for('main.audit'))
+    
+    if current_user.organ != user.organ:
+      flash("Вы не можете уволить игрока другой фракции.")
+      return redirect(url_for('main.audit'))
+    
+    if current_user.curr_rank <= user.curr_rank:
+      flash("Вы не моежете повысить игрока, если вы ниже рангом.")
+      return redirect(url_for('main.audit'))
   
   try:
     try:
       user.action = 'Demotion'
       user.prev_rank = user.curr_rank
-      user.curr_rank = new_rank
+      user.curr_rank = rank
       db.session.commit()
     
     except SQLAlchemyError as e:
       db.session.rollback()
-      flash('Произошла ошибка при сохранении данных. Попробуйте снова.', 'error')
       logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+      flash("Произошла ошибка при сохранении данных. Попробуйте снова.")
+      return redirect(url_for('main.audit'))
     
     try:
       new_action = ActionUsers(
         discordid = user.discordid,
         discordname = user.discordname,
-        static = form.static.data,
-        nikname = form.nikname.data,
+        static = user.static,
+        nikname = user.nikname,
         action = 'Demotion',
         curr_rank = user.curr_rank,
         prev_rank = user.prev_rank,
@@ -1852,80 +1751,162 @@ def process_demotion(user, form, reason):
     logging.error(f"Ошибка обработки: {str(e)}")  
 
   else:
-    send_to_bot_ka('Demotion', form.static.data, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, form.nikname.data, reason)
-    flash('Пользователь успешно понизили!', 'success')
+    send_to_bot_ka('Demotion', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason)
     logging.info('Пользователь был успешно обновлен в бд Users.')
-
-  if user.curr_rank == 0:
-    process_dismissal(user, form, reason)
+    flash("Вы успешено понизили пользователя!")
     return redirect(url_for('main.audit'))
 
+def process_dismissal(user, reason):
+    from __init__ import db, ActionUsers, Users
+    """Обрабатывает увольнение пользователя."""
 
-# Кадровый аудит
+    permission_current = current_user.permissions[0]
+    permission_user = user.permissions[0]
+
+    if not permission_current.admin or not permission_current.tech:
+      if permission_user and (permission_user.admin or permission_user.tech):
+        flash("Вы не можете уволить админа/разработчика.")
+        return redirect(url_for('main.audit'))
+    
+      if current_user.organ != user.organ:
+        flash("Вы не можете уволить игрока другой фракции.")
+        return redirect(url_for('main.audit'))
+      
+      if current_user.curr_rank <= user.curr_rank:
+        flash("Вы не моежете уволить игрока, если вы ниже рангом.")
+        return redirect(url_for('main.audit'))
+
+    if user.action == 'Dismissal':
+      flash("Игрок уже был уволен.")
+      return redirect(url_for('main.audit'))
+
+    try:
+      user.action = 'Dismissal'
+      user.prev_rank = user.curr_rank
+      user.curr_rank = 0
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+      return jsonify({"success": False, "message": "Попробуйте позже."}), 500
+
+    try:
+      permission_user.tech = False
+      permission_user.admin = False
+      permission_user.lider = False
+      permission_user.high_staff = False
+      permission_user.creation_doc = False
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения в базе данных (PermissionUsers): {str(e)}")
+
+    try:
+      new_action = ActionUsers(
+          discordid=user.discordid,
+          discordname=user.discordname,
+          static=user.static,
+          nikname=user.nikname,
+          action='Dismissal',
+          curr_rank=user.curr_rank,
+          prev_rank=user.prev_rank,
+          author_id=current_user.id
+      )
+      db.session.add(new_action)
+      db.session.commit()
+
+    except SQLAlchemyError as e:
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+
+    else:
+      send_to_bot_dismissal(user.discordid, user.static, user.organ)
+      send_to_bot_ka('Dismissal', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason)
+
+      logging.info('Пользователь был успешно обновлен в бд Users.')
+      flash("Пользователь был уволен.")
+      return redirect(url_for('main.audit'))
+
+      
+@main.route('/getPlayerData', methods=['GET'])
+@check_user_action
+@login_required
+def get_player_data():
+  from __init__ import Users
+  
+  static_value = request.args.get('static')
+  player = Users.query.filter_by(static=static_value).first()
+
+  if player:
+    return jsonify({'success': True, 'discord': player.discordid , 'nickname': player.nikname, 'action': player.action})
+  else:
+    return jsonify({'success': False})
+
 @main.route('/audit', methods=['POST', 'GET'])
 @check_user_action
 @login_required
 def audit():
   from __init__ import db, Users
-  form = FormAuditPush()  
-  
+
   permission = current_user.permissions[0]
   if not (permission.high_staff or permission.lider or permission.admin or permission.tech):
     flash("Доступ запрещен, отсутствуют права.")
     return redirect(url_for('main.profile'))
-  
-  action_users = current_user.action_log
 
+  action_users = current_user.action_log
   organ = current_user.organ
-  nikname = current_user.nikname
   color = color_organ(organ)
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
 
-  if form.validate_on_submit():
-    static = form.static.data
-    action = form.action.data
-    discord_id = form.discordID.data
-    discord_name = send_to_bot_get_dsname(discord_id)
-    reason = form.reason.data
+  if request.method == 'POST':
+    static = request.form.get('static')
+    nickname = request.form.get('nickname')
+    discord_id = request.form.get('discord')
+    reason = request.form.get('reason')
+    rank = request.form.get('rank') 
+    dismissal = request.form.get('dismissal')
+    
+    print(static, nickname, discord_id, reason)
+    
+    fraction = current_user.organ
+    if current_user.permissions[0].tech or current_user.permissions[0].admin: 
+      fraction = request.form.get('fraction')
 
     user = Users.query.filter_by(static=static).first()
     if static == current_user.static:
-      flash('Нельзя проводить действия над собой')
+      flash("Вы не можете производить действия над собой.")
       return redirect(url_for('main.audit'))
 
-    if action == 'Invite':
-      if user and user.action == 'Dismissal':
-          process_invite_action(user, form, reason, discord_id, static)
-      elif user is None:
-          process_new_invite(static, discord_id, discord_name, form, reason)
-      else:
-          flash('Такой статик уже имеется во госс. фракции!')
-          return redirect(url_for('main.audit'))
-
-    else:
-      if not user or user.action == 'Dismissal':
-        flash('Такого статика не существует во фракции!')
-        return redirect(url_for('main.audit'))
+    if not user:
+      process_new_invite(static, rank, nickname, discord_id, reason, fraction)
+    
+    elif user and user.action == 'Dismissal':
+      process_invite_action(user, rank, reason, fraction)
       
-      if action == 'Dismissal':
-        process_dismissal(user, form, reason)
-      elif action == 'Raising':
-        process_raise(user, form, reason)
-      elif action == 'Demotion':
-        process_demotion(user, form, reason)
+    elif user and dismissal == 'dismissal':
+      process_dismissal(user, reason)
+      
+    elif user and user.curr_rank < int(rank):
+      process_raise(user, rank, reason)
+      
+    elif user and user.curr_rank > int(rank):
+      process_demotion(user, rank, reason)
+      
+    else:
+      flash("Произошла ошибка попробуйте снова.")
+      return redirect(url_for('main.audit'))
+    
+  return render_template('ka.html', organ=organ, color=color, ranks=ranks)
 
-    return redirect(url_for('main.audit'))
-  return render_template('ka.html', form=form, organ=organ, color=color, nikname=nikname, action_users=action_users, current_user=current_user, ranks=ranks)
-
-# выход с профиля 
 @main.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
   logout_user()
   return redirect(url_for('main.index'))
 
-# профиль
 @main.route('/profile', methods=['GET'])
 @check_user_action
 @login_required
@@ -1955,6 +1936,7 @@ def check_perm_changedata():
   elif current_user.permissions[0].high_staff:
     return 1
   return 0
+
 @main.route('/database', methods=['GET'])
 def database():
   from __init__ import Users, guestUsers

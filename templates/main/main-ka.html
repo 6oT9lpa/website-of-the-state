@@ -1,84 +1,94 @@
-<main>
-    <div class="content">
-        <div class="history">
-            <h2>История КА</h2>
-            {% for user in action_users %}
-            <div class="history-item">
-                <p>{{ user.timespan }} - на кого</p>
-                <p>Name: {{ user.nikname }} | Discord Name: {{ user.discordname }}</p>
-                <p>Static: {{ user.static }} | DS ID: {{ user.discordid }}</p>
-                <p>Rank prev: {{  user.prev_rank }} | Rank curr: {{  user.curr_rank }}  | Action: {{ user.action }}</p>
-                <p>КА написал - {{ current_user.nikname }} | {{ current_user.static }}</p>
+<div class='container-audit'>
+    <div class='header-container'>
+        <div class='head'>
+            <div class='text-header'>
+                {% if current_user.permissions[0].admin or current_user.permissions[0].tech %}
+                    <div style="background-color:#490871 !important;" class="organ">admin</div>
+                    <div class="nikname">{{ current_user.nikname }}</div>
+                {% else %}
+                    <div style="background-color:{{ color }} !important;" class="organ">{{ current_user.organ }}</div>
+                    <div class="nikname">{{ current_user.nikname }}</div>
+                {% endif%}
             </div>
-            {% endfor %}
-        </div>
-        <div class="form">
-            <div class="line-z"></div>
-            <form method="POST" id="formKA">
-                {{ form.hidden_tag() }}
-                <div class="form-title">
-                    <div class="personal-date">
-                        <div style="background-color:{{ color }} !important;" class="organ">{{ organ }}</div>
-                        <div class="nikname">{{ nikname }}</div>
+        </div> 
+    </div>
+    <div class='line-modal'></div>
+    <div class='main-content'>
+        <form id="form-audit" method="POST" action="/audit">
+            <div class='form-container'>
+                <input type='hidden' id='dismissal' name='dismissal' value='none'>
+                <div class='form-control'>
+                    <label for="discord">Discord ID</label>
+                    <div class='form-input-modal'>
+                        <input name="discord"  id='discord' placeholder='Введите discordID игрока' required>
                     </div>
-                    <select class="action" id="actionType" name="action" required=""><option value="Raising">повышение</option><option value="Demotion">понижение</option><option value="Dismissal">увольнение</option><option value="Invite">принятие</option></select>
+                    <span class="text-danger" id="is-invalid"></span>
                 </div>
-                <h2>Кадровый Аудит</h2>
-                <div class='form-container'>
-                    <div class='group-contaniner-modal'>
-                        <div class='form-control'>
-                            <label for="phone">Discord ID</label>
-                            <div class='form-input-modal' id='phone-plaintiff'>
-                                <input class="discord-id" id="discordID" name="discordID" placeholder="Введите дс id" type="text" required>
-                            </div>
-                            <span class="text-danger" id="is-invalid"></span>
+                <div class='form-control'>
+                    <label for="static">Static</label>
+                    <div class='form-input-modal'>
+                        <input name="static" id='static' placeholder='Введите static игрока' required>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+                <div class='form-control'>
+                    <label for="nickname">NickName</label>
+                    <div class='form-input-modal'>
+                        <input name="nickname"  id='nickname' placeholder='Введите nickname игрока' required>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+                {% if current_user.permissions[0].admin or current_user.permissions[0].tech %}
+                    <div class='form-control'>
+                        <label for="fraction">Фракция</label>
+                        <div class='form-input-modal'>
+                            <select name="fraction" id='organ_change' class="dropdown-select-ka">
+                                <option value='LSPD'>LSPD</option>
+                                <option value='LSCSD'>LSCSD</option>
+                                <option value='WN'>WN</option>
+                                <option value='GOV'>GOV</option>
+                                <option value='EMS'>EMS</option>
+                                <option value='FIB'>FIB</option>
+                                <option value='SANG'>SANG</option>
+                            </select>
                         </div>
                     </div>
-                    <div class='group-contaniner-modal'>
-                        <div class='form-control'>
-                            <label for="phone">Static</label>
-                            <div class='form-input-modal' id='phone-plaintiff'>
-                                <input class="" id="static" maxlength="6" minlength="1" name="static" placeholder="Введите статик" required type="text">
-                            </div>
-                            <span class="text-danger" id="is-invalid"></span>
+                    <div class='form-control'>
+                        <label for="rank">Ранг</label>
+                        <div class='form-input-modal'>
+                            <select name="rank" class="dropdown-select-ka" id="rank-select">
+                            </select>
                         </div>
-                        <div class='form-control'>
-                            <label for="phone">NickName</label>
-                            <div class='form-input-modal' id='lower'>
-                                <input class="" id="nikname" maxlength="45" minlength="3" name="nikname" placeholder="Введите ник" required type="text">
-                            </div>
-                            <span class="text-danger" id="is-invalid"></span>
-                        </div>
+                        <span class="text-danger" id="is-invalid"></span>
                     </div>
-                    <div class='group-contaniner-modal'>
-                        <div class='form-control'>
-                            <label for="phone">Rank</label>
-                            <div class='form-input-modal' id='lower'>
-                                <select name="rank" id="rank" class="dropdown-select-ka">
-                                    {% for rank in ranks[organ] %}
-                                    <option value="{{ rank['id'] }}"{% if rank['id'] == 1 %} selected{% endif %}{% if rank['id'] >= current_user.curr_rank %}disabled{%endif%}>{{ rank['id'] }} | {{ rank['name'] }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <span class="text-danger" id="is-invalid"></span>
+                {% else %}
+                    <div class='form-control'>
+                        <label for="rank">Rank</label>
+                        <div class='form-input-modal'>
+                            <select name="rank" id='rank' class="dropdown-select-ka">
+                                {% for rank in ranks[organ] %}
+                                <option value="{{ rank['id'] }}"{% if rank['id'] == 1 %} selected{% endif %}{% if rank['id'] >= current_user.curr_rank %}disabled{%endif%}>{{ rank['id'] }} | {{ rank['name'] }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
-                        <div class='form-control'>
-                            <label for="phone">Reason</label>
-                            <div class='form-input-modal' id='lower'>
-                                <input class="" id="reason" maxlength="100" name="reason" placeholder="Введите причину" required type="text">
-                            </div>
-                            <span class="text-danger" id="is-invalid"></span>
-                        </div>
+                        <span class="text-danger" id="is-invalid"></span>
                     </div>
-                </div>        
+                {% endif %}
+                <div class='form-control'>
+                    <label for="reason">Reason</label>
+                    <div class='form-input-modal'>
+                        <input name="reason" id='reason' placeholder='Введите причину ка' required>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+            </div>
+            <div class="form-button-container">
                 <div class='submit-btn-contanier'>
-                    <div class='submit-btn'>
-                        {{ form.submit() }}
+                    <div class='submit-btn' id='submit-btn'>
+                        <input type="submit" value="Отравить изменения">   
                     </div>   
-                </div>
-            </form>
-        </div>
+                </div> 
+            </div> 
+        </form>
     </div>
-    <div class="lightning">
-    </div>
-</main>
+</div>

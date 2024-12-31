@@ -392,6 +392,47 @@ iframe {
     height: 465px;
 }
 
+.form-input-modal.error {
+    background: #e81c5a8c;
+}
+
+.form-input-modal input {
+    width: 95%;
+    padding: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 5px;
+    border: #1f1e1e;
+    background: #1f1e1e;
+    color: #f0f8ff;
+}
+
+.organ
+{
+    padding: 5px 8px;
+    background-color: #9F4C0F;
+    border-radius: 10px;
+}
+
+.personal-date
+{
+    display: flex;
+}
+
+.nikname
+{
+    font-size: 18px;
+    font-weight: 700;
+    align-content: center;
+    padding: 0 15px;
+}
+
+.form-button-container
+{
+    display: flex;
+    justify-content: center;
+}
+
 .buttons-container {
     display: block; 
     position: absolute;
@@ -958,13 +999,6 @@ span.btn-modal-close:hover {
     justify-content: center;
     padding: 10px;
 }
-
-.submit-btn-contanier {
-    display: flex;
-    justify-content: center;
-    padding: 5px;
-}
-
 
 .submit-btn {
     padding: 5px 10px;

@@ -1,69 +1,54 @@
 <main>
-<div class="search-container">
-    {% if more_info %}
-    <div id="more_info" style="display: flex;">
-    <div style="display: block;">
-    <a href="/database" style="color:red;text-decoration: none;">&times;</a>
-    <div id="playerDetails" style="color:red;">
-        <form method="POST" action="/database_change">
-        <h2>Подробная информация</h2>
-        <p><strong>Никнейм:</strong> {{ user.nikname }}</p>
-        <p><strong>Static:</strong> {{ user.static }}</p>
-        <p><strong>Фракция:</strong> {{ user.organ }}</p>
-        <p><strong>Ранг:</strong> {{ user.curr_rank }}</p>
-        <p><strong>Discord:</strong> <input type="text" name="discordname" value="{{ user.discordname }}" {% if perm_change >= 3 %}{% else %} readonly {% endif %}></p>
-        <p><strong>Discord ID:</strong> <input type="text" name="discordid" value="{{ user.discordid }}" {% if perm_change >= 3 %}{% else %} readonly {% endif %}></p>
-    </div>
-    <div id="permissions" style="color:red; display: block;">
-        <h2>Права пользователя</h2>
-            <input type="hidden" name="user_id" value="{{ user.id }}">
-            <p><label>
-                <input type="checkbox" name="tech" {% if user.permissions[0].tech %}checked{% endif %} onclick="return false;" >
-                Технический доступ
-            </label></p>
-            <p><label>
-                <input type="checkbox" name="prosecutor" {% if user.permissions[0].prosecutor %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
-                Прокурорский доступ
-            </label></p>
-            <p><label>
-                <input type="checkbox" name="lider" {% if user.permissions[0].lider %}checked{% endif %} {% if perm_change >= 4 %}{% else %} onclick="return false;" {% endif %}>
-                Лидерский доступ
-            </label></p>
-            <p><label>
-                <input type="checkbox" name="admin" {% if user.permissions[0].admin %}checked{% endif %} {% if perm_change >= 4 %}{% else %} onclick="return false;" {% endif %}>
-                Доступ Администратора
-            </label></p>
-            <p><label>
-                <input type="checkbox" name="high_staff" {% if user.permissions[0].high_staff %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
-                Старший состав
-            </label></p>
-            <p><label>
-                <input type="checkbox" name="creation_doc" {% if user.permissions[0].creation_doc %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
-                Доступ к созданию документов
-            </label></p>
-            <p><label>
-                <input type="checkbox" name="create_news" {% if user.permissions[0].create_news %}checked{% endif %} {% if perm_change >= 3 %}{% else %} onclick="return false;" {% endif %}>
-                Доступ к созданию новостей
-            </label></p>
-            <p><label>
-                <input type="checkbox" name="lawyer" {% if user.permissions[0].lawyer %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
-                Адвокатский доступ
-            </label></p>
-            {% if perm_change <= 1 %}{% else %} <button type="submit">Сохранить</button> {% endif %}</div>
-        </form></div>
-        <div id="ka" style="color:red; display: block; margin-left: 150px; overflow-y: auto;">
-        <h2>История КА</h2>
-        {% for log in ka_log %}
-            <div class="history-item" style="color:red;">
-                <p>{{ log.timespan }}</p>
-                <p>Name: {{ log.nikname }} | Discord Name: {{ log.discordname }}</p>
-                <p>Static: {{ log.static }} | DS ID: {{ log.discordid }}</p>
-                <p>Rank prev: {{  log.prev_rank }} | Rank curr: {{  log.curr_rank }}  | Action: {{ log.action }}</p>
-                <p>КА написал - {{ log.user.nikname }} | {{ log.user.static }}</p>
+    <div class="search-container">
+        {% if more_info %}
+        <div id="more_info" class="info-container">
+            <a href="/database" class="close-btn">&times;</a>
+            <div id="playerDetails" class="player-details">
+                <form method="POST" action="/database_change">
+                    <h2 class="section-title">Подробная информация</h2>
+                    <p><strong>Никнейм:</strong> {{ user.nikname }}</p>
+                    <p><strong>Static:</strong> {{ user.static }}</p>
+                    <p><strong>Фракция:</strong> {{ user.organ }}</p>
+                    <p><strong>Ранг:</strong> {{ user.curr_rank }}</p>
+                    <p><strong>Discord:</strong> 
+                        <input type="text" name="discordname" value="{{ user.discordname }}" {% if perm_change >= 3 %}{% else %} readonly {% endif %}>
+                    </p>
+                    <p><strong>Discord ID:</strong> 
+                        <input type="text" name="discordid" value="{{ user.discordid }}" {% if perm_change >= 3 %}{% else %} readonly {% endif %}>
+                    </p>
             </div>
-            {% endfor %}</div></div>
-    {% else %}
-    <div id="players">
+    
+            <div id="permissions" class="permissions-section">
+                <h2 class="section-title">Права пользователя</h2>
+                <input type="hidden" name="user_id" value="{{ user.id }}">
+                <p><label>
+                    <input type="checkbox" name="tech" {% if user.permissions[0].tech %}checked{% endif %} onclick="return false;">
+                    Технический доступ
+                </label></p>
+                <p><label>
+                    <input type="checkbox" name="prosecutor" {% if user.permissions[0].prosecutor %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
+                    Прокурорский доступ
+                </label></p>
+                <p><label>
+                    <input type="checkbox" name="lider" {% if user.permissions[0].lider %}checked{% endif %} {% if perm_change >= 4 %}{% else %} onclick="return false;" {% endif %}>
+                    Лидерский доступ
+                </label></p>
+                <p><label>
+                    <input type="checkbox" name="admin" {% if user.permissions[0].admin %}checked{% endif %} {% if perm_change >= 4 %}{% else %} onclick="return false;" {% endif %}>
+                    Доступ Администратора
+                </label></p>
+                <p><label>
+                    <input type="checkbox" name="high_staff" {% if user.permissions[0].high_staff %}checked{% endif %} {% if perm_change >= 2 %}{% else %} onclick="return false;" {% endif %}>
+                    Старший состав
+                </label></p>
+                {% if perm_change <= 1 %}{% else %}  <div class='container-submit-btn'> <button type="submit">Сохранить</button> </div> {% endif %}
+            </div>
+        </form>
+        <button id="toggleKaHistoryBtn" class="toggle-ka-history-btn">Показать Историю КА</button>
+        
+        </div>
+        {% else %}
+    <div id="players" class='players'>
     <div class="tabs">
         <button class="tab-button" onclick="showTab('users')">Пользователи</button>
         <button class="tab-button" onclick="showTab('ranks')">Ранги</button>
@@ -77,7 +62,6 @@
                 <option value="Discord">Дискорд</option>
             </select>
             <input type="text" name="text" id="text">
-            <input type="submit" value="Search">
         </form>
         <table>
             <tr>
@@ -106,26 +90,7 @@
         <p><strong>Ранг:</strong> <span id="userRank"></span></p>
         <p><strong>Discord:</strong> <span id="userDiscord"></span></p>
     </div>
-    
-    <script>
-        // Открытие подробной информации о пользователе при двойном клике на строку таблицы
-        document.querySelectorAll('.user-row').forEach(row => {
-        row.addEventListener('dblclick', function() {
-            const userId = this.getAttribute('data-user-id');
 
-            // Отправляем GET-запрос на сервер для получения полной информации о пользователе
-            function openUserProfile(userId) {
-                    window.location.href = `/database_getdata?user_id=${userId}`;
-            }
-            document.querySelectorAll('.user-row').forEach(row => {
-                row.addEventListener('dblclick', () => {
-                    const userId = row.getAttribute('data-user-id'); // Получаем ID пользователя
-                    openUserProfile(userId);
-                });
-            });
-        });
-    });
-    </script>
     <div id="ranks" class="tab-content" style="display:none;">
         <label for="fraction">Фракция</label>
         <select name="fraction" id="fraction" onchange="filterRanksByFraction(this.value)">
@@ -169,264 +134,31 @@
             </div>
             {% endfor %}
         </div>
-        <button onclick="saveRanks()">Сохранить</button>
+        <div class='container-btn'>
+            <button onclick="saveRanks()">Сохранить</button>
+        </div>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
-<script>
-    // Инициализация сортировки для каждого списка
-    document.querySelectorAll('.rank-list').forEach(rankList => {
-    new Sortable(rankList, {
-        animation: 150,
-        onStart(evt) {
-            // Если элемент с data-leader="true" перетаскивается, заблокировать перемещение
-            const leaderItem = evt.from.querySelector('[data-leader="true"]');
-            if (leaderItem && evt.item === leaderItem) {
-                // Заблокировать перетаскивание лидера
-                evt.item.setAttribute('draggable', 'false');
-            }
-        },
-        onEnd(evt) {
-            // Восстановление перетаскивания для всех элементов
-            evt.from.querySelectorAll('.rank-item').forEach(item => {
-                item.setAttribute('draggable', 'true');
-            });
 
-            // Пересчитываем ID после перетаскивания
-            updateRankIds(evt.from);
-        }
-    });
-});
+    {% endif %}
+</div>
 
-
-    // Обновление ID для ранга (реверсный расчет)
-    function updateRankIds(list) {
-        let index = list.querySelectorAll('.rank-item').length; 
-        list.querySelectorAll('.rank-item').forEach(item => {
-            const newId = index--; 
-            item.querySelector('.rank-id').value = newId;
-        });
-    }
-
-    function filterRanksByFraction(fraction) {
-        document.querySelectorAll('.fraction-group').forEach(group => {
-            if (!fraction || group.dataset.fraction === fraction) {
-                group.style.display = '';
-            } else {
-                group.style.display = 'none';
-            }
-        });
-    }
-
-    function addRank(fraction) {
-        const rankList = document.getElementById(`${fraction}-list`);
-        const newId = generateNewId(rankList);
-
-        const newItem = document.createElement('li');
-        newItem.className = 'rank-item';
-        newItem.setAttribute('data-id', newId);
-        newItem.setAttribute('data-leader', 'false'); 
-        newItem.innerHTML = `
-            <input type="text" class="rank-id" value="${newId}" readonly>
-            <input type="text" class="rank-name" value="Новый ранг">
-            <button class="delete-rank" onclick="deleteRank('${fraction}', ${newId})">Удалить</button>
-        `;
-
-        rankList.appendChild(newItem);
-        updateRankIds(rankList); 
-    }
-
-    // Генерация нового ID
-    function generateNewId(rankList) {
-        let maxId = 0;
-        rankList.querySelectorAll('.rank-item').forEach(item => {
-            const id = parseInt(item.querySelector('.rank-id').value, 10);
-            if (id > maxId) maxId = id;
-        });
-        return maxId + 1;
-    }
-
-    // Массив для хранения удалённых рангов
-    let ranksToDelete = [];
-
-    // Функция для удаления ранга
-    function deleteRank(fraction, id) {
-        const rankItem = document.querySelector(`[data-fraction="${fraction}"] [data-id="${id}"]`);
-        if (rankItem) {
-            // Добавляем ранг в массив удаляемых
-            ranksToDelete.push({
-                organ: fraction,
-                id: id
-            });
-
-            rankItem.remove();
-            updateRankIds(document.getElementById(`${fraction}-list`)); 
-        }
-    }
-
-    // Функция для сохранения рангов
-    function saveRanks() {
-        const updatedRanks = {};
-        
-        // Собираем обновленные ранги
-        document.querySelectorAll('.fraction-group').forEach(group => {
-            const fraction = group.dataset.fraction;
-            const ranks = [];
-            group.querySelectorAll('.rank-item').forEach(item => {
-                const leaderSpan = item.querySelector('.leader-label');
-                const isLeader = leaderSpan !== null;
-
-                ranks.push({
-                    id: parseInt(item.querySelector('.rank-id').value),
-                    name: item.querySelector('.rank-name').value,
-                    leader: isLeader
-                });
-            });
-            updatedRanks[fraction] = ranks;
-        });
-
-        // Добавляем массив для удаления в запрос
-        const dataToSend = {
-            ...updatedRanks,
-            ranks_to_delete: ranksToDelete
-        };
-
-        console.log('Saving ranks:', dataToSend);
-
-        // Очищаем массив для удаления после отправки
-        ranksToDelete = [];
-
-        fetch('/save_ranks', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(dataToSend)
-        }).then(response => {
-            if (response.ok) {
-                alert('Изменения сохранены!');
-            } else {
-                alert('Ошибка при сохранении.');
-            }
-        });
-    }
-</script>
-{% endif %}
-
-    <style>
-        .sortable-ghost {
-            background-color: #f0f0f0;
-            opacity: 0.8;
-        }
-        ul.item-list {
-            list-style: none;
-            padding: 0;
-        }
-        ul.item-list li {
-            margin: 5px 0;
-            padding: 10px;
-            border: 1px solid #ccc;
-            background-color: #fff;
-            cursor: grab;
-        }
-        .group {
-            margin-bottom: 20px;
-        }
-        #userDetails  {
-            color: red;
-        }
-    </style>        
-    </div>
-    <script>
-        function showTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.style.display = 'none';
-    });
-    document.getElementById(tabName).style.display = 'block';
-}
-
-// Enable drag and drop sorting for ranks
-document.querySelectorAll('.rank-list').forEach(rankList => {
-    new Sortable(rankList, {
-        animation: 150,
-        onEnd: function (evt) {
-            // Handle rank reordering
-            console.log('Rank reordered:', evt);
-        }
-    });
-});
-    </script>
+<div id="kaHistory" class="ka-history hidden-modal" style='display: none; transform: translateX(-50%);'>
+    <h2 class="ka-history-title">История КА</h2>
+    <div class="ka-log">
+        {% for log in ka_log %}
+            <div class="ka-item">
+                <p class="ka-timespan">{{ log.timespan }}</p>
+                <p><strong>Имя:</strong> {{ log.nikname }} | <strong>Discord:</strong> {{ log.discordname }}</p>
+                <p><strong>Static:</strong> {{ log.static }} | <strong>Discord ID:</strong> {{ log.discordid }}</p>
+                <p><strong>Ранг до:</strong> {{ log.prev_rank }} | <strong>Ранг после:</strong> {{ log.curr_rank }}</p>
+                <p><strong>Действие:</strong> {{ log.action }}</p>
+                <p><strong>КА написал:</strong> {{ log.user.nikname }} | {{ log.user.static }}</p>
+            </div>
+        {% endfor %}
     </div>
 </div>
 </main>
-<style>
-    li {
-        color:rgb(68, 0, 255);
-        user-select: none;
-    }
-    main {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    .search-container {
-        width: 100%;
-        max-width: 1200px;
-        margin: 20px auto;
-        padding: 20px;
-        background-color: #f1f1f1;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    }
-    .search-form {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    .search-form > * {
-        margin: 10px;
-    }
-    .search-form > label {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    .search-form > label > * {
-        margin: 5px;
-    }
-    .search-form > input[type="text"] {
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-    .search-form > input[type="submit"] {
-        background-color: #4CAF50;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    .search-form > input[type="submit"]:hover {
-        background-color: #45a049;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    th, td {
-        border: 1px solid #ddd;
-        padding: 8px;
-    }
-    td {
-        color: #45a049;  
-    }
-    th {
-        text-align: left;
-        background-color: #4CAF50;
-        color: white;
-    }
-    tr:nth-child(even) {
-        background-color: #f2f2f2;
-    }
-</style>
+
+
