@@ -236,13 +236,6 @@ def read_ranks(filename):
     data = json.load(f)
   return data
 
-def get_rank_info(ranks, organization, rank_level):
-  rank_info = None
-  if organization in ranks:
-    for rank_data in ranks[organization]:
-      if rank_data['id'] == rank_level:
-        return rank_data['name']
-  return rank_info
 
 # подключение redis как обрабочик сообщений
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -1921,9 +1914,8 @@ def profile():
 
     filename = "./python/name-ranks.json"
     ranks = read_ranks(filename)
-    ranks = get_rank_info(ranks, organ, rank)
+    
     updated_ranks = ranks.get("updated_ranks", {})
-
     return render_template('profile.html', rank_name=updated_ranks, color=color, current_user=current_user, is_guest=is_guest)
   else:
     return render_template('profile.html', current_user=current_user, is_guest=is_guest)
