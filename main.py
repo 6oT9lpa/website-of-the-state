@@ -1923,7 +1923,6 @@ def profile():
     ranks = read_ranks(filename)
     updated_ranks = ranks.get("updated_ranks", {})
     rank_name = get_rank_info(updated_ranks, organ, rank)
-    
 
     return render_template('profile.html', rank_name=rank_name, color=color, current_user=current_user, is_guest=is_guest)
   else:
@@ -1940,7 +1939,44 @@ def check_perm_changedata():
     return 1
   return 0
 
+
+@main.route('/getSearchUser', methods=['GET'])
+@check_user_action
+@login_required
+def get_search_data():
+    from __init__ import Users
+    input_val = request.args.get('inputVal', '').strip()
+    filter_val = request.args.get('filterVal', '').strip()
+
+    print(f"Input Value: {input_val}, Filter Value: {filter_val}")  # Debugging line
+
+    query = Users.query
+    if filter_val == 'nickname':
+      query = query.filter(Users.nikname.ilike(f"%{input_val}%"))
+    elif filter_val == 'static':
+      query = query.filter(Users.static.ilike(f"%{input_val}%"))
+    elif filter_val == 'discord':
+      query = query.filter(Users.discordname.ilike(f"%{input_val}%"))
+
+    results = query.all()
+    print(f"Results: {results}")
+
+    filtered_data = [
+        {
+            "id": user.id,
+            "nikname": user.nikname,
+            "static": user.static,
+            "organ": user.organ,
+            "curr_rank": user.curr_rank,
+            "discordname": user.discordname
+        } for user in results
+    ]
+
+    return jsonify({"success": True, "results": filtered_data})
+
 @main.route('/database', methods=['GET'])
+@check_user_action
+@login_required
 def database():
   from __init__ import Users, guestUsers
   perm_level = check_perm_changedata()
@@ -1948,22 +1984,9 @@ def database():
     return redirect(url_for('main.audit'))
   organ = current_user.organ
   rank = current_user.curr_rank
+  users = Users.query.all()
   ranks = read_ranks("./python/name-ranks.json")
   color = color_organ(organ)
-  search = request.args.get('search')
-  print(search)
-  if search:
-    filter = request.args.get('filter')
-    text = request.args.get('text')
-    if filter == "Nikname":
-      users_t = Users.query.filter_by(nikname=text).all()
-    elif filter == "Static":
-      users_t = Users.query.filter_by(static=text).all()
-    elif filter == "Discord":
-      users_t = Users.query.filter_by(discordname=text).all()
-  else:
-    users_t = Users.query.all()
-
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
   rank_name = get_rank_info(ranks, organ, rank)
@@ -1972,7 +1995,7 @@ def database():
   for group_name, rank_items in updated_ranks.items():
     groups[group_name] = rank_items
 
-  return render_template('database.html', rank_name=rank_name, color=color, current_user=current_user, Users=users_t, ranks=ranks, groups=groups, more_info=False)
+  return render_template('database.html', rank_name=rank_name, color=color, current_user=current_user, Users=users, ranks=ranks, groups=groups, more_info=False)
 
 DATA_FILE = "./python/name-ranks.json"
 def write_data(data):
@@ -2286,7 +2309,7 @@ def create_doc():
       
         if degreeRI == 'частично':
           details = [
-              f"1. Цель. Частичное снятие статуса неприкосновенности у гражданина {nickname if nickname != '' else ''}, паспортные "
+              f"1. Цель. Частичное снятие статуса неприкосновенности у гражданина {nickname if nickname != '' else ''}, с номером паспортные "
               f"данные {static}, для проведения следственных действий в рамках прокурорского расследования.", 
 
               "2. Разрешение. Настоящий ордер предоставляет Прокуратуре штата Сан-Андреас право на осуществление "
@@ -2302,7 +2325,7 @@ def create_doc():
 
         elif degreeRI == 'полностью':
           details = [
-              f"1. Цель. Полное снятие статуса неприкосновенности с гражданина {nickname if nickname != '' else ''}, паспортные данные "
+              f"1. Цель. Полное снятие статуса неприкосновенности с гражданина {nickname if nickname != '' else ''}, с номером паспортных данных "
               f"{static}, для задержания и проведения дальнейших процессуальных действий, включая арест.", 
 
               "2. Разрешение. Настоящий ордер предоставляет право на проведение следственных, процессуальных "
@@ -2518,7 +2541,7 @@ def create_doc():
           num += 1
 
         if formResolution.param2.data:
-          text = (f"{num}. Обязать {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортные данные {static}, "
+          text = (f"{num}. Обязать {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортных данных {static}, "
                   f"в течение 24 часов предоставить на почту Прокурора {current_user.nikname} ({current_user.discordname}@gov.sa) видеозапись процессуальных действий, проведённых в отношении {formResolution.param2_nickname.data}, время провдение ареста {formResolution.arrest_time.data}. "
                   f"Запись должна содержать момент ареста {formResolution.arrest_time.data} и фиксировать предполагаемое нарушение.")
           y = draw_multiline_text(pdf, text, 15, y)
@@ -2527,26 +2550,26 @@ def create_doc():
 
         if formResolution.param3.data:
           text = (f"{num}. Предоставить личное дело {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, "
-                  f"с номером паспортные данные {static}, включающее электронную почту, должность. Срок предоставления информации — 24 часа.")
+                  f"с номером паспортных данных {static}, включающее электронную почту, должность. Срок предоставления информации — 24 часа.")
           y = draw_multiline_text(pdf, text, 15, y)
           y -= 5
           num += 1
 
         if formResolution.param4.data:
-          text = f"{num}. Ввести запрет на смену персональных данных {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортные данные {static}."
+          text = f"{num}. Ввести запрет на смену персональных данных {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортных данных {static}."
           y = draw_multiline_text(pdf, text, 15, y)
           y -= 5
           num += 1
 
         if formResolution.param5.data and user and user.action != 'Dismissal':
-          text = (f"{num}. Ввести запрет на увольнение сотрудника {user.organ} {nickname if nickname != '' else ''} с номером паспортные данные {static} "
+          text = (f"{num}. Ввести запрет на увольнение сотрудника {user.organ} {nickname if nickname != '' else ''} с номером паспортных данных {static} "
                   f"и на перевод в другие государственные структуры на период расследования по делу с идентификатором {formResolution.case.data}.")
           y = draw_multiline_text(pdf, text, 15, y)
           y -= 5
           num += 1
 
         if formResolution.param6.data and user and user.action != 'Dismissal':
-          text = f"{num}. Временно отстранить сотрудника {user.organ} {nickname}, с номером паспортные данные {static}, от исполнения служебных обязанностей на время расследования по делу с идентификатором {formResolution.case.data}."
+          text = f"{num}. Временно отстранить сотрудника {user.organ} {nickname}, с номером паспортных данных {static}, от исполнения служебных обязанностей на время расследования по делу с идентификатором {formResolution.case.data}."
           y = draw_multiline_text(pdf, text, 15, y)
           y -= 5
           num += 1
@@ -2908,13 +2931,13 @@ def edit_resolution():
     print(doc.initiation_case)
     if doc.initiation_case:
       text = (f"{num}. Возбудить уголовное дело в отношении {'сотрудника ' + user.organ if user else 'гражданина'} "
-              f"{nickname if nickname != '' else ''}, с номером паспортные данные {static}. Присвоить делу идентификатор {doc.number_case} и принять его к производству прокуратурой штата.")
+              f"{nickname if nickname != '' else ''}, с номером паспортных данных {static}. Присвоить делу идентификатор {doc.number_case} и принять его к производству прокуратурой штата.")
       y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
       num += 1
 
     if doc.provide_video:
-      text = (f"{num}. Обязать {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортные данные {static}, "
+      text = (f"{num}. Обязать {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортных данных {static}, "
               f"в течение 24 часов предоставить на почту Прокурора {current_user.nikname} ({current_user.discordname}@gov.sa) видеозапись процессуальных действий, проведённых в отношении {nickname_victim}, время провдение ареста {time_arrest}. "
               f"Запись должна содержать момент ареста {time_arrest} и фиксировать предполагаемое нарушение.")
       y = draw_multiline_text(pdf, text, 15, y)
@@ -2923,26 +2946,26 @@ def edit_resolution():
 
     if doc.provide_personal_file:
       text = (f"{num}. Предоставить личное дело {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, "
-              f"с номером паспортные данные {static}, включающее электронную почту, должность. Срок предоставления информации — 24 часа.")
+              f"с номером паспортных данных {static}, включающее электронную почту, должность. Срок предоставления информации — 24 часа.")
       y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
       num += 1
 
     if doc.changing_personal_data:
-      text = f"{num}. Ввести запрет на смену персональных данных {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортные данные {static}."
+      text = f"{num}. Ввести запрет на смену персональных данных {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортных данных {static}."
       y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
       num += 1
 
     if doc.dismissal_employee and user and user.action != 'Dismissal':
-      text = (f"{num}. Ввести запрет на увольнение сотрудника {user.organ} {nickname if nickname != '' else ''} с номером паспортные данные {static} "
+      text = (f"{num}. Ввести запрет на увольнение сотрудника {user.organ} {nickname if nickname != '' else ''} с номером паспортных данных {static} "
               f"и на перевод в другие государственные структуры на период расследования по делу с идентификатором {doc.number_case}.")
       y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
       num += 1
 
     if doc.temporarily_suspend and user and user.action != 'Dismissal':
-      text = f"{num}. Временно отстранить сотрудника {user.organ} {nickname}, с номером паспортные данные {static}, от исполнения служебных обязанностей на время расследования по делу с идентификатором {doc.number_case}."
+      text = f"{num}. Временно отстранить сотрудника {user.organ} {nickname}, с номером паспортных данных {static}, от исполнения служебных обязанностей на время расследования по делу с идентификатором {doc.number_case}."
       y = draw_multiline_text(pdf, text, 15, y)
       y -= 5
       num += 1
