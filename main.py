@@ -2127,12 +2127,15 @@ def profile_settings():
     new_discordid = request.form.get('new_discordid')
     current_password = request.form.get('password-teds')
     if check_password_hash(current_user.password, current_password):
-      old_discordid = current_user.discordid
-      current_user.discordid = new_discordid
-      discordname = send_to_bot_get_dsname(new_discordid)
-      send_to_bot_log_dump(f"{current_user.discordid} ({old_discordid} #{current_user.static})", f"Пользователь изменил свой Discord ID на {new_discordid} ({discordname})")
-      current_user.discordname = discordname
-      db.session.commit()
+      if new_discordid.isdigit():
+        old_discordid = current_user.discordid
+        current_user.discordid = new_discordid
+        discordname = send_to_bot_get_dsname(new_discordid)
+        send_to_bot_log_dump(f"{current_user.discordid} ({old_discordid} #{current_user.static})", f"Пользователь изменил свой Discord ID на {new_discordid} ({discordname})")
+        current_user.discordname = discordname
+        db.session.commit()
+      else:
+        flash('Неверный Discord ID!')
     else:
       flash('Неверный пароль!')
   elif action == 'password':
