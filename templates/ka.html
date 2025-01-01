@@ -76,12 +76,18 @@
 
             const staticValue = event.target.value;
 
+            if (/[^0-9]/.test(staticValue)) {
+                event.target.value = '';
+                removeFireButton();
+                document.getElementById('discord').value = '';
+                document.getElementById('nickname').value = '';
+                return;
+            }
+
             if (staticValue.trim() === '') {
                 removeFireButton();
                 document.getElementById('discord').value = '';
                 document.getElementById('nickname').value = '';
-                document.getElementById('discord').disabled = false;
-                document.getElementById('nickname').disabled = false;
                 return;
             }
 
@@ -103,8 +109,6 @@
                             removeFireButton();
                             document.getElementById('discord').value = '';
                             document.getElementById('nickname').value = '';
-                            document.getElementById('discord').disabled = false;
-                            document.getElementById('nickname').disabled = false;
                         }
                     })
                     .catch(error => {
@@ -112,8 +116,6 @@
                         removeFireButton();
                         document.getElementById('discord').value = '';
                         document.getElementById('nickname').value = '';
-                        document.getElementById('discord').disabled = false;
-                        document.getElementById('nickname').disabled = false;
                     });
             }, doneTypingInterval);
         });
