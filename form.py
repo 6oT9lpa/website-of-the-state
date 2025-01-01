@@ -21,8 +21,8 @@ class FormCreateDoc(FlaskForm):
 class FormCreateResolution(FormCreateDoc):   
     param1 = BooleanField(label="Возбуждение уголовного дела.")
     param2 = BooleanField(label="Запрос видеофиксации задержания.")
-    param3 = BooleanField(label="Запрос перснональных данных.")
-    param4 = BooleanField(label="Запрет на смену перснональных данных.")
+    param3 = BooleanField(label="Запрос персональных данных.")
+    param4 = BooleanField(label="Запрет на смену персональных данных.")
     param5 = BooleanField(label="Запрет на увольнение, перевод в другую фракцию.")
     param6 = BooleanField(label="Запрет на ведение службы на время расследования.")  
     custom_button_pressed = HiddenField('Custom Button Pressed', default="false")

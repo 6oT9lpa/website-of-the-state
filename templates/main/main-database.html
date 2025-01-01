@@ -74,32 +74,35 @@
         <button class="tab-button" onclick="showTab('ranks')">Ранги</button>
     </div>
     <div id="users" class="tab-content">
-        <form class="search-form" action="/database" method="GET">
-            <input type="hidden" name="search" value="True">
+        <div class="search-form">
             <select name="filter" id="filter">
-                <option value="Nikname">Имя Фамилия</option>
-                <option value="Static">Статик</option>
-                <option value="Discord">Дискорд</option>
+                <option value="nickname">Имя Фамилия</option>
+                <option value="static">Статик</option>
+                <option value="discord">Дискорд</option>
             </select>
-            <input type="text" name="text" id="text">
-        </form>
-        <table>
-            <tr>
-                <th>Никнейм</th>
-                <th>Static</th>
-                <th>Фракция</th>
-                <th>Ранг</th>
-                <th>Discord</th>
-            </tr>
-            {% for user in Users %}
-            <tr class="user-row" data-user-id="{{ user.id }}">
-                <td>{{ user.nikname }}</td>
-                <td>{{ user.static }}</td>
-                <td>{{ user.organ }}</td>
-                <td>{{ user.curr_rank }}</td>
-                <td>{{ user.discordname }}</td>
-            </tr>
-            {% endfor %}
+            <input type="text" name="text" id="searchInput">
+        </div>
+        <table id="userTable">
+            <thead>
+                <tr>
+                    <th>Никнейм</th>
+                    <th>Static</th>
+                    <th>Фракция</th>
+                    <th>Ранг</th>
+                    <th>Discord</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in Users %}
+                <tr class="user-row" data-user-id="{{ user.id }}">
+                    <td>{{ user.nikname }}</td>
+                    <td>{{ user.static }}</td>
+                    <td>{{ user.organ }}</td>
+                    <td>{{ user.curr_rank }}</td>
+                    <td>{{ user.discordname }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
     <div id="userDetails" style="display: none; margin-top: 20px;">

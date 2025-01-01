@@ -227,18 +227,11 @@
         document.querySelectorAll('.user-row').forEach(row => {
             row.addEventListener('dblclick', function() {
                 const userId = this.getAttribute('data-user-id');
-    
-                function openUserProfile(userId) {
-                        window.location.href = `/database_getdata?user_id=${userId}`;
-                }
-                document.querySelectorAll('.user-row').forEach(row => {
-                    row.addEventListener('dblclick', () => {
-                        const userId = row.getAttribute('data-user-id');
-                        openUserProfile(userId);
-                    });
-                });
+                
+                window.location.href = `/database_getdata?user_id=${userId}`;
             });
         });
+        
 
         function showTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -264,36 +257,93 @@
             filterRanksByFraction('LSPD');
         });
 
-
-        document.getElementById('toggleKaHistoryBtn').addEventListener('click', function() {
-            var kaHistory = document.getElementById('kaHistory');
-            var button = document.getElementById('toggleKaHistoryBtn');
-            
-            if (kaHistory.style.display === 'none') {
-                kaHistory.style.display = 'flex';
-                document.querySelectorAll('#overlay').forEach(o => {
-                    o.classList.add('active');
-                });
-            
-                setTimeout(() => {
-                    kaHistory.classList.remove('hidden-modal');
-                    kaHistory.classList.add('show-modal');
-                }, 10);
-
-                button.textContent = 'Скрыть Историю КА'; 
-            } else {
-                kaHistory.classList.remove('show-modal');
-                kaHistory.classList.add('hidden-modal');
-
-                setTimeout(() => {
-                    kaHistory.style.display = 'none';
+        if (document.getElementById('toggleKaHistoryBtn')) {
+            document.getElementById('toggleKaHistoryBtn').addEventListener('click', function() {
+                var kaHistory = document.getElementById('kaHistory');
+                var button = document.getElementById('toggleKaHistoryBtn');
+                
+                if (kaHistory.style.display === 'none') {
+                    kaHistory.style.display = 'flex';
                     document.querySelectorAll('#overlay').forEach(o => {
-                        o.classList.remove('active');
+                        o.classList.add('active');
                     });
-                }, 450);
-                button.textContent = 'Показать Историю КА';
+                
+                    setTimeout(() => {
+                        kaHistory.classList.remove('hidden-modal');
+                        kaHistory.classList.add('show-modal');
+                    }, 10);
+
+                    button.textContent = 'Скрыть Историю КА'; 
+                } else {
+                    kaHistory.classList.remove('show-modal');
+                    kaHistory.classList.add('hidden-modal');
+
+                    setTimeout(() => {
+                        kaHistory.style.display = 'none';
+                        document.querySelectorAll('#overlay').forEach(o => {
+                            o.classList.remove('active');
+                        });
+                    }, 450);
+                    button.textContent = 'Показать Историю КА';
+                }
+            });
+        }
+        document.getElementById('searchInput').addEventListener('input', performSearch);
+        document.getElementById('filter').addEventListener('change', performSearch);
+        
+        function performSearch() {
+            const searchInput = document.getElementById('searchInput').value.trim();
+            const filterValue = document.getElementById('filter').value;
+        
+            // Проверяем, что есть хотя бы одно значение для поиска
+            if (!searchInput && !filterValue) {
+                return;
             }
-        });
+        
+            fetch(`/getSearchUser?inputVal=${encodeURIComponent(searchInput)}&filterVal=${encodeURIComponent(filterValue)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Ошибка при запросе на сервер');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        updateTable(data.results);
+                    } else {
+                        console.error('Нет данных для отображения');
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при запросе:', error);
+                });
+        }
+        
+        function updateTable(users) {
+            const tableBody = document.querySelector('table tbody');
+            if (!tableBody) {
+                console.error('Таблица не найдена в DOM.');
+                return;
+            }
+        
+            tableBody.innerHTML = '';
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.classList.add('user-row');
+                row.dataset.userId = user.id;
+        
+                row.innerHTML = `
+                    <td>${user.nikname}</td>
+                    <td>${user.static}</td>
+                    <td>${user.organ}</td>
+                    <td>${user.curr_rank}</td>
+                    <td>${user.discordname}</td>
+                `;
+        
+                tableBody.appendChild(row);
+            });
+        }
+        
     </script>
 </body>
 </html>

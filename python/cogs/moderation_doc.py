@@ -169,6 +169,26 @@ class ModerationDoc(commands.Cog):
             print(f"Ошибка при обновлении View для сообщения {message_id}: {e}")
             traceback.print_exc()
 
+    async def clean_old_messages(self):
+        """Удаляет сообщения старше 24 часов."""
+        current_time = time.time()  
+        messages_to_delete = []
+        
+        for message_id, message_data in self.messages.items():
+            created_at = message_data.get("created_at", 0)
+            if current_time - created_at > 129600:  
+                messages_to_delete.append(message_id)
+        
+        for message_id in messages_to_delete:
+            del self.messages[message_id]
+            print(f"Удалено старое сообщение с ID {message_id}")
+        
+        self.save_message_data()  
+        
+    @tasks.loop(seconds=60)
+    async def remove_old_messages(self):
+        """Удаляет старые сообщения каждый день."""
+        await self.clean_old_messages()
 
     @tasks.loop(minutes=10)
     async def update_buttons(self):
@@ -185,7 +205,8 @@ class ModerationDoc(commands.Cog):
                 "uid": uid,
                 "button_url": None,
                 "message_id": None,
-                "is_active": False  
+                "is_active": False,
+                "created_at": time.time()
             }
 
             # Пытаемся получить канал
@@ -196,9 +217,8 @@ class ModerationDoc(commands.Cog):
             
             if status == 'moder':
                 global embed
-                # Создаем сообщение с встраиванием
                 embed = disnake.Embed(
-                    title=f"Пришло новое постановление **{number_resolution}** от прокурора `{nickname} #{static}`",
+                    title=f"Пришло новое постановление **{number_resolution}** от прокурора {nickname} #{static}",
                     description=(
                         "Требуется модерация постановления!\n"
                         "Чтобы начать модерацию, нажмите на кнопку ниже\n\n"
@@ -209,7 +229,7 @@ class ModerationDoc(commands.Cog):
             
             elif status == 'edit':
                 embed = disnake.Embed(
-                    title=f"Пришло измененное постановление **{number_resolution}** от прокурора `{nickname} #{static}`",
+                    title=f"Пришло измененное постановление **{number_resolution}** от прокурора {nickname} #{static}",
                     description=(
                         "Требуется модерация постановления!\n"
                         "Чтобы начать модерацию, нажмите на кнопку ниже\n\n"
@@ -287,8 +307,7 @@ def setup(bot):
     moderation_doc = ModerationDoc(bot)
     bot.loop.create_task(process_new_resolution_message(moderation_doc))
     bot.add_cog(ModerationDoc(bot))
-    
-     
     time.sleep(5)
     moderation_doc.load_message_data()
+    moderation_doc.remove_old_messages.start()
     bot.loop.create_task(moderation_doc.update_buttons())
