@@ -1482,7 +1482,7 @@ def existing_discord_in_multiple_organizations(discord_id):
   """Проверка на 2+ дискорда в Гос. фракции"""
   return (Users.query.filter_by(discordid=discord_id).count() > 1  and Users.query.filter_by(discordid=discord_id).first().action != 'Dismissal')
 
-def send_to_bot_ka(action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason):
+def send_to_bot_ka(action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason, fraction):
   """Redis отправка формы КА в discord bot"""
   message = {
       'action': action,
@@ -1493,7 +1493,8 @@ def send_to_bot_ka(action, static_to, discord_id_from, discord_id_to, curr_rank,
       'static_to': static_to,
       'nikname_from': nikname_from,
       'nikname_to': nikname_to,
-      'reason': reason
+      'reason': reason,
+      'fraction': fraction
   }
   redis_client.publish('ka_channel', json.dumps(message))
 
@@ -1553,7 +1554,7 @@ def process_invite_action(user, rank, reason, fraction):
     logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
 
   else:
-    send_to_bot_ka('Invite', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason)
+    send_to_bot_ka('Invite', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
     send_to_bot_invite(password, user.discordid, user.static, user.organ)
     logging.info('Пользователь был успешно добавлен в бд Users.')
     
@@ -1629,7 +1630,7 @@ def process_new_invite(static, rank, nickname, discord_id, reason, fraction):
     logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
 
   else:
-    send_to_bot_ka('Invite', static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason)
+    send_to_bot_ka('Invite', static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
     send_to_bot_invite(password, discord_id, static, user.organ)
     logging.info('Пользователь был успешно добавлен в бд Users.')
     
@@ -1641,7 +1642,7 @@ def process_new_invite(static, rank, nickname, discord_id, reason, fraction):
     return redirect(url_for('main.audit'))
   
 
-def process_raise(user, rank, reason):
+def process_raise(user, rank, reason, fraction):
   from __init__ import db, ActionUsers
   """Обрабатывает повышение пользователя."""
 
@@ -1691,12 +1692,12 @@ def process_raise(user, rank, reason):
     logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")    
 
   else:
-    send_to_bot_ka('Raising', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason)
+    send_to_bot_ka('Raising', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
     logging.info('Пользователь был успешно обновлен в бд Users.')
     flash("Пользователь был повышен!")
     return redirect(url_for('main.audit'))
 
-def process_demotion(user, rank, reason):
+def process_demotion(user, rank, reason, fraction):
   from __init__ import db, ActionUsers
   """Обрабатывает понижение пользователя."""
 
@@ -1751,12 +1752,12 @@ def process_demotion(user, rank, reason):
     logging.error(f"Ошибка обработки: {str(e)}")  
 
   else:
-    send_to_bot_ka('Demotion', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason)
+    send_to_bot_ka('Demotion', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
     logging.info('Пользователь был успешно обновлен в бд Users.')
     flash("Вы успешено понизили пользователя!")
     return redirect(url_for('main.audit'))
 
-def process_dismissal(user, reason):
+def process_dismissal(user, reason, fraction):
     from __init__ import db, ActionUsers, Users
     """Обрабатывает увольнение пользователя."""
 
@@ -1823,7 +1824,7 @@ def process_dismissal(user, reason):
 
     else:
       send_to_bot_dismissal(user.discordid, user.static, user.organ)
-      send_to_bot_ka('Dismissal', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason)
+      send_to_bot_ka('Dismissal', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
 
       logging.info('Пользователь был успешно обновлен в бд Users.')
       flash("Пользователь был уволен.")
@@ -1888,13 +1889,13 @@ def audit():
       process_invite_action(user, rank, reason, fraction)
       
     elif user and dismissal == 'dismissal':
-      process_dismissal(user, reason)
+      process_dismissal(user, reason, fraction)
       
     elif user and user.curr_rank < int(rank):
-      process_raise(user, rank, reason)
+      process_raise(user, rank, reason, fraction)
       
     elif user and user.curr_rank > int(rank):
-      process_demotion(user, rank, reason)
+      process_demotion(user, rank, reason, fraction)
       
     else:
       flash("Произошла ошибка попробуйте снова.")

@@ -5,13 +5,25 @@ from datetime import datetime
 from disnake.ui import View, Button
 import os, time, sys
 
+def find_fraction_channel(fraction):
+    fraction_channels = {
+        "LSPD": 1323282948316725372,
+        "FIB": 1323282948316725372,
+        "LSCSD": 1323282948316725372,
+        "SANG": 1323282948316725372,
+        "EMS": 1323282948316725372,
+        "GOV": 1323282948316725372,
+        "WN": 1323282948316725372
+    }
+    
+    return fraction_channels[fraction]
+
 class ManagerAuditMessage(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.channel_id = 1323282948316725372
     
-    async def handle_action(self, action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason):
-        channel = self.bot.get_channel(self.channel_id)
+    async def handle_action(self, action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason, fraction):
+        channel = self.bot.get_channel(find_fraction_channel(fraction))
         if action == "Invite":
             embed = disnake.Embed(
                 title=f"Кадровый аудит • Принятие  || {nikname_to} #{static_to} ||",
@@ -42,7 +54,7 @@ class ManagerAuditMessage(commands.Cog):
             embed.add_field(name="> Имя Фамилия (сотрудника)", value=f"```{nikname_to}```", inline=True)
             embed.add_field(name="> Паспорт (сотрудника)", value=f"```{static_to}```", inline=True)
             embed.add_field(name="> Причина", value=f"```{reason}```", inline=False)
-            embed.add_field(name="> Ранг", value=f"```Уволен с {prev_rank} - предыдущий {curr_rank}```", inline=False)
+            embed.add_field(name="> Ранг", value=f"```Уволен с {prev_rank}```", inline=False)
             
             current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Дата: {current_datetime}")
@@ -110,13 +122,14 @@ async def process_ka_messages(manager_audit):
                 nikname_from = data['nikname_from']
                 nikname_to = data['nikname_to']
                 reason = data['reason']
+                fraction = data['fraction']
                 
-                await manager_audit.handle_action(action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason)
+                await manager_audit.handle_action(action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason, fraction)
             except Exception as e:
                 print(f"Ошибка обработки сообщения: {e}")
                 traceback.print_exc()
-        await asyncio.sleep(1)     
-        
+        await asyncio.sleep(1)    
+       
 def setup(bot):
     manager_audit =  ManagerAuditMessage(bot)
     bot.loop.create_task(process_ka_messages(manager_audit))
