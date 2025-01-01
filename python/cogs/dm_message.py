@@ -229,6 +229,25 @@ class SendDmMessage(commands.Cog):
             print(f"Сообщение отправлено пользователю {discord_id}")
         except Exception as e:
             print(f"Не удалось отправить сообщение пользователю {discord_id}: {e}")
+            traceback.print_exc()
+
+    async def send_log(self, header, text):
+        try:
+            channel = self.bot.get_channel(1323976134307876864)
+            embed = disnake.Embed(
+                title=header,
+                description=(
+                    text
+                ),
+                color=disnake.Color.red()
+            )
+            embed.set_footer(text="Если вы считаете, что это ошибочное сообщение, свяжитесь с Arnetik")
+
+            view = View()
+
+            await channel.send(embed=embed, view=view)
+        except Exception as e:
+            print(f"Не удалось отправить сообщение лога: {e}")
             traceback.print_exc()       
 
 
@@ -352,6 +371,25 @@ async def process_information_resolution_message(dm_message):
                 traceback.print_exc()
         await asyncio.sleep(1)
 
+async def process_log_messages(dm_message):
+    pubsub = redis_client.pubsub()
+    pubsub.subscribe('log_dump')
+
+    while True:
+        message = pubsub.get_message()
+        if message and message['type'] == 'message':
+            try:
+                print(f"Получено сообщение: {message['data']}")
+                data = json.loads(message['data'])
+                header = data['header']
+                text = data['text']
+                
+                await dm_message.send_log(header, text,)
+            except Exception as e:
+                print(f"Ошибка обработки сообщения: {e}")
+                traceback.print_exc()
+        await asyncio.sleep(1)    
+
 async def process_get_dsname(bot):
     pubsub = redis_client.pubsub()
     pubsub.subscribe('get_dsname')
@@ -393,5 +431,6 @@ def setup(bot):
     bot.loop.create_task(process_information_resolution_message(dm_message))
     bot.loop.create_task(process_invite_changepass(dm_message))
     bot.loop.create_task(process_notifdm(dm_message))
+    bot.loop.create_task(process_log_messages(dm_message))
     bot.loop.create_task(process_get_dsname(bot))
     bot.add_cog(SendDmMessage(bot))

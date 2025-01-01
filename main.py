@@ -2097,12 +2097,33 @@ def database_getdata():
 @login_required
 def profile_settings():
   from __init__ import Users, guestUsers,db
-  new_nickname = request.form.get('new-nickname')
-  if new_nickname:
-    current_user.nikname = new_nickname
-    print(current_user.nikname)
-    db.session.commit()
-    print(current_user.nikname)
+  action = request.form.get('action')
+  if action == 'nickname':
+    new_nickname = request.form.get('new_nickname')
+    if new_nickname:
+      current_user.nikname = new_nickname
+      db.session.commit()
+  elif action == 'discord':
+    new_discordid = request.form.get('new_discordid')
+    current_password = request.form.get('password-teds')
+    if check_password_hash(current_user.password, current_password):
+      old_discordid = current_user.discordid
+      current_user.discordid = new_discordid
+      discordname = send_to_bot_get_dsname(new_discordid)
+      send_to_bot_log_dump(f"{current_user.discordid} ({old_discordid} #{current_user.static})", f"Пользователь изменил свой Discord ID на {new_discordid} ({discordname})")
+      current_user.discordname = discordname
+      db.session.commit()
+    else:
+      flash('Неверный пароль!')
+  elif action == 'password':
+    current_password = request.form.get('password-s')
+    new_password = request.form.get('password-n')
+    if check_password_hash(current_user.password, current_password):
+      current_user.password = generate_password_hash(new_password)
+      db.session.commit()
+      send_to_bot_log_dump(f"{current_user.discordid} ({current_user.nikname} #{current_user.static})", f"Пользователь изменил свой пароль!")
+    else:
+      flash('Неверный пароль!')
 
   return redirect(url_for('main.profile'))
 

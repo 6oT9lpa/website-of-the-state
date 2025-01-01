@@ -44,7 +44,7 @@
                         <div class='form-control'>
                             <label for="phone">Введите новый nickname</label>
                             <div class='form-input-modal'>
-                                <input name="nickname" placeholder='Введите новый nickname'>
+                                <input name="new_nickname" placeholder='Введите новый nickname'>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
@@ -68,11 +68,19 @@
                         </div>
                     </div>
                 
-                    <div class='settings-discordID' style='display:none;'>
+                    <div class='settings-discordID' style='display:none; flex-direction: column;'>
+                        <div class='form-control'>
+                            <label for="phone">Пароль</label>
+                            <div class='form-input-modal'>
+                                <input name="password-teds" placeholder='Введите текущий пароль'>
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+
                         <div class='form-control'>
                             <label for="phone">Введите новый discordID</label>
                             <div class='form-input-modal'>
-                                <input name="password-n" placeholder='Введите новый discordID'>
+                                <input name="new_discordid" placeholder='Введите новый discordID'>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
