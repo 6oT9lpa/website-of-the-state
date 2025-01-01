@@ -1,28 +1,14 @@
-{% if message %}
-    <div class="toast">
-        <div class="toast-content">
-            <i class="fas fa-solid fa-check check"></i>
-            {%  if message[1] == 404 %}
-            <div class="message">
-                <span class="text text-1">Уведомление</span>
-                <span class="text text-2">{{ message[0] }}</span>
-            </div>
-            {% elif message[1] == 403 %}
-            <div class="message">
-                <span class="text text-1">Отказано в доступе</span>
-                <span class="text text-2">{{ message[0] }}</span>
-            </div>
-            {% else %}
-                <div class="message">
-                    <span class="text text-1">Уведомление</span>
-                    <span class="text text-2">{{ message[0] }}</span>
-                </div>
-            {% endif %}
+
+<div class="toast">
+    <div class="toast-content">
+        <i class="fas fa-solid fa-check check"></i>
+        <div class="message">
+            <span class="text text-2 message-notif">message</span>
         </div>
-        <span class="close">&times;</span>
-        <div class="progress"></div>
     </div>
-{% endif %}
+    <span class="close">&times;</span>
+    <div class="progress"></div>
+</div>
 
 <style>
     .container-main {
@@ -133,27 +119,40 @@
 
     let timer1, timer2;
 
-    function notification () {
+    function showNotification(message, isError = false) {
+        const messageElement = toast.querySelector(".message-notif");
+        const toastIcon = toast.querySelector(".toast-content .check");
+        messageElement.textContent = message;
+
+        if (isError) {
+            messageElement.style.color = '#ff4f4f';  
+            toastIcon.style.backgroundColor = '#ff4f4f';
+        } else {
+            messageElement.style.color = '#666666';
+            toastIcon.style.backgroundColor = '#4070f4';
+        }
+
         toast.classList.add("active");
         progress.classList.add("active");
 
         timer1 = setTimeout(() => {
             toast.classList.remove("active");
-        }, 3000); 
+        }, 3000);
 
         timer2 = setTimeout(() => {
             progress.classList.remove("active");
-        }, 3300); 
-    };
+        }, 3300);
+    }
 
     closeIcon?.addEventListener("click", () => {
-    toast.classList.remove("active");
+        toast.classList.remove("active");
 
-    setTimeout(() => {
-        progress.classList.remove("active");
-    }, 300);
+        setTimeout(() => {
+            progress.classList.remove("active");
+            
+        }, 310);
 
-    clearTimeout(timer1);
-    clearTimeout(timer2);
+        clearTimeout(timer1);
+        clearTimeout(timer2);
     });
 </script>

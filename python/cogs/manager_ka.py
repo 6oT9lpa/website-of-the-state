@@ -18,15 +18,34 @@ def find_fraction_channel(fraction):
     
     return fraction_channels[fraction]
 
+def read_ranks(filename):
+    with open(filename, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data
+
+def get_rank_info(ranks, organization, rank_level):
+    rank_info = None
+    if organization in ranks:
+        for rank_data in ranks[organization]:
+            if rank_data['id'] == rank_level:
+                return rank_data['name']
+    return rank_info
+
 class ManagerAuditMessage(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
     async def handle_action(self, action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason, fraction):
         channel = self.bot.get_channel(find_fraction_channel(fraction))
+        filename = "./python/name-ranks.json"
+        ranks = read_ranks(filename)
+        updated_ranks = ranks.get("updated_ranks", {})
+        curr_rank_name = get_rank_info(updated_ranks, fraction, curr_rank)
+        prev_rank_name = get_rank_info(updated_ranks, fraction, prev_rank)
+        
         if action == "Invite":
             embed = disnake.Embed(
-                title=f"Кадровый аудит • Принятие  || {nikname_to} #{static_to} ||",
+                title=f"Кадровый аудит • Принятие во фракцию {fraction} || {nikname_to} #{static_to} ||",
                 color=disnake.Color.green()
             )
             
@@ -34,7 +53,7 @@ class ManagerAuditMessage(commands.Cog):
             embed.add_field(name="> Имя Фамилия (гражданина)", value=f"```{nikname_to}```", inline=True)
             embed.add_field(name="> Паспорт (гражданина)", value=f"```{static_to}```", inline=True)
             embed.add_field(name="> Причина", value=f"```{reason}```", inline=False)
-            embed.add_field(name="> Ранг", value=f"```Принят на {curr_rank}```", inline=False)
+            embed.add_field(name="> Ранг", value=f"```Принят на [{curr_rank}] {curr_rank_name}```", inline=False)
             
             current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Дата: {current_datetime}")
@@ -46,7 +65,7 @@ class ManagerAuditMessage(commands.Cog):
 
         elif action == "Dismissal":
             embed = disnake.Embed(
-                title=f"Кадровый аудит • Увольнение || {nikname_to} #{static_to} ||",
+                title=f"Кадровый аудит • Увольнение с фракции {fraction} || {nikname_to} #{static_to} ||",
                 color=disnake.Color.red()
             )
                 
@@ -54,7 +73,7 @@ class ManagerAuditMessage(commands.Cog):
             embed.add_field(name="> Имя Фамилия (сотрудника)", value=f"```{nikname_to}```", inline=True)
             embed.add_field(name="> Паспорт (сотрудника)", value=f"```{static_to}```", inline=True)
             embed.add_field(name="> Причина", value=f"```{reason}```", inline=False)
-            embed.add_field(name="> Ранг", value=f"```Уволен с {prev_rank}```", inline=False)
+            embed.add_field(name="> Ранг", value=f"```Уволен с [{prev_rank}] {prev_rank_name}```", inline=False)
             
             current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Дата: {current_datetime}")
@@ -73,7 +92,7 @@ class ManagerAuditMessage(commands.Cog):
             embed.add_field(name="> Имя Фамилия (сотрудника)", value=f"```{nikname_to}```", inline=True)
             embed.add_field(name="> Паспорт (сотрудника)", value=f"```{static_to}```", inline=True)
             embed.add_field(name="> Причина", value=f"```{reason}```", inline=False)
-            embed.add_field(name="> Ранг", value=f"```Повышен до {curr_rank} - предыдущий {prev_rank}```", inline=False)
+            embed.add_field(name="> Ранг", value=f"```Повышен до [{curr_rank}] {curr_rank_name} - предыдущий [{prev_rank}] {prev_rank_name}```", inline=False)
             
             current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Дата: {current_datetime}")
@@ -93,7 +112,7 @@ class ManagerAuditMessage(commands.Cog):
             embed.add_field(name="> Имя Фамилия (сотрудника)", value=f"```{nikname_to}```", inline=True)
             embed.add_field(name="> Паспорт (сотрудника)", value=f"```{static_to}```", inline=True)
             embed.add_field(name="> Причина", value=f"```{reason}```", inline=False)
-            embed.add_field(name="> Ранг", value=f"```Понижен до {curr_rank} - предыдущий {prev_rank}```", inline=False)
+            embed.add_field(name="> Ранг", value=f"```Понижен до [{curr_rank}] {curr_rank_name} - предыдущий [{prev_rank}] {prev_rank_name}```", inline=False)
             
             current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Дата: {current_datetime}")

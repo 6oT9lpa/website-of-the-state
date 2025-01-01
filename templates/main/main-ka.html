@@ -14,20 +14,20 @@
     </div>
     <div class='line-modal'></div>
     <div class='main-content'>
-        <form id="form-audit" method="POST" action="/audit">
+        <form id="form-audit" method="POST">
             <div class='form-container'>
                 <input type='hidden' id='dismissal' name='dismissal' value='none'>
-                <div class='form-control'>
-                    <label for="discord">Discord ID</label>
-                    <div class='form-input-modal'>
-                        <input name="discord"  id='discord' placeholder='Введите discordID игрока' required>
-                    </div>
-                    <span class="text-danger" id="is-invalid"></span>
-                </div>
                 <div class='form-control'>
                     <label for="static">Static</label>
                     <div class='form-input-modal'>
                         <input name="static" id='static' placeholder='Введите static игрока' required>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+                <div class='form-control'>
+                    <label for="discord">Discord ID</label>
+                    <div class='form-input-modal'>
+                        <input name="discord"  id='discord' placeholder='Введите discordID игрока' required>
                     </div>
                     <span class="text-danger" id="is-invalid"></span>
                 </div>

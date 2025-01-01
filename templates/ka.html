@@ -17,17 +17,15 @@
     {% block header %}
         {% include 'header/header-ka.html' %}
     {% endblock %}
-    <main>
-        {% block error %}
-            {% include 'api/error.html' %}
-        {% endblock %}
 
+    {% block error %}
+            {% include 'api/error-json.html' %}
+        {% endblock %}
+    <main>
         {% block main %}
             {% include 'main/main-ka.html' %}
         {% endblock %}
     </main>
-
-
 
     <div class="lines">
         {% for i in range(40) %}
@@ -63,86 +61,166 @@
             }
         }
     
-        fractionSelect.addEventListener('change', updateRanks);
-        document.addEventListener('DOMContentLoaded', updateRanks);
+        fractionSelect?.addEventListener('change', updateRanks);
+        document.addEventListener('DOMContentLoaded', function() {
+            if (fractionSelect) {
+                updateRanks();
+            }
+        });
 
+        let typingTimer;
+        const doneTypingInterval = 300;
 
         document.getElementById('static').addEventListener('input', function(event) {
+            clearTimeout(typingTimer);
+
             const staticValue = event.target.value;
-        
+
             if (staticValue.trim() === '') {
+                removeFireButton();
+                document.getElementById('discord').value = '';
+                document.getElementById('nickname').value = '';
+                document.getElementById('discord').disabled = false;
+                document.getElementById('nickname').disabled = false;
                 return;
             }
-        
-            fetch(`/getPlayerData?static=${staticValue}`)
+
+            typingTimer = setTimeout(function() {
+                fetch(`/getPlayerData?static=${staticValue}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (document.getElementById('discord').value !== data.discord) {
+                                document.getElementById('discord').value = data.discord;
+                            }
+                            if (document.getElementById('nickname').value !== data.nickname) {
+                                document.getElementById('nickname').value = data.nickname;
+                            }
+                            if (data.action !== 'Dismissal') {
+                                addFireButton();
+                            }
+                        } else {
+                            removeFireButton();
+                            document.getElementById('discord').value = '';
+                            document.getElementById('nickname').value = '';
+                            document.getElementById('discord').disabled = false;
+                            document.getElementById('nickname').disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при запросе:', error);
+                        removeFireButton();
+                        document.getElementById('discord').value = '';
+                        document.getElementById('nickname').value = '';
+                        document.getElementById('discord').disabled = false;
+                        document.getElementById('nickname').disabled = false;
+                    });
+            }, doneTypingInterval);
+        });
+
+        function addFireButton() {
+            const existingButton = document.querySelector('.form-button-container .submit-btn-contanier .fire-btn');
+            if (existingButton) return;
+
+            const container = document.querySelector('.form-button-container');
+            const fireButtonWrapper = document.createElement('div');
+            fireButtonWrapper.classList.add('submit-btn-contanier');
+
+            const fireButtonDiv = document.createElement('div');
+            fireButtonDiv.classList.add('submit-btn');
+
+            const fireButton = document.createElement('input');
+            fireButton.type = 'submit';
+            fireButton.value = 'Уволить';
+            fireButton.classList.add('fire-btn');
+            fireButtonDiv.appendChild(fireButton);
+            fireButtonWrapper.appendChild(fireButtonDiv);
+            container.appendChild(fireButtonWrapper);
+
+            fireButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                fireButton.classList.toggle('red');
+                fireButtonDiv.classList.toggle('red');
+
+                const dismissalField = document.getElementById('dismissal');
+                if (dismissalField.value === 'dismissal') {
+                    dismissalField.value = 'none';
+                } else {
+                    dismissalField.value = 'dismissal';
+                }
+            });
+        }
+
+        function removeFireButton() {
+            const fireButtonWrapper = document.querySelector('.form-button-container .submit-btn-contanier .fire-btn');
+            if (fireButtonWrapper) {
+                fireButtonWrapper.closest('.submit-btn-contanier').remove();
+            }
+        }
+
+        document.getElementById('form-audit').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+
+            const formData = new FormData(event.target);
+            const dataObject = Object.fromEntries(formData.entries());
+
+            const fractionSelector = document.getElementById('organ_change');
+            if (fractionSelector) {
+                const fractionValue = dataObject.fraction;
+                console.log(dataObject.fraction)
+                const validFractions = ['LSPD', 'LSCSD', 'EMS', 'SANG', 'GOV', 'FIB'];
+                if (!validFractions.includes(fractionValue)) {
+                    showNotification("Нии...даа.... так делать!", true);
+                    return;
+                }
+            }
+
+            const nickname = dataObject.nickname.value;
+            const nicknameRegex = /^[A-Za-z]+(?:\s[A-Za-z]+)*$/;
+            if (!nicknameRegex.test(nickname)) {
+                showNotification("Ник должен быть в формате 'Nick Name'", true);
+                return;
+            }
+
+            const discordId = String(dataObject.discord);
+            const discordIdRegex = /^\d{17,19}$/;
+            if (!discordIdRegex.test(discordId)) {
+                showNotification("Discord ID должен быть числовым значением длиной от 17 до 19 символов.", true);
+                return;
+            }
+
+            fetch('/audit', {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json'
+            },
+                body: JSON.stringify(Object.fromEntries(formData.entries()))
+            })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    console.log(data.action)
-                    
-                    document.getElementById('discord').value = data.discord;
-                    document.getElementById('nickname').value = data.nickname;
-                    document.getElementById('discord').disabled = true;
-                    document.getElementById('nickname').disabled = true;
-                    if (data.action !== 'Dismissal') {
-                        const container = document.querySelector('.form-button-container');
-                        const fireButtonWrapper = document.createElement('div');
-                        fireButtonWrapper.classList.add('submit-btn-contanier');
-
-                        const fireButtonDiv = document.createElement('div');
-                        fireButtonDiv.classList.add('submit-btn');
-
-                        const fireButton = document.createElement('input');
-                        fireButton.type = 'submit';
-                        fireButton.value = 'Уволить';
-                        fireButton.classList.add('fire-btn');
-                        fireButtonDiv.appendChild(fireButton);
-                        fireButtonWrapper.appendChild(fireButtonDiv);
-                        container.appendChild(fireButtonWrapper);
-
-                        fireButton.addEventListener('click', function(event) { 
-                            event.preventDefault();
-                            fireButton.classList.toggle('red');
-                            fireButtonDiv.classList.toggle('red');
-
-                            const dismissalField = document.getElementById('dismissal');
-                            if (dismissalField.value === 'dismissal') {
-                                dismissalField.value = 'none';
-                            } else {
-                                dismissalField.value = 'dismissal';
-                            }
-                        });
-                    }
-                } else {
-                    document.getElementById('discord').value = '';
-                    document.getElementById('nickname').value = '';
+                    showNotification(data.message);
+                    document.getElementById('form-audit').reset()
                     document.getElementById('discord').disabled = false;
                     document.getElementById('nickname').disabled = false;
-
                     const fireButtonWrapper = document.querySelector('.form-button-container .submit-btn-contanier .fire-btn');
                     if (fireButtonWrapper) {
                         fireButtonWrapper.closest('.submit-btn-contanier').remove(); 
                     }
+
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
+
+                } else {
+                    showNotification(data.message, true);
                 }
             })
             .catch(error => {
-                console.error('Ошибка при запросе:', error);
+                console.error('Произошла ошибка:', error);
+                showNotification('Произошла ошибка при отправке данных', true);
             });
-
         });
-
-        document.getElementById('submit-btn').addEventListener('submit', function(event) {
-            if (
-                static.value.trim() === '' && 
-                discord.value.trim() === '' && 
-                nickname.value.trim() === '' && 
-                reason.value.trim() === ''
-            ) {
-                event.preventDefault()
-                alert('Пожалуйста, заполните все обязательные поля!')
-                return
-            }            
-        });     
     </script>
 </body>
 </html>

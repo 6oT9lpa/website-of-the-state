@@ -114,8 +114,7 @@ class ModerationDoc(commands.Cog):
         button.callback = button_callback
         view.add_item(button)
         return view
-
-
+    
     async def get_channel_with_retry(self, channel_id):
         """Пытается получить канал с указанным ID несколько раз с задержкой."""
         if not channel_id:

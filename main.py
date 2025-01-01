@@ -270,11 +270,11 @@ def send_to_bot_get_dsname(discordid):
       'discordid': discordid
   }
   redis_client.publish('get_dsname', json.dumps(message))
-  for _ in range(3):  
+  for _ in range(8):  
     response = redis_client.get(f'dsname_response_{discordid}')
     if response:
-        return response.decode('utf-8')
-    time.sleep(0.2) 
+      return response.decode('utf-8')
+    time.sleep(0.5) 
   return 'Не определен'
 
 def send_to_bot_permission_none(is_permission):
@@ -309,7 +309,6 @@ def send_to_bot_notification(text, discord_id, url):
     }
     redis_client.publish('notificationdm_channel', json.dumps(message))
 
-# создание блюпринта
 main = Blueprint('main', __name__)
 
 def check_user_action(f):
@@ -1515,322 +1514,294 @@ def send_to_bot_dismissal(discord_id, static, organ):
   }
   redis_client.publish('dismissal_channel', json.dumps(message))
 
+from flask import jsonify
+
 def process_invite_action(user, rank, reason, fraction):
-  from __init__ import db, ActionUsers
-  """Обрабатывает Инвайт если пользователя есть в БД"""
-  password = generate_random_password()
-  hash_password = generate_password_hash(password)
+    from __init__ import db, ActionUsers
+    """Обрабатывает Инвайт если пользователя есть в БД"""
+    password = generate_random_password()
+    hash_password = generate_password_hash(password)
 
-  try:
-    user.password = hash_password
-    user.prev_rank = 0
-    user.curr_rank = 1
-    user.action = 'Invite'
-    user.organ = fraction
-    db.session.commit()
+    try:
+        user.password = hash_password
+        user.prev_rank = 0
+        user.curr_rank = 1
+        user.action = 'Invite'
+        user.organ = fraction
+        db.session.commit()
 
-  except SQLAlchemyError as e:
-    db.session.rollback()
-    logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
-    flash("Произошла ошибка при сохранении данных. Попробуйте снова.")
-    return redirect(url_for('main.audit'))
-    
-  try:
-    new_action = ActionUsers(
-      discordid = user.discordid,
-      discordname = user.discordname,
-      static = user.static,
-      nikname = user.nikname,
-      action = 'Invite',
-      curr_rank = 1,
-      prev_rank = 0,
-      author_id = current_user.id
-    )
-    db.session.add(new_action)
-    db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+        return jsonify({"success": False, "message": "Произошла ошибка при сохранении данных. Попробуйте снова."}), 500
 
-  except SQLAlchemyError as e:
-    db.session.rollback()
-    logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+    try:
+        new_action = ActionUsers(
+            discordid = user.discordid,
+            discordname = user.discordname,
+            static = user.static,
+            nikname = user.nikname,
+            action = 'Invite',
+            curr_rank = 1,
+            prev_rank = 0,
+            author_id = current_user.id
+        )
+        db.session.add(new_action)
+        db.session.commit()
 
-  else:
-    send_to_bot_ka('Invite', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
-    send_to_bot_invite(password, user.discordid, user.static, user.organ)
-    logging.info('Пользователь был успешно добавлен в бд Users.')
-    
-    if int(rank) > 1:
-      process_raise(user, rank, reason)
-      return redirect(url_for('main.audit'))
-    
-    flash("Пользователь успешно добавлен!")
-    return redirect(url_for('main.audit'))
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+        return jsonify({"success": False, "message": "Ошибка при сохранении действия пользователя."}), 500
+
+    else:
+        send_to_bot_ka('Invite', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
+        send_to_bot_invite(password, user.discordid, user.static, user.organ)
+        logging.info('Пользователь был успешно добавлен в бд Users.')
+
+        if int(rank) > 1:
+            process_raise(user, rank, reason, fraction)
+            return jsonify({"success": True, "message": "Инвайт отправлен, пользователь был повышен."}), 200
+        
+        return jsonify({"success": True, "message": "Пользователь успешно добавлен!"}), 200
+
 
 def process_new_invite(static, rank, nickname, discord_id, reason, fraction):
-  from __init__ import db, Users, ActionUsers, PermissionUsers, get_next_id_user, get_next_id_permission
-  """Обрабатывает Инвайт если пользователя нет в БД"""
-  discord_name = send_to_bot_get_dsname(discord_id)
-  if existing_discord_in_multiple_organizations(discord_id):
-    flash("Данный дискорд уже состоит в 2-ух гос. структурах!")
-    return redirect(url_for('main.audit'))
+    from __init__ import db, Users, ActionUsers, PermissionUsers, get_next_id_user, get_next_id_permission
+    """Обрабатывает Инвайт если пользователя нет в БД"""
+    discord_name = send_to_bot_get_dsname(discord_id)
+    if existing_discord_in_multiple_organizations(discord_id):
+        return jsonify({"success": False, "message": "Данный дискорд уже состоит в 2-ух гос. структурах!"}), 400
 
-  password = generate_random_password()
-  hash_password = generate_password_hash(password)
-  
-  try:
-    new_user = Users(
-      id=get_next_id_user(),
-      discordid=discord_id,
-      discordname=discord_name,
-      static=static,
-      nikname=nickname,
-      action='Invite',
-      organ=fraction,
-      prev_rank=0,
-      curr_rank=1,
-      password=hash_password
-    )
-    db.session.add(new_user)
-    db.session.commit()
+    password = generate_random_password()
+    hash_password = generate_password_hash(password)
 
-  except SQLAlchemyError as e:
-    db.session.rollback()
-    logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
-    flash("Произошла ошибка при сохранении данных. Попробуйте снова.")
-    return redirect(url_for('main.audit'))
+    try:
+        new_user = Users(
+            id=get_next_id_user(),
+            discordid=discord_id,
+            discordname=discord_name,
+            static=static,
+            nikname=nickname,
+            action='Invite',
+            organ=fraction,
+            prev_rank=0,
+            curr_rank=1,
+            password=hash_password
+        )
+        db.session.add(new_user)
+        db.session.commit()
 
-  user = Users.query.filter_by(static=static).first()
-  try:
-    new_permission = PermissionUsers(
-      id=get_next_id_permission(),
-      author_id=user.id
-    )
-    db.session.add(new_permission)
-    db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+        return jsonify({"success": False, "message": "Произошла ошибка при сохранении данных. Попробуйте снова."}), 500
 
-  except SQLAlchemyError as e:
-    db.session.rollback()
-    logging.error(f"Ошибка сохранения в базе данных (PermissionUsers): {str(e)}")
-    
-  try:
-    new_action = ActionUsers(
-      discordid = discord_id,
-      discordname = discord_name,
-      static = static,
-      nikname = nickname,
-      action = 'Invite',
-      curr_rank = 1,
-      prev_rank = 0,
-      author_id = current_user.id
-    )
-    db.session.add(new_action)
-    db.session.commit()
+    user = Users.query.filter_by(static=static).first()
+    try:
+        new_permission = PermissionUsers(
+            id=get_next_id_permission(),
+            author_id=user.id
+        )
+        db.session.add(new_permission)
+        db.session.commit()
 
-  except SQLAlchemyError as e:
-    db.session.rollback()
-    logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"Ошибка сохранения в базе данных (PermissionUsers): {str(e)}")
+        return jsonify({"success": False, "message": "Ошибка при сохранении прав пользователя."}), 500
 
-  else:
-    send_to_bot_ka('Invite', static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
-    send_to_bot_invite(password, discord_id, static, user.organ)
-    logging.info('Пользователь был успешно добавлен в бд Users.')
-    
-    if int(rank) > 1:
-      process_raise(user, rank, reason)
-      return redirect(url_for('main.audit'))
-    
-    flash("Пользователь успешно добавлен!")
-    return redirect(url_for('main.audit'))
-  
+    try:
+        new_action = ActionUsers(
+            discordid = discord_id,
+            discordname = discord_name,
+            static = static,
+            nikname = nickname,
+            action = 'Invite',
+            curr_rank = 1,
+            prev_rank = 0,
+            author_id = current_user.id
+        )
+        db.session.add(new_action)
+        db.session.commit()
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+        return jsonify({"success": False, "message": "Ошибка при сохранении действия пользователя."}), 500
+
+    else:
+        send_to_bot_ka('Invite', static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
+        send_to_bot_invite(password, discord_id, static, user.organ)
+        logging.info('Пользователь был успешно добавлен в бд Users.')
+
+        if int(rank) > 1:
+            process_raise(user, rank, reason, fraction)
+            return jsonify({"success": True, "message": "Инвайт отправлен, пользователь был повышен."}), 200
+        
+        return jsonify({"success": True, "message": "Пользователь успешно добавлен!"}), 200
+
 
 def process_raise(user, rank, reason, fraction):
-  from __init__ import db, ActionUsers
-  """Обрабатывает повышение пользователя."""
-
-  permission_current = current_user.permissions[0]
-  permission_user = user.permissions[0]
-  if not permission_current.tech or not permission_current.admin:
-    if permission_user and (permission_user.admin or permission_user.tech):
-      flash("Вы не можете уволить админа/разработчика.")
-      return redirect(url_for('main.audit'))
-    
-    if current_user.organ != user.organ:
-      flash("Вы не можете уволить игрока другой фракции.")
-      return redirect(url_for('main.audit'))
-    
-    if current_user.curr_rank <= user.curr_rank:
-      flash("Вы не можете повысить игрока, если вы ниже рангом.")
-      return redirect(url_for('main.audit'))
-  
-  try:
-    user.action = 'Raising'
-    user.prev_rank = user.curr_rank
-    user.curr_rank = rank
-    db.session.commit()
-
-  except SQLAlchemyError as e:
-    db.session.rollback()
-    logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
-    flash("Произошла ошибка, попробуйте позже.")
-    return redirect(url_for('main.audit'))
-  
-  try:
-    new_action = ActionUsers(
-      discordid = user.discordid,
-      discordname = user.discordname,
-      static = user.static,
-      nikname = user.nikname,
-      action = 'Raising',
-      curr_rank = user.curr_rank,
-      prev_rank = user.prev_rank,
-      author_id = current_user.id
-    )
-    db.session.add(new_action)
-    db.session.commit()
-
-  except SQLAlchemyError as e:
-    db.session.rollback()
-    logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")    
-
-  else:
-    send_to_bot_ka('Raising', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
-    logging.info('Пользователь был успешно обновлен в бд Users.')
-    flash("Пользователь был повышен!")
-    return redirect(url_for('main.audit'))
-
-def process_demotion(user, rank, reason, fraction):
-  from __init__ import db, ActionUsers
-  """Обрабатывает понижение пользователя."""
-
-  permission_current = current_user.permissions[0]
-  permission_user = user.permissions[0]
-  if not permission_current.tech or not permission_current.admin:
-    if permission_user and (permission_user.admin or permission_user.tech):
-      flash("Вы не можете уволить админа/разработчика.")
-      return redirect(url_for('main.audit'))
-    
-    if current_user.organ != user.organ:
-      flash("Вы не можете уволить игрока другой фракции.")
-      return redirect(url_for('main.audit'))
-    
-    if current_user.curr_rank <= user.curr_rank:
-      flash("Вы не моежете повысить игрока, если вы ниже рангом.")
-      return redirect(url_for('main.audit'))
-  
-  try:
-    try:
-      user.action = 'Demotion'
-      user.prev_rank = user.curr_rank
-      user.curr_rank = rank
-      db.session.commit()
-    
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
-      flash("Произошла ошибка при сохранении данных. Попробуйте снова.")
-      return redirect(url_for('main.audit'))
-    
-    try:
-      new_action = ActionUsers(
-        discordid = user.discordid,
-        discordname = user.discordname,
-        static = user.static,
-        nikname = user.nikname,
-        action = 'Demotion',
-        curr_rank = user.curr_rank,
-        prev_rank = user.prev_rank,
-        author_id = current_user.id
-      )
-      db.session.add(new_action)
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")    
-
-  except SQLAlchemyError as e:
-    db.session.rollback()
-    logging.error(f"Ошибка обработки: {str(e)}")  
-
-  else:
-    send_to_bot_ka('Demotion', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
-    logging.info('Пользователь был успешно обновлен в бд Users.')
-    flash("Вы успешено понизили пользователя!")
-    return redirect(url_for('main.audit'))
-
-def process_dismissal(user, reason, fraction):
-    from __init__ import db, ActionUsers, Users
-    """Обрабатывает увольнение пользователя."""
+    from __init__ import db, ActionUsers
+    """Обрабатывает повышение пользователя."""
 
     permission_current = current_user.permissions[0]
     permission_user = user.permissions[0]
+    if not permission_current.tech or not permission_current.admin:
+        if permission_user and (permission_user.admin or permission_user.tech):
+            return jsonify({"success": False, "message": "Вы не можете уволить админа/разработчика."}), 403
 
-    if not permission_current.admin or not permission_current.tech:
-      if permission_user and (permission_user.admin or permission_user.tech):
-        flash("Вы не можете уволить админа/разработчика.")
-        return redirect(url_for('main.audit'))
-    
-      if current_user.organ != user.organ:
-        flash("Вы не можете уволить игрока другой фракции.")
-        return redirect(url_for('main.audit'))
-      
-      if current_user.curr_rank <= user.curr_rank:
-        flash("Вы не моежете уволить игрока, если вы ниже рангом.")
-        return redirect(url_for('main.audit'))
+        if current_user.organ != user.organ:
+            return jsonify({"success": False, "message": "Вы не можете уволить игрока другой фракции."}), 403
 
-    if user.action == 'Dismissal':
-      flash("Игрок уже был уволен.")
-      return redirect(url_for('main.audit'))
+        if current_user.curr_rank <= user.curr_rank:
+            return jsonify({"success": False, "message": "Вы не можете повысить игрока, если вы ниже рангом."}), 403
 
     try:
-      user.action = 'Dismissal'
-      user.prev_rank = user.curr_rank
-      user.curr_rank = 0
-      db.session.commit()
+        user.action = 'Raising'
+        user.prev_rank = user.curr_rank
+        user.curr_rank = rank
+        db.session.commit()
 
     except SQLAlchemyError as e:
-      db.session.rollback()
-      logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
-      return jsonify({"success": False, "message": "Попробуйте позже."}), 500
+        db.session.rollback()
+        logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+        return jsonify({"success": False, "message": "Произошла ошибка при сохранении данных. Попробуйте снова."}), 500
 
     try:
-      permission_user.tech = False
-      permission_user.admin = False
-      permission_user.lider = False
-      permission_user.high_staff = False
-      permission_user.creation_doc = False
-      db.session.commit()
+        new_action = ActionUsers(
+            discordid = user.discordid,
+            discordname = user.discordname,
+            static = user.static,
+            nikname = user.nikname,
+            action = 'Raising',
+            curr_rank = user.curr_rank,
+            prev_rank = user.prev_rank,
+            author_id = current_user.id
+        )
+        db.session.add(new_action)
+        db.session.commit()
 
     except SQLAlchemyError as e:
-      db.session.rollback()
-      logging.error(f"Ошибка сохранения в базе данных (PermissionUsers): {str(e)}")
-
-    try:
-      new_action = ActionUsers(
-          discordid=user.discordid,
-          discordname=user.discordname,
-          static=user.static,
-          nikname=user.nikname,
-          action='Dismissal',
-          curr_rank=user.curr_rank,
-          prev_rank=user.prev_rank,
-          author_id=current_user.id
-      )
-      db.session.add(new_action)
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+        db.session.rollback()
+        logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+        return jsonify({"success": False, "message": "Ошибка при сохранении действия пользователя."}), 500
 
     else:
-      send_to_bot_dismissal(user.discordid, user.static, user.organ)
-      send_to_bot_ka('Dismissal', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
+        send_to_bot_ka('Raising', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
+        logging.info('Пользователь был успешно обновлен в бд Users.')
+        return jsonify({"success": True, "message": "Пользователь был повышен!"}), 200
 
-      logging.info('Пользователь был успешно обновлен в бд Users.')
-      flash("Пользователь был уволен.")
-      return redirect(url_for('main.audit'))
 
-      
+def process_demotion(user, rank, reason, fraction):
+    from __init__ import db, ActionUsers
+    """Обрабатывает понижение пользователя."""
+
+    permission_current = current_user.permissions[0]
+    permission_user = user.permissions[0]
+    if not permission_current.tech or not permission_current.admin:
+        if permission_user and (permission_user.admin or permission_user.tech):
+            return jsonify({"success": False, "message": "Вы не можете уволить админа/разработчика."}), 403
+
+        if current_user.organ != user.organ:
+            return jsonify({"success": False, "message": "Вы не можете уволить игрока другой фракции."}), 403
+
+        if current_user.curr_rank <= user.curr_rank:
+            return jsonify({"success": False, "message": "Вы не можете понизить игрока, если вы ниже рангом."}), 403
+
+    try:
+        user.action = 'Demotion'
+        user.prev_rank = user.curr_rank
+        user.curr_rank = rank
+        db.session.commit()
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
+        return jsonify({"success": False, "message": "Произошла ошибка при сохранении данных. Попробуйте снова."}), 500
+
+    try:
+        new_action = ActionUsers(
+            discordid = user.discordid,
+            discordname = user.discordname,
+            static = user.static,
+            nikname = user.nikname,
+            action = 'Demotion',
+            curr_rank = user.curr_rank,
+            prev_rank = user.prev_rank,
+            author_id = current_user.id
+        )
+        db.session.add(new_action)
+        db.session.commit()
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+        return jsonify({"success": False, "message": "Ошибка при сохранении действия пользователя."}), 500
+
+    else:
+        send_to_bot_ka('Demotion', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
+        logging.info('Пользователь был успешно обновлен в бд Users.')
+        return jsonify({"success": True, "message": "Пользователь был понижен!"}), 200
+
+def process_dismissal(user, reason, fraction):
+  from __init__ import db, ActionUsers, Users
+  """Обрабатывает увольнение пользователя."""
+  
+  permission_current = current_user.permissions[0]
+  permission_user = user.permissions[0]
+
+  # Проверка прав
+  if not permission_current.admin or not permission_current.tech:
+    if permission_user and (permission_user.admin or permission_user.tech):
+      return jsonify({"success": False, "message": "Вы не можете уволить админа/разработчика."}), 403
+
+    if current_user.organ != user.organ:
+      return jsonify({"success": False, "message": "Вы не можете уволить игрока другой фракции."}), 403
+
+    if current_user.curr_rank <= user.curr_rank:
+      return jsonify({"success": False, "message": "Вы не можете уволить игрока, если вы ниже рангом."}), 403
+
+  if user.action == 'Dismissal':
+    return jsonify({"success": False, "message": "Игрок уже был уволен."}), 400
+
+  try:
+    user.action = 'Dismissal'
+    user.prev_rank = user.curr_rank
+    user.curr_rank = 0
+    db.session.commit()
+
+    permission_user.tech = False
+    permission_user.admin = False
+    permission_user.lider = False
+    permission_user.high_staff = False
+    permission_user.creation_doc = False
+    db.session.commit()
+
+    new_action = ActionUsers(
+      discordid=user.discordid,
+      discordname=user.discordname,
+      static=user.static,
+      nikname=user.nikname,
+      action='Dismissal',
+      curr_rank=user.curr_rank,
+      prev_rank=user.prev_rank,
+      author_id=current_user.id
+    )
+    db.session.add(new_action)
+    db.session.commit()
+
+    send_to_bot_dismissal(user.discordid, user.static, user.organ)
+    send_to_bot_ka('Dismissal', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
+
+    logging.info('Пользователь был успешно уволен.')
+
+  except SQLAlchemyError as e:
+    db.session.rollback()
+    logging.error(f"Ошибка базы данных: {str(e)}")
+    return jsonify({"success": False, "message": "Ошибка базы данных, попробуйте позже."}), 500
+
 @main.route('/getPlayerData', methods=['GET'])
 @check_user_action
 @login_required
@@ -1853,54 +1824,75 @@ def audit():
 
   permission = current_user.permissions[0]
   if not (permission.high_staff or permission.lider or permission.admin or permission.tech):
-    flash("Доступ запрещен, отсутствуют права.")
-    return redirect(url_for('main.profile'))
+    return jsonify({"success": False, "message": "Доступ запрещен, отсутствуют права."}), 403
 
-  action_users = current_user.action_log
+  if request.method == 'POST':
+    data = request.get_json()
+    static = data.get('static')
+    nickname = data.get('nickname')
+    discord_id = data.get('discord')
+    reason = data.get('reason')
+    rank_data = data.get('rank')
+    dismissal = data.get('dismissal')
+    fraction = data.get('fraction', current_user.organ)
+    
+    rank_data = int(rank_data)
+      
+    print(rank_data)
+    print(type(rank_data))
+
+    if current_user.curr_rank > rank_data and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
+      return jsonify({"success": False, "message": "Ваш текущий ранг выше выбранного. Вы не можете выбрать этот ранг."}), 400
+        
+    try:    
+      nickname_regex = r'^[A-Za-z]+(?:\s[A-Za-z]+)*$'
+      if not re.match(nickname_regex, nickname):
+        return jsonify({"success": False, "message": "Ник должен быть в формате 'Nick Name'"}), 400
+      
+      discord_id_regex = r'^\d{17,19}$'
+      if not re.match(discord_id_regex, discord_id):
+        return jsonify({"success": False, "message": "Discord ID должен быть числовым значением длиной от 17 до 19 символов."}), 400
+      
+      valid_fractions = ['LSPD', 'LSCSD', 'EMS', 'SANG', 'GOV', 'FIB']
+      if fraction not in valid_fractions:
+        return jsonify({ 'success': False, 'message': "Не неверное название фракции." }), 400
+
+      if static == current_user.static:
+        return jsonify({"success": False, "message": "Вы не можете производить действия над собой."}), 400
+
+      user = Users.query.filter_by(static=static).first()
+      if not user:
+        process_new_invite(static, rank_data, nickname, discord_id, reason, fraction)
+        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nikname} #{user.static}"}), 200
+
+      elif user and user.action == 'Dismissal' and dismissal != 'dismissal':
+        process_invite_action(user, rank_data, reason, fraction)
+        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nikname} #{user.static}"}), 200
+
+      elif user and dismissal == 'dismissal':
+        process_dismissal(user, reason, fraction)
+        return jsonify({"success": True, "message": f"Вы успешно уволили {user.nikname} #{user.static}"}), 200
+
+      elif user and user.curr_rank < int(rank_data):
+        process_raise(user, rank_data, reason, fraction)
+        return jsonify({"success": True, "message": f"Вы успешно повысили {user.nikname} #{user.static}"}), 200
+
+      elif user and user.curr_rank > int(rank_data):
+        process_demotion(user, rank_data, reason, fraction)
+        return jsonify({"success": True, "message": f"Вы успешно понизили {user.nikname} #{user.static}"}), 200
+
+      return jsonify({"success": False, "message": "Не удалось выполнить действие."}), 400
+
+    except Exception as e:
+      logging.error(f"Ошибка на стороне сервера: {str(e)}")
+      return jsonify({"success": False, "message": "Произошла ошибка, попробуйте позже."}), 500
+
   organ = current_user.organ
   color = color_organ(organ)
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
   updated_ranks = ranks.get("updated_ranks", {})
 
-  if request.method == 'POST':
-    static = request.form.get('static')
-    nickname = request.form.get('nickname')
-    discord_id = request.form.get('discord')
-    reason = request.form.get('reason')
-    rank = request.form.get('rank') 
-    dismissal = request.form.get('dismissal')
-    
-    print(static, nickname, discord_id, reason)
-    
-    fraction = current_user.organ
-    if current_user.permissions[0].tech or current_user.permissions[0].admin: 
-      fraction = request.form.get('fraction')
-
-    user = Users.query.filter_by(static=static).first()
-    if static == current_user.static:
-      flash("Вы не можете производить действия над собой.")
-      return redirect(url_for('main.audit'))
-
-    if not user:
-      process_new_invite(static, rank, nickname, discord_id, reason, fraction)
-    
-    elif user and user.action == 'Dismissal':
-      process_invite_action(user, rank, reason, fraction)
-      
-    elif user and dismissal == 'dismissal':
-      process_dismissal(user, reason, fraction)
-      
-    elif user and user.curr_rank < int(rank):
-      process_raise(user, rank, reason, fraction)
-      
-    elif user and user.curr_rank > int(rank):
-      process_demotion(user, rank, reason, fraction)
-      
-    else:
-      flash("Произошла ошибка попробуйте снова.")
-      return redirect(url_for('main.audit'))
-    
   return render_template('ka.html', organ=organ, color=color, ranks=updated_ranks)
 
 @main.route('/logout', methods=['GET', 'POST'])
