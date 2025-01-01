@@ -308,11 +308,12 @@
             </div>
             {% elif item.type_doc == 'start_investigation' %}
             {% set prosecutor = Users.query.filter_by(id=district.prosecutor).first() %}
+            {% set judge = Users.query.filter_by(id=district.judge).first() %}
             <div class='hodataistvo-complaint'>
                 <div class='main-content-complaint'>
                     <div class='header-content'>
                         <div class='header-statement'>
-                            <div class='img-header'><img src="{{ url_for('static', filename='img/DistrictCourt.png') }}"/></div>     
+                            <div class='img-header'><img src="https://th.bing.com/th/id/R.5a07adc8d4870297301dac3af6712d18?rik=PEhbYj8GDFbuLQ&riu=http%3a%2f%2fcaliforniaconsulting.org%2fwp-content%2fuploads%2f2018%2f04%2fDepartment-of-Justice-office-of-justice-programs.png&ehk=TZu5ncQ7%2b4c%2bnsUa4ejZVKSNork9j01Es1Ivcp%2bHHI0%3d&risl=&pid=ImgRaw&r=0"/></div>     
                             <div class='text-header'>
                                 <h4>District Court of the State of San Andreas</h4>
                                 <p>От: <b>Прокуратуры штата Сан-Андреас</b></p>
@@ -321,9 +322,9 @@
                         </div>
                     </div>
                     <div class='description-content'>
-                        <p style="text-align: center;">Тут должен был быть герб прокуратуры, но бюджет пропит и денег нет</p>
+                        
                         <h3>Прокуратура штата Сан-Андреас</h3>
-                            <p style='text-align: center;'>Уважаемый Чорт ебаный, по вашему заявлению будет проведена прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и действующих на территории San-Andreas нормативно-правовых актов, на установление причин и условий, способствующих выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений..</p>
+                            <p style='text-align: center;'>Уважаемый {{ judge.nikname }}, по вашему заявлению будет проведена прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и действующих на территории San-Andreas нормативно-правовых актов, на установление причин и условий, способствующих выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений..</p>
                     </div>                    
                     <div class='footer-content'>
                         <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
@@ -336,11 +337,12 @@
             </div>
             {% elif item.type_doc == 'complete_delo' %}
             {% set prosecutor = Users.query.filter_by(id=district.prosecutor).first() %}
+            {% set judge = Users.query.filter_by(id=district.judge).first() %}
             <div class='hodataistvo-complaint'>
                 <div class='main-content-complaint'>
                     <div class='header-content'>
                         <div class='header-statement'>
-                            <div class='img-header'><img src="{{ url_for('static', filename='img/DistrictCourt.png') }}"/></div>     
+                            <div class='img-header'><img src="https://th.bing.com/th/id/R.5a07adc8d4870297301dac3af6712d18?rik=PEhbYj8GDFbuLQ&riu=http%3a%2f%2fcaliforniaconsulting.org%2fwp-content%2fuploads%2f2018%2f04%2fDepartment-of-Justice-office-of-justice-programs.png&ehk=TZu5ncQ7%2b4c%2bnsUa4ejZVKSNork9j01Es1Ivcp%2bHHI0%3d&risl=&pid=ImgRaw&r=0"/></div>  
                             <div class='text-header'>
                                 <h4>District Court of the State of San Andreas</h4>
                                 <p>От: <b>Прокуратуры штата Сан-Андреас</b></p>
@@ -349,9 +351,8 @@
                         </div>
                     </div>
                     <div class='description-content'>
-                        <p style="text-align: center;">Тут должен был быть герб прокуратуры, но бюджет пропит и денег нет</p>
                         <h3>Прокуратура штата Сан-Андреас</h3>
-                            <p style='text-align: center;'>Уважаемый Чорт ебаный, по вашему заявлению была проведена прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и действующих на территории San-Andreas нормативно-правовых актов, на установление причин и условий, способствующих выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений. По итогам проверки: {% if item.replyik['type_delo'] == "blameless" %} Прокуратурой штата не были выявлены нарушения Конституции и действующих на территории San-Andreas нормативно-правовых актов. {% elif item.replyik['type_delo' == "accusatory"] %} Прокуратура выявила нарушения Конституции и действующих на территории San-Andreas нормативно-правовых актов.{% endif %} </p>
+                            <p style='text-align: center;'>Уважаемый {{ judge.nikname }}, по вашему заявлению была проведена прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и действующих на территории San-Andreas нормативно-правовых актов, на установление причин и условий, способствующих выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений. По итогам проверки: {% if item.replyik['type_delo'] == "blameless" %} Прокуратурой штата не были выявлены нарушения Конституции и действующих на территории San-Andreas нормативно-правовых актов. {% elif item.replyik['type_delo' == "accusatory"] %} Прокуратура выявила нарушения Конституции и действующих на территории San-Andreas нормативно-правовых актов.{% endif %} </p>
                     </div>                    
                     <div class='footer-content'>
                         <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
