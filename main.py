@@ -1939,7 +1939,6 @@ def check_perm_changedata():
     return 1
   return 0
 
-
 @main.route('/getSearchUser', methods=['GET'])
 @check_user_action
 @login_required
