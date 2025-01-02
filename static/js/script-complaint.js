@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { openBtn: '#open-btn-5', closeBtn: '#close-btn-5', modal: '#modal-5' },
         { openBtn: '#open-btn-6', closeBtn: '#close-btn-6', modal: '#modal-6' },
         { openBtn: '#open-btn-7', closeBtn: '#close-btn-7', modal: '#modal-7' },
+        { openBtn: '#open-btn-8', closeBtn: '#close-btn-8', modal: '#modal-8' },
     ];
 
     modals.forEach(({ openBtn, closeBtn, modal }) => {

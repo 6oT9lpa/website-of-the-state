@@ -100,7 +100,7 @@
 
                         <div class='submit-btn-contanier'>
                             <div class='submit-btn'>
-                                <input type="submit" class='accept-petition' value="Привлечь лицо">   
+                                <input type="submit" class='accept-petition' id='open-btn-8' value="Привлечь лицо">   
                             </div>   
                         </div>
                         
@@ -542,6 +542,46 @@
                 <div class='submit-btn-contanier'>
                     <div class='submit-btn'>
                         <input type="submit" value="Оставить ответ">   
+                    </div>   
+                </div> 
+            </div> 
+        </form>
+    </div>
+    {% endif %}
+    {% if status == 'Judge' %}
+    <div class='modal-processing-complaint' style='display:none;' id='modal-8'>
+        <form method='POST' action='/judge_settings'>
+            <input type="hidden" name="uid" id="uidcompliant">
+            <input type="hidden" name="setting" value="privlehenie">
+            <div class='content-modal'>
+                <div class="header-modal">
+                    <span class="btn-modal-close" id="close-btn-8">&times;</span>
+                </div>  
+                <input type="hidden" name="action" id="action-5">
+
+                <div class='form-control'>
+                    <label for="role">Роль</label>
+                    <div class='form-input'>
+                        <select class="dropdown-select-isk-nohover" id="role" name="role">
+                            <option value="prosecutor"{% if district.prosecutor %} disabled {% endif %}>Прокурор</option>
+                            <option value="defendant">Ответчик</option>
+                            <option value="lawerc"{% if district.lawerc %} disabled {% endif %}>Адвокат истца</option>
+                            <option value="lawerd"{% if district.lawerd %} disabled {% endif %}>Адвокат ответчика</option>
+                            <option value="expert">Эксперт</option>
+                            <option value="svidetel">Свидетель</option>
+                        </select>
+                    </div>
+                </div>
+                <div class='form-control'>
+                    <label for="static">Статик</label>
+                    <div class='form-input'>
+                        <input id="static" name="static" placeholder='Введите статик'>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+                <div class='submit-btn-contanier'>
+                    <div class='submit-btn'>
+                        <input type="submit" value="Привлечь">   
                     </div>   
                 </div> 
             </div> 

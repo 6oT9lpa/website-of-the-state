@@ -771,6 +771,25 @@ def judge_settings():
           del otherme_dict[key_to_delete]
       else:
         setattr(isk.district_court[0], type_otvod, None)
+  elif setting == "privlehenie":
+    isk = claimsStatement.query.filter_by(uid=uid).first()
+    role = request.form.get('role')
+    static = request.form.get('static')
+    print(static)
+    print(f" Ответчик {isk.district_court[0].defendant}")
+    if isk.district_court and isk.district_court[0].judge == current_user.id:
+      print(role)
+      user = Users.query.filter_by(static=static).first()
+      if role == "expert" or role == "svidetel":
+        setattr(isk.district_court[0].otherme, role, static)
+      elif role == "defendant":
+        itog = f"{user.nikname} {static}"
+        isk.district_court[0].defendant.append(itog)
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(isk.district_court[0], "defendant")
+        print(isk.district_court[0].defendant)
+      else:
+        setattr(isk.district_court[0], role, user.id)
   elif setting == "prinatisk":
     isk = claimsStatement.query.filter_by(uid=uid).first()
     status = check_isk_status(isk.district_court[0]) if isk.district_court else check_isk_status(isk.supreme_court[0])
