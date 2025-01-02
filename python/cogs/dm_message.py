@@ -413,7 +413,7 @@ async def process_get_dsname(bot):
                         print(f"Попытка {attempt + 1}: Ошибка при получении пользователя с ID {discordid}: {e}")
 
                     if attempt < 2: 
-                        await asyncio.sleep(5)
+                        await asyncio.sleep(0.3)
                 else:
                     print(f"Не удалось получить пользователя с ID {discordid} после 3 попыток")
 

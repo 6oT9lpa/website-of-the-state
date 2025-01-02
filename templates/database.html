@@ -21,6 +21,7 @@
     {% block main %}
         {% include 'main/main-database.html' %}
     {% endblock %}
+    <div id="loader" class="loader"></div>
 
     <div class="lines">
         {% for i in range(40) %}
@@ -30,32 +31,25 @@
 
     <div class="overlay" id='overlay'></div>
 <script>
-        // Инициализация сортировки для каждого списка
     document.querySelectorAll('.rank-list').forEach(rankList => {
         new Sortable(rankList, {
             animation: 150,
             onStart(evt) {
-                // Если элемент с data-leader="true" перетаскивается, заблокировать перемещение
                 const leaderItem = evt.from.querySelector('[data-leader="true"]');
                 if (leaderItem && evt.item === leaderItem) {
-                    // Заблокировать перетаскивание лидера
                     evt.item.setAttribute('draggable', 'false');
                 }
             },
             onEnd(evt) {
-                // Восстановление перетаскивания для всех элементов
                 evt.from.querySelectorAll('.rank-item').forEach(item => {
                     item.setAttribute('draggable', 'true');
                 });
     
-                // Пересчитываем ID после перетаскивания
                 updateRankIds(evt.from);
             }
         });
     });
     
-    
-        // Обновление ID для ранга (реверсный расчет)
         function updateRankIds(list) {
         let index = list.querySelectorAll('.rank-item').length; 
         list.querySelectorAll('.rank-item').forEach(item => {
@@ -66,11 +60,9 @@
                 rankIdInput.value = newId;
             }
     
-            // Если элемент имеет атрибут data-recon = true, обновляем и data-id
             if (item.getAttribute('data-recon') === 'true') {
                 item.setAttribute('data-id', newId);
     
-                // Дополнительно обновляем значение в input с классом rank-id
                 if (rankIdInput) {
                     rankIdInput.value = newId;
                 }
@@ -109,12 +101,11 @@
         rankList.appendChild(newItem);
     
     
-        console.log('Новый ранг добавлен:', ranksToAdd); // Лог добавленного ранга
+        console.log('Новый ранг добавлен:', ranksToAdd);
     
         updateRankIds(rankList);
     }
     
-        // Генерация нового ID
         function generateNewId(rankList) {
             let maxId = 0;
             rankList.querySelectorAll('.rank-item').forEach(item => {
@@ -123,19 +114,15 @@
             });
             return maxId + 1;
         }
-    
-        // Массив для хранения удалённых рангов
+
         let ranksToDelete = [];
-    
-        // Функция для удаления ранга
+
         function deleteRank(fraction, id) {
         const rankItem = document.querySelector(`[data-fraction="${fraction}"] [data-id="${id}"]`);
         if (rankItem) {
-            // Проверяем, был ли ранг добавлен в этой сессии
             if (rankItem.getAttribute('data-recon') === 'true') {
     
             } else {
-                // Добавляем ранг в массив удаляемых
                 ranksToDelete.push({
                     organ: fraction,
                     id: id
@@ -146,12 +133,10 @@
             updateRankIds(document.getElementById(`${fraction}-list`));
         }
     }
-    
-    // Функция для сохранения рангов
+
     function saveRanks() {
         const updatedRanks = {};
-    
-        // Собираем обновленные ранги
+
         document.querySelectorAll('.fraction-group').forEach(group => {
             const fraction = group.dataset.fraction;
             const ranks = [];
@@ -186,8 +171,7 @@
             leader: false
         });
         });
-    
-        // Формируем данные для отправки
+
         const dataToSend = {
             updated_ranks: updatedRanks,
             ranks_to_delete: ranksToDelete,
@@ -195,8 +179,7 @@
         };
     
         console.log('Saving ranks:', dataToSend);
-    
-        // Очищаем массивы для добавления и удаления после отправки
+
         ranksToDelete = [];
         ranksToAdd = [];
     
@@ -288,18 +271,29 @@
                 }
             });
         }
-        document.getElementById('searchInput').addEventListener('input', performSearch);
+        let debounceTimer;
+
+        document.getElementById('searchInput').addEventListener('input', debounce(performSearch, 500));
         document.getElementById('filter').addEventListener('change', performSearch);
-        
+
+        function debounce(callback, delay) {
+            return function (...args) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => callback(...args), delay);
+            };
+        }
+
         function performSearch() {
             const searchInput = document.getElementById('searchInput').value.trim();
             const filterValue = document.getElementById('filter').value;
-        
-            // Проверяем, что есть хотя бы одно значение для поиска
+
             if (!searchInput && !filterValue) {
+                updateTable([]);
                 return;
             }
-        
+
+            setLoading(true);
+
             fetch(`/getSearchUser?inputVal=${encodeURIComponent(searchInput)}&filterVal=${encodeURIComponent(filterValue)}`)
                 .then(response => {
                     if (!response.ok) {
@@ -308,30 +302,43 @@
                     return response.json();
                 })
                 .then(data => {
+                    setLoading(false);
                     if (data.success) {
                         updateTable(data.results);
                     } else {
+                        updateTable([]);
                         console.error('Нет данных для отображения');
                     }
                 })
                 .catch(error => {
+                    setLoading(false); 
                     console.error('Ошибка при запросе:', error);
                 });
         }
-        
+
         function updateTable(users) {
             const tableBody = document.querySelector('table tbody');
             if (!tableBody) {
                 console.error('Таблица не найдена в DOM.');
                 return;
             }
-        
+
             tableBody.innerHTML = '';
+
+            if (users.length === 0) {
+                tableBody.innerHTML = `
+                    <tr class="empty-message">
+                        <td colspan="5">Данные не найдены</td>
+                    </tr>
+                `;
+                return;
+            }
+
             users.forEach(user => {
                 const row = document.createElement('tr');
                 row.classList.add('user-row');
                 row.dataset.userId = user.id;
-        
+
                 row.innerHTML = `
                     <td>${user.nikname}</td>
                     <td>${user.static}</td>
@@ -339,9 +346,17 @@
                     <td>${user.curr_rank}</td>
                     <td>${user.discordname}</td>
                 `;
-        
+
                 tableBody.appendChild(row);
             });
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                document.body.classList.add('loading');
+            } else {
+                document.body.classList.remove('loading');
+            }
         }
         
     </script>

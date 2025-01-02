@@ -309,3 +309,8 @@ main{
   flex-direction: column;
   gap: 5px;
 }
+
+.settings-nickname {
+  justify-content: center;
+  flex-direction: column;
+}

@@ -267,14 +267,16 @@ def send_to_bot_log_dump(header, text):
 def send_to_bot_get_dsname(discordid):
   import time
   message = {
-      'discordid': discordid
+    'discordid': discordid
   }
   redis_client.publish('get_dsname', json.dumps(message))
-  for _ in range(8):  
+  
+  for _ in range(3):  
     response = redis_client.get(f'dsname_response_{discordid}')
     if response:
       return response.decode('utf-8')
     time.sleep(0.5) 
+    
   return 'Не определен'
 
 def send_to_bot_permission_none(is_permission):
@@ -291,7 +293,6 @@ def send_to_bot_new_resolution(uid, nickname, static, discordid, status, number_
       'number_resolution': number_resolution
       
   }
-  print("отправленно")
   redis_client.publish('new_resolution', json.dumps(message))
 
 def send_to_bot_changepass(code, discord_id):
@@ -1949,7 +1950,6 @@ def get_search_data():
       query = query.filter(Users.discordname.ilike(f"%{input_val}%"))
 
     results = query.all()
-    print(f"Results: {results}")
 
     filtered_data = [
         {
@@ -1991,21 +1991,18 @@ DATA_FILE = "./python/name-ranks.json"
 def write_data(data):
     with open(DATA_FILE, 'w') as file:
         json.dump(data, file, indent=4)
+        
+        
 @main.route('/save_ranks', methods=['POST'])
 def save_ranks():
-    # Получаем данные из запроса
     new_data = request.json
     ranks_to_delete = new_data.get("ranks_to_delete", [])
     ranks_to_add = new_data.get("ranks_to_add", [])
-
-    # Загружаем текущие данные из JSON
+    
     with open(DATA_FILE, 'r') as file:
         current_data = json.load(file)
 
-    # Обновляем JSON с новыми данными
     write_data(new_data)
-
-    # Если есть ранги для удаления, выполняем корректировку
     if ranks_to_delete:
         for rank in ranks_to_delete:
             organ = rank.get("organ")
@@ -2013,7 +2010,6 @@ def save_ranks():
             if organ and rank_id:
                 delete_rank_and_adjust_users(organ, rank_id, current_data)
 
-    # Если есть ранги для добавления, выполняем корректировку
     if ranks_to_add:
         for rank in ranks_to_add:
             organ = rank.get("organ")
@@ -2025,42 +2021,34 @@ def save_ranks():
 
 def add_rank_and_adjust_users(organ, rank_id, current_data):
     from __init__ import Users, db
-    # Удаляем ранг из указанного органа
     if organ in current_data:
         current_data[organ] = [rank for rank in current_data[organ] if rank['id'] != rank_id]
 
-    # Понижаем пользователей с этим рангом
     users_with_removed_rank = Users.query.filter_by(curr_rank=rank_id).all()
     for user in users_with_removed_rank:
-        if rank_id > 1:  # Если ранг не минимальный
+        if rank_id > 1:
             user.curr_rank += 1
 
-    # Понижаем пользователей с рангами выше удалённого
     higher_rank_users = Users.query.filter(Users.curr_rank > rank_id).all()
     for user in higher_rank_users:
         user.curr_rank += 1
 
-    # Сохраняем изменения в базе данных
     db.session.commit()
     
 def delete_rank_and_adjust_users(organ, rank_id, current_data):
     from __init__ import Users, db
-    # Удаляем ранг из указанного органа
     if organ in current_data:
         current_data[organ] = [rank for rank in current_data[organ] if rank['id'] != rank_id]
 
-    # Понижаем пользователей с этим рангом
     users_with_removed_rank = Users.query.filter_by(curr_rank=rank_id).all()
     for user in users_with_removed_rank:
-        if rank_id > 1:  # Если ранг не минимальный
+        if rank_id > 1: 
             user.curr_rank -= 1
 
-    # Понижаем пользователей с рангами выше удалённого
     higher_rank_users = Users.query.filter(Users.curr_rank > rank_id).all()
     for user in higher_rank_users:
         user.curr_rank -= 1
 
-    # Сохраняем изменения в базе данных
     db.session.commit()
 
 
@@ -2106,42 +2094,72 @@ def database_getdata():
   user = Users.query.get(user_id)
   ka_log = ActionUsers.query.filter_by(static=user.static).all()
   return render_template('database.html', user=user, current_user=current_user, more_info=True, perm_change=perm_change, ka_log=ka_log)
+
+
+def send_to_bot_change_nickname(new_nickname, old_nickname, static, reason, discordid):
+  message = {
+      'new_nickname': new_nickname,
+      'old_nickname': old_nickname,
+      'static': static,
+      'reason': reason,
+      'discordid': discordid
+  }
+  redis_client.publish('change_nickname', json.dumps(message))
+
 @main.route('/profile_settings', methods=['POST'])
 @login_required
 def profile_settings():
-  from __init__ import Users, guestUsers,db
-  action = request.form.get('action')
-  if action == 'nickname':
-    new_nickname = request.form.get('new_nickname')
-    if new_nickname:
-      current_user.nikname = new_nickname
-      db.session.commit()
-  elif action == 'discord':
-    new_discordid = request.form.get('new_discordid')
-    current_password = request.form.get('password-teds')
-    if check_password_hash(current_user.password, current_password):
-      if new_discordid.isdigit():
-        old_discordid = current_user.discordid
-        current_user.discordid = new_discordid
-        discordname = send_to_bot_get_dsname(new_discordid)
-        send_to_bot_log_dump(f"{current_user.discordid} ({old_discordid} #{current_user.static})", f"Пользователь изменил свой Discord ID на {new_discordid} ({discordname})")
-        current_user.discordname = discordname
+  from __init__ import db
+  try:
+    data = request.get_json()
+    action = data.get('action')
+    
+    if action == 'nickname':
+      new_nickname = data.get('new_nickname')
+      reason = data.get('reason')
+      nickname_regex = r'^[A-Za-z]+(?:\s[A-Za-z]+)*$'
+      if not re.match(nickname_regex, new_nickname):
+        return jsonify({"success": False, "message": "Ник должен быть в формате 'Nick Name'"}), 400
+      
+      send_to_bot_change_nickname(new_nickname, current_user.nikname, current_user.static, reason, current_user.discordid)
+      return jsonify({"success": True, "message": "Nickname был отправлен на одобрение!"}), 200
+        
+    elif action == 'discord':
+      discord = data.get('new_discordid')
+      password = data.get('password-teds')
+            
+      discord_id_regex = r'^\d{17,19}$'
+      if not re.match(discord_id_regex, discord):
+        return jsonify({"success": False, "message": "Discord ID должен быть числовым значением длиной от 17 до 19 символов."}), 400
+      
+      if check_password_hash(current_user.password, password):
+        if send_to_bot_get_dsname(discord) != 'Не определен':
+          current_user.discordid = discord
+          db.session.commit()
+          return jsonify({"success": True, "message": "Discord ID был изменен"}), 200
+        
+        return jsonify({"success": False, "message": "Discord ID не определен, проверьте его правильность!"}), 404
+      return jsonify({"success": False, "message": "Вы ввели неверный пароль, проверьте его правильность!"}), 404
+    
+    elif action == 'password':
+      password_old = data.get('password-s')
+      password_new = data.get('password-n')
+      
+      password_check =r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{10,}$'
+      
+      if not re.match(password_check, password_new):
+        return jsonify({"success": False, "message": "Новый пароль должен содержать заглавные и строчные буквы, цифры и специальные символы"}), 400
+      
+      if check_password_hash(current_user.password, password_old):
+        current_user.password = generate_password_hash(password_new)
         db.session.commit()
-      else:
-        flash('Неверный Discord ID!')
-    else:
-      flash('Неверный пароль!')
-  elif action == 'password':
-    current_password = request.form.get('password-s')
-    new_password = request.form.get('password-n')
-    if check_password_hash(current_user.password, current_password):
-      current_user.password = generate_password_hash(new_password)
-      db.session.commit()
-      send_to_bot_log_dump(f"{current_user.discordid} ({current_user.nikname} #{current_user.static})", f"Пользователь изменил свой пароль!")
-    else:
-      flash('Неверный пароль!')
+        return jsonify({"success": True, "message": "Пароль был изменен"}), 200
+      return jsonify({"success": False, "message": "Вы ввели неверный пароль, проверьте его правильность!"}), 404
+        
+  except Exception as e:
+    logging.error(f"Ошибка на стороне сервера: {str(e)}")
+    return jsonify({"success": False, "message": "Произошла ошибка, попробуйте позже."}), 500
 
-  return redirect(url_for('main.profile'))
 
 @main.route('/doc')
 def doc():

@@ -37,24 +37,37 @@
                 <span class="btn-modal-close" id="close-btn-1">&times;</span>
             </div>
             <div class='form-container' id='complaint'>
-            <form method='POST' action='/profile_settings'>
-                <input type="hidden" name="action" id="action-0">
-                <div class='group-contaniner-modal'>
+                <form method='POST' id='settings-nickname-form'>
+                    <input type="hidden" name="action" id="action-0">
                     <div class='settings-nickname' style='display:none;'>
                         <div class='form-control'>
-                            <label for="phone">Введите новый nickname</label>
+                            <label for="nickname">Введите новый nickname</label>
                             <div class='form-input-modal'>
-                                <input name="new_nickname" placeholder='Введите новый nickname'>
+                                <input name="new_nickname" placeholder='Введите новый nickname' required>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
+                        <div class='form-control'>
+                            <label for="reason">Введите причину смену</label>
+                            <div class='form-input-modal'>
+                                <input name="reason" placeholder='Введите причину' required>
+                            </div>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                        <div class='submit-btn-contanier'>
+                            <div class='submit-btn'>
+                                <input type="submit" value="Сохранить">   
+                            </div>   
+                        </div>
                     </div>
-                
+                </form>
+                <form method='POST' id='settings-password-form'>
+                    <input type="hidden" name="action" id="action-0">
                     <div class='settings-password' style='display:none;'> 
                         <div class='form-control'>
                             <label for="phone">Старый пароль</label>
                             <div class='form-input-modal'>
-                                <input name="password-s" placeholder='Введите текущий пароль'>
+                                <input type='password' name="password-s" placeholder='Введите текущий пароль'>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
@@ -62,17 +75,24 @@
                         <div class='form-control'>
                             <label for="phone">Новый пароль</label>
                             <div class='form-input-modal'>
-                                <input name="password-n" placeholder='Введите новый пароль'>
+                                <input type='password' name="password-n" placeholder='Введите новый пароль'>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
+                        <div class='submit-btn-contanier'>
+                            <div class='submit-btn'>
+                                <input type="submit" value="Сохранить">   
+                            </div>   
+                        </div>
                     </div>
-                
+                </form>
+                <form method='POST' id='settings-discordID-form'>
+                    <input type="hidden" name="action" id="action-0">
                     <div class='settings-discordID' style='display:none; flex-direction: column;'>
                         <div class='form-control'>
                             <label for="phone">Пароль</label>
                             <div class='form-input-modal'>
-                                <input name="password-teds" placeholder='Введите текущий пароль'>
+                                <input type='password' name="password-teds" placeholder='Введите текущий пароль'>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
@@ -84,13 +104,13 @@
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
+                        <div class='submit-btn-contanier'>
+                            <div class='submit-btn'>
+                                <input type="submit" value="Сохранить">   
+                            </div>   
+                        </div>
                     </div>
-                </div>
-                <div class='submit-btn-contanier'>
-                    <div class='submit-btn'>
-                        <input type="submit" value="Сохранить">   
-                    </div>   
-                </div>
+                </form>
             </form>
             </div> 
         </div> 

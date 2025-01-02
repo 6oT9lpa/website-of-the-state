@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dropdownMenu.addEventListener('click', (e) => {
             e.preventDefault();
             const action = e.target.dataset.action;
-            document.getElementById(hiddenInputId).value = action;
+            document.querySelectorAll("#" + hiddenInputId).forEach(i => i.value = action) ;
             dropdown.classList.remove('open');
             dropdownBtn.classList.remove('active');
             showModal(document.querySelector('#modal-1'));
@@ -73,4 +73,97 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupDropdown(document.querySelector('#dropdown-0'), document.querySelector('#dropdown-btn-0'), document.querySelector('#dropdown-menu-0'), 'action-0');
 
+});
+
+
+document.getElementById('settings-nickname-form').addEventListener('submit', function(event) {
+    event.preventDefault(); 
+
+    const formData = new FormData(event.target);
+
+    fetch('/profile_settings', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+    },
+        body: JSON.stringify(Object.fromEntries(formData.entries()))
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+});
+
+document.getElementById('settings-password-form').addEventListener('submit', function(event) {
+    event.preventDefault(); 
+
+    const formData = new FormData(event.target);
+
+    fetch('/profile_settings', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+    },
+        body: JSON.stringify(Object.fromEntries(formData.entries()))
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+});
+
+document.getElementById('settings-discordID-form').addEventListener('submit', function(event) {
+    event.preventDefault(); 
+
+    const formData = new FormData(event.target);
+    fetch('/profile_settings', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+    },
+        body: JSON.stringify(Object.fromEntries(formData.entries()))
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
 });
