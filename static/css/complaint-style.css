@@ -427,6 +427,31 @@ a.accept-judge {
     font-weight: 600;
 }
 
+.dropdown-select-isk-nohover {
+    appearance: none; 
+    background: transparent;
+    color: #f0f8ff;
+    padding: 10px 15px;
+    font-size: 14px;
+    border-radius: 10px;
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+    width: 200px; /* Задайте ширину, если нужно */
+    box-sizing: border-box;
+}
+
+.dropdown-select-isk-nohover option {
+    background-color: #252525;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+}
+.dropdown-select-isk-nohover option:disabled {
+    background-color: #141414;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+}
 
 .contanier-court-order {
     color: #f0f8ff;
