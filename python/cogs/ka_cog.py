@@ -316,7 +316,7 @@ class ka_cog(commands.Cog):
                     embed.add_field(name="Причина:", value=reason_type, inline=True)
                     embed.add_field(name="Отработка", value=otrabotaika_message, inline=True)
                     embed.add_field(name="Итого:", value=f"{user.YW}/2, {user.SW}/3", inline=True)
-                    db_session.query(Users).filter_by(discordid=member.id).update({
+                    db_session.query(Users).filter_by(static=passport).update({
                             "YW": user.YW,
                             "SW": user.SW
                         })
@@ -392,7 +392,7 @@ class ka_cog(commands.Cog):
 
                         embed.add_field(name="Причина:", value=reason_type, inline=True)
                         embed.add_field(name="Итого:", value=f"{user.YW}/2, {user.SW}/3", inline=True)
-                        db_session.query(Users).filter_by(discordid=member.id).update({
+                        db_session.query(Users).filter_by(static=passport).update({
                             "YW": user.YW,
                             "SW": user.SW
                         })
