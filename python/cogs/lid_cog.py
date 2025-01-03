@@ -46,7 +46,7 @@ class lid_cog(commands.Cog):
                                         "organ": fraction_name,
                                         "action": "Invite"
                                     })
-                                    db.session.query(PermissionUsers).filter_by(user_static=newleader.static).update({
+                                    db.session.query(PermissionUsers).filter_by(author_id=newleader.id).update({
                                         "lider": True
                                     })
                                     db.session.commit()

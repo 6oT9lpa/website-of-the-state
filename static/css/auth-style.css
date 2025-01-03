@@ -387,6 +387,13 @@ a.change_pasw:hover {
     color: #f0f8ff;
 }
 
+.remember_container {
+    display: flex;
+    justify-content: start;
+    font-size: 12px;
+    gap: 5px;
+}
+
 @media (max-width: 768px) {
     .circle-1 {
         width: 200px;

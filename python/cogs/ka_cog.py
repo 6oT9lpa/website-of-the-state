@@ -12,7 +12,7 @@ from enum import Enum
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from __init__ import Users
 
-engine = create_engine('mysql://root:arnetik1@localhost:3306/site')
+engine = create_engine('mysql://root:Qwerty123!@localhost:3306/db_majestic')
 Session = sessionmaker(bind=engine)
 db_session = Session()
 

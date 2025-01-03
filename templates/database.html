@@ -18,6 +18,10 @@
         {% include 'header/header-account.html' %}
     {% endblock %}
 
+    {% block error %}
+        {% include 'api/error-json.html' %}
+    {% endblock %}
+
     {% block main %}
         {% include 'main/main-database.html' %}
     {% endblock %}
@@ -357,6 +361,24 @@
             } else {
                 document.body.classList.remove('loading');
             }
+        }
+
+        function checkPermissions(tabName) {
+            fetch('/check_permissions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showTab(tabName); 
+                } else {
+                    showNotification(data.message, true); 
+                }
+            })
+            .catch(error => console.error('Ошибка при проверке прав:', error));
         }
         
     </script>

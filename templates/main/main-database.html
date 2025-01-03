@@ -27,11 +27,6 @@
                     <div class="checkmark"></div>
                 </label>
                 <label class="container">
-                    <input type="checkbox" name="prosecutor" {% if user.permissions[0].prosecutor %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
-                    Прокурорский доступ
-                    <div class="checkmark"></div>
-                </label>
-                <label class="container">
                     <input type="checkbox" name="lider" {% if user.permissions[0].lider %}checked="checked"{% endif %} {% if perm_change >= 4 %}{% else %} disabled {% endif %}>
                     Лидерский доступ
                     <div class="checkmark"></div>
@@ -47,31 +42,36 @@
                     <div class="checkmark"></div>
                 </label>
                 <label class="container">
-                    <input type="checkbox" name="creation_doc" {% if user.permissions[0].creation_doc %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
-                    Доступ к созданию документов
-                    <div class="checkmark"></div>
-                </label>
-                <label class="container">
                     <input type="checkbox" name="create_news" {% if user.permissions[0].create_news %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
                     Доступ к созданию новостей
                     <div class="checkmark"></div>
                 </label>
                 <label class="container">
-                    <input type="checkbox" name="lawyer" {% if user.permissions[0].lawyer %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
+                    <input type="checkbox" name="creation_doc" {% if user.permissions[0].creation_doc %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
+                    Доступ к созданию документов
+                    <div class="checkmark"></div>
+                </label>
+                <label class="container">
+                    <input type="checkbox" name="lawyer" {% if user.permissions[0].lawyer %}checked="checked"{% endif %} {% if perm_change >= 1 %}{% else %} disabled {% endif %}>
                     Доступ адвоката
                     <div class="checkmark"></div>
                 </label>
-                {% if perm_change <= 1 %}{% else %}  <div class='container-submit-btn'> <button type="submit">Сохранить</button> </div> {% endif %}
+                <label class="container">
+                    <input type="checkbox" name="prosecutor" {% if user.permissions[0].prosecutor %}checked="checked"{% endif %} {% if perm_change >= 1 %}{% else %} disabled {% endif %}>
+                    Прокурорский доступ
+                    <div class="checkmark"></div>
+                </label>
+                
             </div>
+                {% if perm_change < 1 %}{% else %}  <div class='container-submit-btn'> <button type="submit">Сохранить</button> </div> {% endif %}
         </form>
         <button id="toggleKaHistoryBtn" class="toggle-ka-history-btn">Показать Историю КА</button>
-        
         </div>
         {% else %}
     <div id="players" class='players'>
     <div class="tabs">
         <button class="tab-button" onclick="showTab('users')">Пользователи</button>
-        <button class="tab-button" onclick="showTab('ranks')">Ранги</button>
+        <button class="tab-button" onclick="checkPermissions('ranks')">Ранги</button>
     </div>
     <div id="users" class="tab-content">
         <div class="search-form">
@@ -80,7 +80,7 @@
                 <option value="static">Статик</option>
                 <option value="discord">Дискорд</option>
             </select>
-            <input type="text" name="text" id="searchInput">
+            <input type="text" name="text" id="searchInput" placeholder='поиск'>
         </div>
         <table id="userTable">
             <thead>

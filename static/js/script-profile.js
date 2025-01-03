@@ -45,8 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll("#" + hiddenInputId).forEach(i => i.value = action) ;
             dropdown.classList.remove('open');
             dropdownBtn.classList.remove('active');
-            showModal(document.querySelector('#modal-1'));
-            document.querySelector('#close-btn-1').addEventListener('click', () => hideModal(document.querySelector('#modal-1')));
+            if (dropdownMenu === document.querySelector('#dropdown-menu-0')) {
+                showModal(document.querySelector('#modal-1'));
+                document.querySelector('#close-btn-1').addEventListener('click', () => hideModal(document.querySelector('#modal-1')));
+            }
             updateContentSettings();
         });
     }
@@ -72,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupDropdown(document.querySelector('#dropdown-0'), document.querySelector('#dropdown-btn-0'), document.querySelector('#dropdown-menu-0'), 'action-0');
-
+    setupDropdown(document.querySelector('#dropdown-1'), document.querySelector('#dropdown-btn-1'), document.querySelector('#dropdown-menu-1'), 'action-1');
 });
 
 
@@ -167,3 +169,85 @@ document.getElementById('settings-discordID-form').addEventListener('submit', fu
         showNotification('Произошла ошибка при отправке данных', true);
     });
 });
+
+function switchAccount(userId) {
+    fetch(`/switch_account/${userId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            sessionStorage.setItem('notification', data.message);
+            sessionStorage.setItem('isError', 'false');
+            window.location.reload();
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => console.error('Ошибка:', error));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const message = sessionStorage.getItem('notification');
+    const isError = sessionStorage.getItem('isError') === 'true';
+
+    if (message) {
+        showNotification(message, isError);
+
+        sessionStorage.removeItem('notification');
+        sessionStorage.removeItem('isError');
+    }
+});
+
+document.querySelector('#audit').addEventListener('click', function(event) {
+    event.preventDefault();
+
+    fetch('/audit', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            window.location.href = '/audit';
+            
+        }
+        else if(!response.ok) {
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (!data.success) {
+            sessionStorage.setItem('notification', data.message);
+            sessionStorage.setItem('isError', 'true');
+
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                window.history.back();
+            }
+        }
+    })
+    .catch(error => console.error('Ошибка:', error));
+    
+    
+});
+
+function logoutAccount() {
+    fetch(`/logout`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            window.location.href = '/logout?next=/';
+        }
+    })
+    .catch(error => console.error('Ошибка:', error));
+}

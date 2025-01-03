@@ -6,7 +6,7 @@ from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
 import logging, uuid
 from cryptography.fernet import Fernet
-
+from datetime import timedelta
 
 from main import main
 
@@ -19,6 +19,7 @@ app.config['WTF_CSRF_ENABLED'] = True
 app.config['DEBUG'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
 app.config['FERNET_KEY'] = b'RZP6DxiYrL_hz7fX1IN0v4YAtfMwwz5Gp53JRVvLw6M='
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=7)
 cipher = Fernet(app.config['FERNET_KEY'])
 app.register_blueprint(main)
 

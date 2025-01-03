@@ -215,19 +215,19 @@ def increment_number_with_leading_zeros(record):
 
 def color_organ(organ):
   if organ == 'LSPD':
-    color = '#142c77'  # Синий
+    color = '#142c77' 
   elif organ == 'LSCSD':
-    color = '#9F4C0F'  # Коричневый
+    color = '#9F4C0F' 
   elif organ == 'SANG':
-    color = '#166c0e'  # Зеленый
+    color = '#166c0e'
   elif organ == 'FIB':
-    color = '#000000' # черный
+    color = '#6a6969' 
   elif organ == 'EMS':
-    color = '#a21726' # красный
+    color = '#a21726' 
   elif organ == 'WN':
-    color = '#a21726' # красный
+    color = '#a21726' 
   elif organ == 'GOV':
-    color = '#CCAC00' # желтый
+    color = '#CCAC00' 
     
   return color
 
@@ -1461,7 +1461,7 @@ def auth():
         return redirect(url_for('main.auth'))
 
       if check_password_hash(user.password, form.password.data):
-        login_user(user)
+        login_user(user, remember=form.remember_me.data)
         return redirect(url_for('main.profile'))
       else:
         flash("Неверный static или password!")
@@ -1469,7 +1469,7 @@ def auth():
 
     if guest:
         if check_password_hash(guest.password, form.password.data):
-          login_user(guest)
+          login_user(user, remember=form.remember_me.data)
           return redirect(url_for('main.profile'))
         else:
           flash("Неверный static или password!")
@@ -1482,13 +1482,17 @@ def auth():
 
 @main.after_request
 def redirect_login(response):
+    if request.endpoint == 'main.logout':
+      return redirect(url_for('main.index'))
+    
     if response.status_code == 401:  
-        if not current_user.is_authenticated:
-            next_url = request.args.get('next')
-            if not next_url:
-                next_url = url_for('main.index')
-            return redirect(url_for('main.auth', next=next_url)) 
+      if not current_user.is_authenticated:
+        next_url = request.args.get('next')
+        if not next_url:
+          next_url = url_for('main.index')
+        return redirect(url_for('main.auth', next=next_url)) 
     return response
+
 
 # Обработка КА функций.
 def generate_random_password():
@@ -1844,7 +1848,7 @@ def audit():
 
   permission = current_user.permissions[0]
   if not (permission.high_staff or permission.lider or permission.admin or permission.tech):
-    return jsonify({"success": False, "message": "Доступ запрещен, отсутствуют права."}), 403
+    return jsonify({"success": False, "message": "Доступ запрещен, отсутствуют права.", "redirect_url": request.referrer}), 403
 
   if request.method == 'POST':
     data = request.get_json()
@@ -1860,10 +1864,13 @@ def audit():
       
     print(rank_data)
     print(type(rank_data))
+    
+    if current_user.discordid == discord_id:
+      return jsonify({"success": False, "message": "Вы не можете выбрать себя."}), 400
 
     if current_user.curr_rank > rank_data and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
       return jsonify({"success": False, "message": "Ваш текущий ранг выше выбранного. Вы не можете выбрать этот ранг."}), 400
-        
+      
     try:    
       nickname_regex = r'^[A-Za-z]+(?:\s[A-Za-z]+)*$'
       if not re.match(nickname_regex, nickname):
@@ -1883,11 +1890,11 @@ def audit():
       user = Users.query.filter_by(static=static).first()
       if not user:
         process_new_invite(static, rank_data, nickname, discord_id, reason, fraction)
-        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nikname} #{user.static}"}), 200
+        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nickname} #{user.static}"}), 200
 
       elif user and user.action == 'Dismissal' and dismissal != 'dismissal':
         process_invite_action(user, rank_data, reason, fraction)
-        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nikname} #{user.static}"}), 200
+        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nickname} #{user.static}"}), 200
 
       elif user and dismissal == 'dismissal':
         process_dismissal(user, reason, fraction)
@@ -1906,7 +1913,7 @@ def audit():
     except Exception as e:
       logging.error(f"Ошибка на стороне сервера: {str(e)}")
       return jsonify({"success": False, "message": "Произошла ошибка, попробуйте позже."}), 500
-
+    
   organ = current_user.organ
   color = color_organ(organ)
   filename = "./python/name-ranks.json"
@@ -1919,7 +1926,35 @@ def audit():
 @login_required
 def logout():
   logout_user()
-  return redirect(url_for('main.index'))
+  return jsonify({
+        "success": True,
+        "message": f"Вы вышли с аккаунта.",
+      }), 200
+
+@main.route('/switch_account/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def switch_account(user_id):
+    from __init__ import Users
+
+    new_user = Users.query.filter_by(id=user_id, discordid=current_user.discordid).first()
+    if new_user:
+      logout_user()
+      login_user(new_user)
+      
+      return jsonify({
+        "success": True,
+        "message": f"Вы переключились на аккаунт {new_user.nikname}.",
+        "new_user": {
+            "id": new_user.id,
+            "nikname": new_user.nikname,
+            "discordid": new_user.discordid
+        }
+      }), 200
+    else:
+      return jsonify({
+        "success": False,
+        "message": "Ошибка: аккаунт не найден или недоступен."
+      }), 400
 
 @main.route('/profile', methods=['GET'])
 @check_user_action
@@ -1936,10 +1971,14 @@ def profile():
     ranks = read_ranks(filename)
     updated_ranks = ranks.get("updated_ranks", {})
     rank_name = get_rank_info(updated_ranks, organ, rank)
-
-    return render_template('profile.html', rank_name=rank_name, color=color, current_user=current_user, is_guest=is_guest)
+    curr_users = Users.query.filter(
+            Users.discordid == current_user.discordid,
+            Users.id != current_user.id
+        ).all()
+    
+    return render_template('profile.html', rank_name=rank_name, color=color, current_user=current_user, is_guest=is_guest, curr_users=curr_users)
   else:
-    return render_template('profile.html', current_user=current_user, is_guest=is_guest)
+    return render_template('profile.html', current_user=current_user, is_guest=is_guest, guestUsers=guestUsers)
   
 def check_perm_changedata():
   if current_user.permissions[0].tech:
@@ -1982,6 +2021,14 @@ def get_search_data():
     ]
 
     return jsonify({"success": True, "results": filtered_data})
+
+@main.route('/check_permissions', methods=['POST'])
+@login_required
+def check_permissions():
+    permission = current_user.permissions[0]
+    if not (permission.lider or permission.admin or permission.tech):
+        return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия."}), 403
+    return jsonify({"success": True, "message": "Доступ разрешен."}), 200
 
 @main.route('/database', methods=['GET'])
 @check_user_action

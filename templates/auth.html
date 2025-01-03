@@ -42,12 +42,15 @@
                             {{ form.password(class="form-input", id='password') }}
                         </div>
                         <span class="text-danger" id="is-invalid"></span>
-                    </div>                   
+                    </div>      
+                    <div class='remember_container'>
+                        <label for='remember_me' class='form-check-label'> Запомнить меня</label>    
+                        {{ form.remember_me(class="form-check-input", id='remember_me') }}
+                    </div>         
                 </div>
                 <div class='submit-btn-contanier'>
                     {{ form.submit(class="submit-button") }}     
                 </div> 
-                <a class='change_pasw'>забыл пароль</a>    
             </form>       
         </div>
     </div>

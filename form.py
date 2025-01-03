@@ -6,6 +6,7 @@ from wtforms.validators import DataRequired, length, EqualTo
 class FormAuthPush(FlaskForm):
     static = StringField(validators=[DataRequired(), length(min=1, max=6)], render_kw={"placeholder": "Введите static"})
     password = PasswordField(validators=[DataRequired(), length(min=10, max=40)],render_kw={"placeholder": "Введите password"})
+    remember_me = BooleanField('Запомнить меня')
     submit = SubmitField(label='отправить', validators=[DataRequired()])
     
 class FormCreateDoc(FlaskForm):
