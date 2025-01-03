@@ -2,33 +2,73 @@
     "updated_ranks": {
         "SANG": [
             {
-                "id": 6,
+                "id": 14,
                 "name": "Colonel",
                 "leader": true
             },
             {
+                "id": 13,
+                "name": "\u0413\u0435\u043d\u0435\u0440\u0430\u043b-\u043f\u043e\u043b\u043a\u043e\u0432\u043d\u0438\u043a",
+                "leader": false
+            },
+            {
+                "id": 12,
+                "name": "\u0413\u0435\u043d\u0435\u0440\u0430\u043b-\u043b\u0435\u0439\u0442\u0435\u043d\u0430\u043d\u0442",
+                "leader": false
+            },
+            {
+                "id": 11,
+                "name": "\u0413\u0435\u043d\u0435\u0440\u0430\u043b-\u043c\u0430\u0439\u043e\u0440",
+                "leader": false
+            },
+            {
+                "id": 10,
+                "name": "\u041f\u043e\u043b\u043a\u043e\u0432\u043d\u0438\u043a",
+                "leader": false
+            },
+            {
+                "id": 9,
+                "name": "\u041f\u043e\u0434\u043f\u043e\u043b\u043a\u043e\u0432\u043d\u0438\u043a",
+                "leader": false
+            },
+            {
+                "id": 8,
+                "name": "\u041c\u0430\u0439\u043e\u0440",
+                "leader": false
+            },
+            {
+                "id": 7,
+                "name": "\u041b\u0435\u0439\u0442\u0435\u043d\u0430\u043d\u0442",
+                "leader": false
+            },
+            {
+                "id": 6,
+                "name": "\u041c\u043b\u0430\u0434\u0448\u0438\u0439 \u043b\u0435\u0439\u0442\u0435\u043d\u0430\u043d\u0442",
+                "leader": false
+            },
+            {
                 "id": 5,
-                "name": "Major",
+                "name": "\u0421\u0442\u0430\u0440\u0448\u0438\u0439 \u043f\u0440\u0430\u043f\u043e\u0440\u0449\u0438\u043a",
                 "leader": false
             },
             {
                 "id": 4,
-                "name": "Specialist",
+                "name": "\u0421\u0435\u0440\u0436\u0430\u043d\u0442",
                 "leader": false
             },
             {
                 "id": 3,
-                "name": "Private Second Class",
+                "name": "\u041c\u043b\u0430\u0434\u0448\u0438\u0439 \u0441\u0435\u0440\u0436\u0430\u043d\u0442",
                 "leader": false
             },
             {
                 "id": 2,
-                "name": "Private First Class",
+                "name": "\u0415\u0444\u0440\u0435\u0439\u0442\u043e\u0440",
                 "leader": false
             },
             {
                 "id": 1,
-                "name": "Private",
+                "name": "\u0420\u044f\u0434\u043e\u0432\u043e\u0439",
                 "leader": false
             }
         ],
@@ -172,17 +212,17 @@
             },
             {
                 "id": 7,
-                "name": "\u041d\u043e\u0432\u044b\u0439 \u0440\u0430\u043d\u0433",
-                "leader": false
-            },
-            {
-                "id": 6,
                 "name": "\u0410\u0434\u0432\u043e\u043a\u0430\u0442",
                 "leader": false
             },
             {
-                "id": 5,
+                "id": 6,
                 "name": "\u0410\u0433\u0435\u043d\u0442 USSS",
+                "leader": false
+            },
+            {
+                "id": 5,
+                "name": "\u0421\u0443\u0434\u0435\u0431\u043d\u044b\u0439 \u0421\u0435\u043a\u0440\u0435\u0442\u0430\u0440\u044c",
                 "leader": false
             },
             {
@@ -208,58 +248,68 @@
         ],
         "LSPD": [
             {
-                "id": 14,
+                "id": 16,
                 "name": "Chief",
                 "leader": true
             },
             {
-                "id": 13,
+                "id": 15,
+                "name": "Deputy Chief",
+                "leader": false
+            },
+            {
+                "id": 14,
                 "name": "Assistant Chief",
                 "leader": false
             },
             {
-                "id": 12,
+                "id": 13,
                 "name": "Curator of Department",
                 "leader": false
             },
             {
-                "id": 11,
+                "id": 12,
                 "name": "Head of Department",
                 "leader": false
             },
             {
-                "id": 10,
+                "id": 11,
                 "name": "Deputy of Department",
                 "leader": false
             },
             {
-                "id": 9,
+                "id": 10,
                 "name": "Instructor",
                 "leader": false
             },
             {
-                "id": 8,
+                "id": 9,
                 "name": "Senior Lieutenant",
                 "leader": false
             },
             {
-                "id": 7,
+                "id": 8,
                 "name": "Lieutenant",
                 "leader": false
             },
             {
-                "id": 6,
+                "id": 7,
                 "name": "Senior Sergeant",
                 "leader": false
             },
             {
-                "id": 5,
+                "id": 6,
                 "name": "Sergeant",
                 "leader": false
             },
             {
-                "id": 4,
+                "id": 5,
                 "name": "Senior Lead Officer",
+                "leader": false
+            },
+            {
+                "id": 4,
+                "name": "Officer III",
                 "leader": false
             },
             {
@@ -280,9 +330,24 @@
         ],
         "LSCSD": [
             {
-                "id": 12,
+                "id": 15,
                 "name": "Sheriff",
                 "leader": true
+            },
+            {
+                "id": 14,
+                "name": "Undersheriff",
+                "leader": false
+            },
+            {
+                "id": 13,
+                "name": "Assistant Sheriff",
+                "leader": false
+            },
+            {
+                "id": 12,
+                "name": "Head of Department",
+                "leader": false
             },
             {
                 "id": 11,
@@ -291,37 +356,37 @@
             },
             {
                 "id": 10,
-                "name": "Investigator",
+                "name": "High Inspector",
                 "leader": false
             },
             {
                 "id": 9,
-                "name": "Captain",
+                "name": "Instructor",
                 "leader": false
             },
             {
                 "id": 8,
-                "name": "Lieutenant",
+                "name": "Captain",
                 "leader": false
             },
             {
                 "id": 7,
-                "name": "Sergeant",
+                "name": "Lieutenant",
                 "leader": false
             },
             {
                 "id": 6,
-                "name": "Caporal",
+                "name": "Sergeant",
                 "leader": false
             },
             {
                 "id": 5,
-                "name": "Deputy Officer II",
+                "name": "Caporal",
                 "leader": false
             },
             {
                 "id": 4,
-                "name": "Deputy Officer I",
+                "name": "Officer",
                 "leader": false
             },
             {
@@ -331,7 +396,7 @@
             },
             {
                 "id": 2,
-                "name": "Trainee",
+                "name": "Tranee",
                 "leader": false
             },
             {
@@ -368,68 +433,139 @@
             },
             {
                 "id": 10,
-                "name": "Physician of the Highest Category",
+                "name": "Specialist II",
                 "leader": false
             },
             {
                 "id": 9,
-                "name": "Physician of the First Category",
+                "name": "Specialist I",
                 "leader": false
             },
             {
                 "id": 8,
-                "name": "Physician of the Second Category",
+                "name": "Psychologist",
                 "leader": false
             },
             {
                 "id": 7,
-                "name": "General Practitioner",
+                "name": "Physician",
                 "leader": false
             },
             {
                 "id": 6,
-                "name": "Assistant Physician",
+                "name": "Therapist",
                 "leader": false
             },
             {
                 "id": 5,
-                "name": "Paramedic",
+                "name": "Resuscitator",
                 "leader": false
             },
             {
                 "id": 4,
-                "name": "Intern",
+                "name": "Intensivist",
                 "leader": false
             },
             {
                 "id": 3,
-                "name": "Assistant",
+                "name": "Paramedic",
                 "leader": false
             },
             {
                 "id": 2,
-                "name": "Trainee",
+                "name": "Intern",
                 "leader": false
             },
             {
                 "id": 1,
-                "name": "Apprentice",
+                "name": "Student",
                 "leader": false
             }
         ],
         "WN": [
             {
-                "id": 1,
+                "id": 13,
                 "name": "Director",
                 "leader": true
+            },
+            {
+                "id": 12,
+                "name": "Deputy Director",
+                "leader": false
+            },
+            {
+                "id": 11,
+                "name": "Curator of Department",
+                "leader": false
+            },
+            {
+                "id": 10,
+                "name": "Head of Department",
+                "leader": false
+            },
+            {
+                "id": 9,
+                "name": "Deputy Department Head",
+                "leader": false
+            },
+            {
+                "id": 8,
+                "name": "Showman",
+                "leader": false
+            },
+            {
+                "id": 7,
+                "name": "Speaker",
+                "leader": false
+            },
+            {
+                "id": 6,
+                "name": "Journalist",
+                "leader": false
+            },
+            {
+                "id": 5,
+                "name": "Editor",
+                "leader": false
+            },
+            {
+                "id": 4,
+                "name": "Reader",
+                "leader": false
+            },
+            {
+                "id": 3,
+                "name": "Manager",
+                "leader": false
+            },
+            {
+                "id": 2,
+                "name": "Promoter",
+                "leader": false
+            },
+            {
+                "id": 1,
+                "name": "Trainee",
+                "leader": false
             }
         ]
     },
     "ranks_to_delete": [
         {
             "organ": "GOV",
-            "id": 11
+            "id": 2
+        },
+        {
+            "organ": "GOV",
+            "id": 4
         }
     ],
-    "ranks_to_add": []
+    "ranks_to_add": [
+        {
+            "organ": "GOV",
+            "id": "2",
+            "name": "\u042e\u0440\u0438\u0441\u0442",
+            "leader": false
+        }
+    ]
 }

@@ -90,8 +90,8 @@ class SettingProfile(commands.Cog):
                     title="Запрос на смену Nickname • ОДОБРЕНО",
                     description=(
                     f"> Одобрен: <@{interaction.user.id}> (`{interaction.user.id} | {interaction.user.name}`)\n\n"
-                    f"> - **{"Ваш текущий nickname и static."}**\n"
-                    f"``` {self.messages[message_id]["nickname"]} | #{self.messages[message_id]["static"]}```\n\n"
+                    f"> - **{'Ваш текущий nickname и static.'}**\n"
+                    f"``` {self.messages[message_id]['nickname']} | #{self.messages[message_id]['static']}```\n\n"
                     ))
                     embed.set_footer(text="Если вы считаете, что это ошибочное сообщение, свяжитесь с 6ot9lpa")
                     await userDS.send(embed=embed)
@@ -106,8 +106,8 @@ class SettingProfile(commands.Cog):
                     title="Запрос на смену Nickname • ОТКАЗАНО",
                     description=(
                     f"> Отказано: <@{interaction.user.id}> (`{interaction.user.id} | {interaction.user.name}`)\n\n"
-                    f"> - **{"Ваш текущий nickname и static."}**\n"
-                    f"``` {self.messages[message_id]["nickname"]} | #{self.messages[message_id]["static"]}```\n\n"
+                    f"> - **{'Ваш текущий nickname и static.'}**\n"
+                    f"``` {self.messages[message_id]['nickname']} | #{self.messages[message_id]['static']}```\n\n"
                     ))
                     embed.set_footer(text="Если вы считаете, что это ошибочное сообщение, свяжитесь с 6ot9lpa")
                     await userDS.send(embed=embed)
@@ -222,11 +222,11 @@ class SettingProfile(commands.Cog):
                 title=f":bookmark_tabs: Заявление на смену имени!",
                 description=(
                     f"> Автор заявления: <@{discordid}> (`{discordid} | {user.name}`)\n\n"
-                    f"> - **{"Текущий nickname и static."}**\n"
+                    f"> - **{'Текущий nickname и static.'}**\n"
                     f"``` {old_nickname} | #{static}```\n"
-                    f"> - **{"Новый nickname и static."}**\n"
+                    f"> - **{'Новый nickname и static.'}**\n"
                     f"``` {new_nickname} | #{static}```\n"
-                    f"> - **{"Причина смены nickname."}**\n"
+                    f"> - **{'Причина смены nickname.'}**\n"
                     f"``` {reason} ```\n"
                 )
             )

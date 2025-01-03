@@ -251,7 +251,7 @@ class ka_cog(commands.Cog):
             await inter.response.send_message(f"Только лидер и админитсрация может менять информацию о отработках!", ephemeral=True)
 
     @commands.slash_command()
-    async def warn(inter: disnake.ApplicationCommandInteraction, member: disnake.Member, warning_type: warn_variants, reason_type: str):
+    async def warn(inter: disnake.ApplicationCommandInteraction, member: disnake.Member, passport: int, warning_type: warn_variants, reason_type: str):
         author = db_session.query(Users).filter(Users.discordid == inter.author.id).all()
         permtot = False
         for user in author:
@@ -272,7 +272,7 @@ class ka_cog(commands.Cog):
                         break
                 # Если департамент найден
             if user_department:
-                user = db_session.query(Users).filter_by(discordid=member.id).first()
+                user = db_session.query(Users).filter_by(static=passport).first()
                 if user:
                     otrabotaika_message = otrabotaika_messages.get(user_department, {}).get(warning_type.lower(), "Не указано")
                     if isinstance(otrabotaika_message, list):
@@ -316,7 +316,7 @@ class ka_cog(commands.Cog):
                     embed.add_field(name="Причина:", value=reason_type, inline=True)
                     embed.add_field(name="Отработка", value=otrabotaika_message, inline=True)
                     embed.add_field(name="Итого:", value=f"{user.YW}/2, {user.SW}/3", inline=True)
-                    db_session.query(Users).filter_by(discordid=member.id).update({
+                    db_session.query(Users).filter_by(static=passport).update({
                             "YW": user.YW,
                             "SW": user.SW
                         })
@@ -332,18 +332,20 @@ class ka_cog(commands.Cog):
                         except Exception as e:
                             await inter.response.send_message(f"Произошла ошибка: {e}", ephemeral=True)
                             return
-                        await inter.response.send_message(embed=embed)
+                    await inter.response.send_message(embed=embed)
                     if user.SW == 3:
                         await inter.followup.send(f'<@{inter.author.id}> У <@{member.id}> 3 строгих выговора', ephemeral=True)
 
                         db_session.commit()  # Сохраняем изменения в базе данных
                 else:
-                    await inter.response.send_message("Игрок не в отделе!", ephemeral=True)
+                    await inter.response.send_message("Игрок не найден!", ephemeral=True)
+            else:
+                await inter.response.send_message("Игрок не в отделе!", ephemeral=True)
         else:
             await inter.response.send_message("У вас нет прав!", ephemeral=True)
 
     @commands.slash_command()
-    async def unwarn(inter: disnake.ApplicationCommandInteraction, member: disnake.Member, warning_type: warn_variants, reason_type: str):
+    async def unwarn(inter: disnake.ApplicationCommandInteraction, member: disnake.Member, passport: int, warning_type: warn_variants, reason_type: str):
         author = db_session.query(Users).filter(Users.discordid == inter.author.id).all()
         permtot = False
         for user in author:
@@ -351,7 +353,7 @@ class ka_cog(commands.Cog):
                 permtot = True
                 break
         if permtot:
-                user = db_session.query(Users).filter_by(discordid=member.id).first()
+                user = db_session.query(Users).filter_by(static=passport).first()
                 config = load_config()
                 server_config = config['servers'].get(str(inter.guild.id), {})
                 warn_roles = server_config.get('otrabotaika', {}).get('warn_roles', {})
@@ -390,7 +392,7 @@ class ka_cog(commands.Cog):
 
                         embed.add_field(name="Причина:", value=reason_type, inline=True)
                         embed.add_field(name="Итого:", value=f"{user.YW}/2, {user.SW}/3", inline=True)
-                        db_session.query(Users).filter_by(discordid=member.id).update({
+                        db_session.query(Users).filter_by(static=passport).update({
                             "YW": user.YW,
                             "SW": user.SW
                         })

@@ -17,7 +17,6 @@ bot = commands.Bot(command_prefix=config['prefix'], intents=disnake.Intents.all(
 @bot.event
 async def on_ready():
     print(f"Бот {bot.user} готов к работе!")
-    
 
 def run_bot():
     setup_cogs(bot)
