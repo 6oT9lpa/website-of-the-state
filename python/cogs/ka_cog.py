@@ -337,8 +337,8 @@ class ka_cog(commands.Cog):
                         await inter.followup.send(f'<@{inter.author.id}> У <@{member.id}> 3 строгих выговора', ephemeral=True)
 
                         db_session.commit()  # Сохраняем изменения в базе данных
-                else:
-                    await inter.response.send_message("Игрок не в отделе!", ephemeral=True)
+            else:
+                await inter.response.send_message("Игрок не в отделе!", ephemeral=True)
         else:
             await inter.response.send_message("У вас нет прав!", ephemeral=True)
 
