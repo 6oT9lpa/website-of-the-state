@@ -50,9 +50,9 @@ class lid_cog(commands.Cog):
                                         "lider": True
                                     })
                                     db.session.commit()
-                                    print(f'Информация о лидере {server_info['fraction_name']} обновлена!')
+                                    print(f"Информация о лидере {server_info['fraction_name']} обновлена!")
                                 else:
-                                    print(f'Лидера {server_info['fraction_name']} нет в базе.')
+                                    print(f"Лидера {server_info['fraction_name']} нет в базе.")
                                 found_member = True
                 if not found_member:
                     with app.app_context():
@@ -69,7 +69,7 @@ class lid_cog(commands.Cog):
                                 "lider": False
                             })
                             db.session.commit()
-                            print(f'Лидер {server_info['fraction_name']} не найден!')
+                            print(f"Лидер {server_info['fraction_name']} не найден!")
 
     async def start_monitoring(self):
         await self.bot.wait_until_ready()
