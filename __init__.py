@@ -283,6 +283,7 @@ class iskdis(db.Model):
     lawerd = db.Column(db.String(45))
     otherme = db.Column(db.PickleType, nullable=True)
     status = db.Column(db.String(15), default='Waitting')
+    evidence = db.Column(db.PickleType, nullable=True)
 
     current_claim = db.relationship('claimsStatement', back_populates='district_court')
 
@@ -304,6 +305,7 @@ class isksup(db.Model):
     lawerd = db.Column(db.String(45))
     otherme = db.Column(db.PickleType, nullable=True)
     status = db.Column(db.String(15), default='Waitting')
+    evidence = db.Column(db.PickleType, nullable=True)
 
     current_claim = db.relationship('claimsStatement', back_populates='supreme_court')
 

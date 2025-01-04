@@ -1208,4 +1208,15 @@ span.btn-modal-close:hover {
     background-color: #45a049;  
 }
 
+.text-header {
+    display: flex;
+    flex-direction: column;
+    padding: 5px 0px;
+}
+.container-evidence-btn {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    padding: 0px 15px;
+}
 

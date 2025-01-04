@@ -738,7 +738,8 @@ def judge_settings():
 
   uid = request.form.get('uid')
   if not uid:
-    return "No UID provided", 400
+    return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 400
+  
   setting = request.form.get('setting')
   if setting == "samootvod":
     isk = claimsStatement.query.filter_by(uid=uid).first()
@@ -759,10 +760,12 @@ def judge_settings():
       type_doc='log'
     )
     db.session.add(new_log)
+    
   elif setting == "otvodoth":
     isk = claimsStatement.query.filter_by(uid=uid).first()
     type_otvod = request.form.get('type_otvod')
     name_otvod = request.form.get('name_otvod')
+    
     if isk.district_court and isk.district_court[0].judge == current_user.id:
       if type_otvod == "otherme":
         otherme_dict = isk.district_court[0].otherme
@@ -771,28 +774,31 @@ def judge_settings():
           del otherme_dict[key_to_delete]
       else:
         setattr(isk.district_court[0], type_otvod, None)
+        
   elif setting == "privlehenie":
     isk = claimsStatement.query.filter_by(uid=uid).first()
     role = request.form.get('role')
     static = request.form.get('static')
-    print(static)
-    print(f" Ответчик {isk.district_court[0].defendant}")
+    
     if isk.district_court and isk.district_court[0].judge == current_user.id:
       print(role)
       user = Users.query.filter_by(static=static).first()
       if role == "expert" or role == "svidetel":
         setattr(isk.district_court[0].otherme, role, static)
+        
       elif role == "defendant":
         itog = f"{user.nikname} {static}"
         isk.district_court[0].defendant.append(itog)
         from sqlalchemy.orm.attributes import flag_modified
         flag_modified(isk.district_court[0], "defendant")
-        print(isk.district_court[0].defendant)
+        
       else:
         setattr(isk.district_court[0], role, user.id)
+        
   elif setting == "prinatisk":
     isk = claimsStatement.query.filter_by(uid=uid).first()
     status = check_isk_status(isk.district_court[0]) if isk.district_court else check_isk_status(isk.supreme_court[0])
+    
     if status == 'Judge':
       if isk.district_court:
         isk.district_court[0].judge = current_user.id
@@ -800,6 +806,7 @@ def judge_settings():
         isk.supreme_court[0].judge = current_user.id
       else:
         return "Эта ошибка не должна произойти, но если вы её видите напишите в тех. поддержку", 400
+      
       replyik = {
         'judge': current_user.nikname,
         'type_log': 'prinatisk'
@@ -956,23 +963,83 @@ def claim_state():
   else:
     flash('Данный иск удален или поврежден!')
     return redirect(url_for('main.doc'))
+  
+@main.route('/add_link_court', methods=['POST'])
+def addlink():
+  from __init__ import iskdis, isksup, db
+  
+  data = request.get_json()
+  uid = data.get('uid')
+  if not uid:
+    return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 400
+
+  if iskdis.query.filter_by(current_uid=uid).first():
+    isk = iskdis.query.filter_by(current_uid=uid).first()
+  elif isksup.query.filter_by(current_uid=uid).first():
+    isk = isksup.query.filter_by(current_uid=uid).first()
+  else:
+    return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 500
+  
+  paymentProof = data.get('paymentProof', '')
+  evidences =  data.get('evidence', [])
+  print(evidences)
+  
+  YOUTUBE_REGEX = r'^(https?:\/\/)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)\/(watch\?v=[\w-]+|.+)$'
+  RUTUBE_REGEX = r'^(https?:\/\/)?(www\.)?rutube\.ru\/video\/[a-zA-Z0-9]+\/?$'
+  YAPIX_REGEX = r'^(https?:\/\/)?(www\.)?yapix\.ru\/video\/[a-zA-Z0-9]+\/?$'
+  IMGUR_REGEX = r'^(https?:\/\/)?(www\.)?imgur\.com\/[a-zA-Z0-9]+\/?$'
+  
+  if paymentProof and not (
+    re.match(YAPIX_REGEX, paymentProof) or 
+    re.match(IMGUR_REGEX, paymentProof)):
+    return jsonify({"success": False, "message": "Введите корректную ссылку для оплаты гос пошлины (Yapix или Imgur)"}), 400
+  
+  for evidence in evidences:
+    if evidence:
+      if not (
+        re.match(YOUTUBE_REGEX, evidence) or 
+        re.match(RUTUBE_REGEX, evidence) or 
+        re.match(YAPIX_REGEX, evidence) or 
+        re.match(IMGUR_REGEX, evidence)):
+        return jsonify({"success": False, "message": "Введите корректную ссылку YouTube, Rutube, Yapix или Imgur для доказательств"}), 400
+  
+  link_evedence = {}
+  try:
+    evidences = [evidence for evidence in evidences if evidence and (isinstance(evidence, dict) and evidence or isinstance(evidence, str) and evidence.strip())]
+    link_evedence = {
+      'paymentProof': paymentProof,
+      'evidences': evidences
+    }
+    isk.evidence = link_evedence
+    db.session.commit()
+  except Exception as e:
+    db.session.rollback()
+    return jsonify({"success": False, "message": "Попробуйте позже!"}), 500
+
+  return jsonify({"success": True, "message": "Доказательства бли прикрепленны!"}), 200
+
 
 @main.route('/create_petition', methods=['POST'])
 def createPettion():
   from __init__ import repltoisks, db
-  uid = request.form.get('uid')
+  
+  data = request.get_json()
+  uid = data.get('uid')
   if not uid:
-    return "No UID provided", 400
+    return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 400
 
-  type_pettion = request.form.get('action')
-  findings = request.form.get('findings')
-  nickname = request.form.get('nickname')
-  static = request.form.get('static')
+  type_pettion = data.get('action')
+  findings = data.get('findings')
+  nickname = data.get('nickname')
+  static = data.get('static')
 
   replyik = {}
 
   count = repltoisks.query.filter_by(current_uid=uid, type_doc='pettion').count()
   if type_pettion == 'svidetel':
+    if nickname == '' or static == '':
+      return jsonify({"success": False, "message": "Nickname и static не могут быть пустыми при выборе 'Свидетель'"}), 400
+    
     replyik = {
       "creater": current_user.id,
       "№-pettion": count + 1,
@@ -983,6 +1050,9 @@ def createPettion():
     }
 
   elif type_pettion == 'expert':
+    if nickname == '' or static == '':
+      return jsonify({"success": False, "message": "Nickname и static не могут быть пустыми при выборе 'Эксперт'"}), 400
+    
     replyik = {
       "creater": current_user.id,
       "№-pettion": count + 1,
@@ -993,6 +1063,9 @@ def createPettion():
     }
 
   elif type_pettion == 'otvod':
+    if nickname == '' or static == '':
+      return jsonify({"success": False, "message": "Nickname и static не могут быть пустыми при выборе 'Отвод'"}), 400
+    
     replyik = {
       "creater": current_user.id,
       "№-pettion": count + 1,
@@ -1013,8 +1086,7 @@ def createPettion():
     }
 
   else:
-    flash('Вы должны заполнить действие для ходатайства.')
-    return redirect(url_for('main.claim_state', uid=uid))
+    return jsonify({"success": False, "message": "Вы должны выбрать тип ходатайства"}), 400
 
   try: 
     new_pettion = repltoisks(
@@ -1026,46 +1098,51 @@ def createPettion():
 
     db.session.add(new_pettion)
     db.session.commit()
-    return redirect(url_for('main.claim_state', uid=uid))
+    return jsonify({"success": True, "message": f"Вы успешно подали ходатайство!"}), 200
 
   except SQLAlchemyError as e:
     logging.error(f'Ошибка в бд repltoisks: {e}') 
-    flash('Проблема создания ходатайства, попробуйте позже!')
-    return redirect(url_for('main.claim_state', uid=uid))
+    return jsonify({"success": False, "message": "Попробуйте позже!"}), 500
   
 
 @main.route('/create_prosecutor', methods=['POST'])
 def createProsecutor():
   from __init__ import repltoisks, db, iskdis, isksup
-  uid = request.form.get('uid')
-  if not uid:
-    return "No UID provided", 400
   
-  if not current_user.is_authenticated and current_user.type_user != 'user' and \
-    not current_user.permissions[0].prosecutor:
-    flash('Вы не прокурор, вследствие не можете это сделать!')
-    return redirect(url_for('main.claim_state', uid=uid))
+  data = request.get_json()
+  uid = data.get('uid')
+  if not uid:
+    return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 400
+  
+  if current_user.user_type != 'user' and not current_user.permissions[0].prosecutor:
+    return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия."}), 403
 
-  type_document = request.form.get('type_document')
+  type_document = data.get('type_document')
   if type_document == "complete_delo":
     
-    delo = request.form.get('delo')
-    type_delo = request.form.get('type_delo')
+    delo = data.get('delo')
+    pattern = r"^https:\/\/docs\.google\.com\/document\/.*"
+    if not re.match(pattern, delo):
+      return jsonify({"success": False, "message": "Некорректная ссылка. Ссылка должна начинаться с https://docs.google.com/"}), 400
+    
+    type_delo = data.get('type_delo')
     if all([delo, type_delo]):
-      flash("Ошибка вы не заполнили все поля!")
-      return redirect(url_for('main.claim_state', uid=uid))
+      return jsonify({"success": False, "message": "Все поля должны быть заполнены!"}), 400
 
   replyik = {}
   if type_document == 'start_investigation':
     now = datetime.now()
     replyik = {
       "type": 'start_investigation',
+      "id_prosecutor": current_user.id,
       "date": now.strftime("%Y.%m.%d %H:%M")
     }
     claim_statement_district = iskdis.query.filter_by(current_uid=uid).first()
     claim_statement_supreme = isksup.query.filter_by(current_uid=uid).first()
+    
     if claim_statement_district:
       claim_statement_district.prosecutor = current_user.id
+      
     elif claim_statement_supreme:
       claim_statement_supreme.prosecutor = current_user.id
 
@@ -1075,12 +1152,12 @@ def createProsecutor():
       "type": 'complete_delo',
       "date": now.strftime("%Y.%m.%d %H:%M"),
       "delo": delo,
+      "id_prosecutor": current_user.id,
       "type_delo": type_delo
     }
 
   else:
-    flash('Ошибка которой быть не должно! Если она повториться обратитесь в тех. поддержку.')
-    return redirect(url_for('main.claim_state', uid=uid))
+    return jsonify({"success": False, "message": "Данное действие недоступно!"}), 400
 
   try: 
     new_procdoc = repltoisks(
@@ -1097,35 +1174,33 @@ def createProsecutor():
 
     db.session.add(new_procdoc)
     db.session.commit()
-    return redirect(url_for('main.claim_state', uid=uid))
+    return jsonify({"success": True, "message": "Успешно было отправленно!"}), 200
 
   except SQLAlchemyError as e:
     db.session.rollback()
     logging.error(f'Ошибка в бд repltoisks: {e}') 
-    flash('Проблема создания, попробуйте позже!')
-    return redirect(url_for('main.claim_state', uid=uid))
-
+    return jsonify({"success": False, "message": "Проблема создания документа, попробуйте позже!"}), 404
 
 @main.route('/create_court_pettion', methods=['POST'])
 def courtPettion():
   from __init__ import db, repltoisks, iskdis, courtOrder
 
-  uid = request.form.get('uid')
+  data = request.get_json()
+  uid = data.get('uid')
   if not uid:
-    return "No UID provided", 400
+    return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 400
   
   if not is_send_allowed():
-    return redirect(url_for('main.claim_state', uid=uid))
+    return jsonify({"success": False, "message": "Попробуйте позже!"}), 400
   
-  action = request.form.get('action')
-  pettion = request.form.get('petition')
-  ruling = request.form.getlist('decision')
-  findings = request.form.get('findings')
-  consideration = request.form.get('consideration') 
+  action = data.get('action')
+  pettion = data.get('petition')
+  ruling = data.get('decision')
+  findings = data.get('findings')
+  consideration = data.get('consideration') 
 
   if not all([findings, consideration, action, pettion]):
-    flash('Все поля должны быть заполнены!')
-    return redirect(url_for('main.claim_state', uid=uid))
+    return jsonify({"success": False, "message": "Все поля должны быть заполнены!"}), 400
   
   entries = repltoisks.query.filter_by(current_uid=uid).all()
   entry = None
@@ -1137,8 +1212,7 @@ def courtPettion():
       entry = e.replyik['№-pettion']
 
   if not entry: 
-    flash(f'Ходатайтсва {pettion} не существует!')
-    return redirect(url_for('main.claim_state', uid=uid))
+    return jsonify({"success": False, "message": f"Такого ходатайства {pettion} не существует!"}), 400
   
   replo = repltoisks.query.filter_by(id=id_entry).first()
   if action == 'false-petition':
@@ -1156,12 +1230,11 @@ def courtPettion():
 
       db.session.add(new_order)
       db.session.commit()
-      return redirect(url_for('main.claim_state', uid=uid))
+      return jsonify({"success": True, "message": "Вы успешно отправили определение!"}), 200
     
     except SQLAlchemyError as e:
       db.session.rollback()
-      flash('Возникла проблема, повторите попытку позже!')
-      return redirect(url_for('main.claim_state', uid=uid))
+      return jsonify({"success": False, "message": "Возникла проблема сохранения, попробуйте позже!"}), 500
 
   nickname = replo.replyik["nickname"]
   static = replo.replyik["static"]
@@ -1193,8 +1266,7 @@ def courtPettion():
 
     except SQLAlchemyError as e:
       db.session.rollback()
-      flash('Возникла проблема, повторите попытку позже!')
-      return redirect(url_for('main.claim_state', uid=uid))
+      return jsonify({"success": False, "message": "Возникла проблема сохранения, попробуйте позже!"}), 500
 
   elif replo.replyik["type"] == 'expert':
     try:
@@ -1223,8 +1295,7 @@ def courtPettion():
 
     except SQLAlchemyError as e:
       db.session.rollback()
-      flash('Возникла проблема, повторите попытку позже!')
-      return redirect(url_for('main.claim_state', uid=uid))
+      return jsonify({"success": False, "message": "Возникла проблема сохранения, попробуйте позже!"}), 500
 
   elif replo.replyik["type"] == 'otvod':
     new_order = courtOrder(
@@ -1257,178 +1328,152 @@ def courtPettion():
     db.session.commit()
 
   else:
-    flash('Попробуйте позже или обратитесь в тех. поддержку!')
-    return redirect(url_for('main.claim_state', uid=uid))
+    return jsonify({"success": False, "message": "Возникла проблема сохранения, попробуйте позже!"}), 500
   
-  return redirect(url_for('main.claim_state', uid=uid))
-
+  return jsonify({"success": True, "message": "Вы успешно отправили определение!"}), 200
 
 @main.route('/create_court_order', methods=['POST'])
 def courtOrder():
-  from __init__ import courtOrder, db, iskdis, claimsStatement
-
-  uid = request.form.get('uid')
-  if not uid:
-    return "No UID provided", 400
-  
-  if not is_send_allowed():
-    return redirect(url_for('main.claim_state', uid=uid))
-
-  if not current_user.is_authenticated and current_user.type_user != 'user' and \
-    not current_user.curr_rank in [13, 15, 21]:
-    flash('Вы не судья, вследствие не можете создать определение!')
-    return redirect(url_for('main.claim_state', uid=uid))
-  
-  typeOrderCourt = request.form.get('type_court_order')
-  if typeOrderCourt == 'processiong_complaint':
-    ruling = request.form.getlist('decision')
-    findings = request.form.get('findings')
-    consideration = request.form.get('consideration') 
-    action = request.form.get('action')
-
-    if not all([findings, consideration, action]):
-      flash('Все поля должны быть заполнены!')
-      return redirect(url_for('main.claim_state', uid=uid))
+    from __init__ import courtOrder, db, iskdis, claimsStatement
     
-    complaint = iskdis.query.filter_by(current_uid=uid).first()
-    if action == 'accept':
-      complaint.status = 'Accepted'
-      complaint.judge = True
-    
-    elif action == 'reject':
-      complaint.status = 'Rejectioned'
-      complaint.judge = True
+    data = request.get_json()
+    uid = data.get('uid')
+    if not uid:
+      return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 400
 
-    elif action == 'hold':
-      complaint.status = 'LeftMoved'
-      complaint.judge = True
+    if not is_send_allowed():
+      return jsonify({"success": False, "message": "Попробуйте позже!"}), 400
+
+    if current_user.user_type != 'user' and current_user.curr_rank not in [13, 15, 21]:
+      return jsonify({"success": False, "message": "Вы не можете составлять опредение под иско!"}), 403
+
+    typeOrderCourt = data.get('type_court_order')
+    if typeOrderCourt == 'processiong_complaint':
+        ruling = data.get('decision')
+        print (ruling)
+        
+        findings = data.get('findings')
+        consideration = data.get('consideration') 
+        action = data.get('action')
+
+        if not all([findings, consideration, action]):
+          return jsonify({"success": False, "message": "Все поля должны быть заполнены!"}), 400
+
+        complaint = iskdis.query.filter_by(current_uid=uid).first()
+        if not complaint:
+          return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 404
+
+        if action == 'accept':
+            complaint.status = 'Accepted'
+            complaint.judge = True
+        elif action == 'reject':
+            complaint.status = 'Rejectioned'
+            complaint.judge = True
+        elif action == 'hold':
+            complaint.status = 'LeftMoved'
+            complaint.judge = True
+        else:
+            return jsonify({"success": False, "message": "Ошшибка действия над иском!"}), 400
+
+        try:
+            new_order = courtOrder(
+                current_uid=uid,
+                author_id=current_user.id,
+                findings=findings,
+                consideration=consideration,
+                ruling=ruling,
+                type_doc='court_order'
+            )
+            db.session.add(new_order)
+            db.session.commit()
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return jsonify({"success": False, "message": f"Ошибка сохранения в базе данных: {str(e)}"}), 500
+
+    elif typeOrderCourt == 'appoint_court_session':
+        ruling = data.get('decision')
+        findings = data.get('findings')
+        consideration = data.get('consideration') 
+        action = data.get('action')
+        time = data.get('time')
+
+        if not all([findings, consideration, action]):
+            return jsonify({"success": False, "message": "Все поля должны быть заполнены!"}), 400
+
+        complaint = iskdis.query.filter_by(current_uid=uid).first()
+        claimState = claimsStatement.query.filter_by(uid=uid).first()
+
+        if not complaint or not claimState:
+            return jsonify({"success": False, "message": "Исковое заявление не найдено!"}), 404
+
+        if action in ['appoint', 'reassign']:
+            try:
+                complaint.status = 'CourtHearing'
+                date_court_session = datetime.strptime(time, '%d.%m.%Y %H:%M')
+                claimState.date_court_session = date_court_session
+                db.session.commit()
+            except (ValueError, SQLAlchemyError) as e:
+                db.session.rollback()
+                return jsonify({"success": False, "message": f"Время должно быть в формате 'ДД.ММ.ГГГГ ЧЧ:ММ'."}), 500
+        else:
+            return jsonify({"success": False, "message": "Произошла ошибка, попробуйте позже!"}), 400
+
+        try:
+            new_order = courtOrder(
+                current_uid=uid,
+                author_id=current_user.id,
+                findings=findings,
+                consideration=consideration,
+                ruling=ruling,
+                other=time,
+                type_doc='court_order'
+            )
+            db.session.add(new_order)
+            db.session.commit()
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return jsonify({"success": False, "message": f"Ошибка сохранения в базе данных: {str(e)}"}), 500
+
+    elif typeOrderCourt == 'decision_court_session':
+        ruling = data.get('decision')
+        findings = data.get('findings')
+        consideration = data.get('consideration')
+
+        if not all([findings, consideration]):
+            return jsonify({"success": False, "message": "Все поля должны быть заполнены!"}), 400
+
+        complaint = iskdis.query.filter_by(current_uid=uid).first()
+        claimState = claimsStatement.query.filter_by(uid=uid).first()
+
+        if not complaint or not claimState:
+            return jsonify({"success": False, "message": "Исковое заявление не найдено!"}), 404
+
+        if claimState.date_court_session > datetime.now():
+            return jsonify({"success": False, "message": "Вы не можете принять решение, пока не прошло время суда!"}), 400
+
+        try:
+            complaint.status = 'CompletedTrial'
+            claimState.is_archived = True
+
+            new_order = courtOrder(
+                current_uid=uid,
+                author_id=current_user.id,
+                findings=findings,
+                consideration=consideration,
+                ruling=ruling,
+                type_doc='court_order'
+            )
+            db.session.add(new_order)
+            db.session.commit()
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return jsonify({"success": False, "message": f"Ошибка сохранения в базе данных: {str(e)}"}), 500
 
     else:
-      flash('Вы не выбрали действие над исковым заявлением!')
-      return redirect(url_for('main.claim_state', uid=uid))
+        return jsonify({"success": False, "message": "Не возможно определить тип действия!"}), 400
 
-    try:
-      new_order = courtOrder(
-        current_uid = uid,
-        author_id = current_user.id,
-        findings = findings,
-        consideration = consideration,
-        ruling =  ruling,
-        type_doc = 'court_order'
-      )
-      db.session.add(new_order)
-      db.session.commit()
+    return jsonify({"success": True, "message": "Определение было успешно создано!"}), 200
 
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      print(f'Ошибка {str(e)}')
-      return redirect(url_for('main.claim_state', uid=uid))
-
-  elif typeOrderCourt == 'appoint_court_session':
-    ruling = request.form.getlist('decision')
-    findings = request.form.get('findings')
-    consideration = request.form.get('consideration') 
-    action = request.form.get('action')
-    time = request.form.get('time')
-
-    if not all([findings, consideration, action]):
-      flash('Все поля должны быть заполнены!')
-      return redirect(url_for('main.claim_state', uid=uid))
-    
-    complaint = iskdis.query.filter_by(current_uid=uid).first()
-    claimState = claimsStatement.query.filter_by(uid=uid).first()
-    if action == 'appoint':
-      try:
-        complaint.status = 'CourtHearing'
-
-        date_court_session = datetime.strptime(time, '%d.%m.%Y %H:%M')
-        claimState.date_court_session = date_court_session
-
-        db.session.commit()
-
-      except ValueError or SQLAlchemyError as e:
-        db.session.rollback()
-        flash('Ошибка взамодействия обратитесь в тех. поддержку!')
-        return redirect(url_for('main.claim_state', uid=uid))
-      
-    elif action == 'reassign':
-      try:
-        complaint.status = 'CourtHearing'
-
-        date_court_session = datetime.strptime(time, '%d.%m.%Y %H:%M')
-        claimState.date_court_session = date_court_session
-
-        db.session.commit()
-
-      except ValueError or SQLAlchemyError as e:
-        db.session.rollback()
-        flash('Ошибка взамодействия обратитесь в тех. поддержку!')
-        return redirect(url_for('main.claim_state', uid=uid))
-      
-    else:
-      flash('Ошибка взамодействия обратитесь в тех. поддержку!')
-      return redirect(url_for('main.claim_state', uid=uid))
-    
-    try:
-      new_order = courtOrder(
-        current_uid = uid,
-        author_id = current_user.id,
-        findings = findings,
-        consideration = consideration,
-        ruling = ruling,
-        other = time,
-        type_doc = 'court_order'
-      )
-      db.session.add(new_order)
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      print(f'Ошибка {str(e)}')
-      return redirect(url_for('main.claim_state', uid=uid))
-
-  elif typeOrderCourt == 'decision_court_session':
-    ruling = request.form.getlist('decision')
-    findings = request.form.get('findings')
-    consideration = request.form.get('consideration') 
-
-    if not all([findings, consideration]):
-      flash('Все поля должны быть заполнены!')
-      return redirect(url_for('main.claim_state', uid=uid))
-    
-    complaint = iskdis.query.filter_by(current_uid=uid).first()
-    claimState = claimsStatement.query.filter_by(uid=uid).first()
-
-    if claimState.date_court_session > datetime.now():
-      flash('Вы не можете вынести решение раньше назначеного время заседания.')
-      return redirect(url_for('main.claim_state', uid=uid))
-    
-    try:
-      complaint.status = 'CompletedTrial'
-      claimState.is_archived = True
-
-      new_order = courtOrder(
-        current_uid = uid,
-        author_id = current_user.id,
-        findings = findings,
-        consideration = consideration,
-        ruling =  ruling,
-        type_doc = 'court_order'
-      )
-
-      db.session.add(new_order)
-      db.session.commit()
-
-    except SQLAlchemyError as e:
-      db.session.rollback()
-      flash('Ошибка взамодействия обратитесь в тех. поддержку!')
-      return redirect(url_for('main.claim_state', uid=uid))
-  
-  else:
-    flash('Ошибка взамодействия обратитесь в тех. поддержку!')
-    return redirect(url_for('main.claim_state', uid=uid))
-
-  return redirect(url_for('main.claim_state', uid=uid))
 
 @main.route('/get_news/<int:news_id>', methods=['GET'])
 def get_news(news_id):
@@ -1890,11 +1935,11 @@ def audit():
       user = Users.query.filter_by(static=static).first()
       if not user:
         process_new_invite(static, rank_data, nickname, discord_id, reason, fraction)
-        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nickname} #{user.static}"}), 200
+        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nikname} #{user.static}"}), 200
 
       elif user and user.action == 'Dismissal' and dismissal != 'dismissal':
         process_invite_action(user, rank_data, reason, fraction)
-        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nickname} #{user.static}"}), 200
+        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nikname} #{user.static}"}), 200
 
       elif user and dismissal == 'dismissal':
         process_dismissal(user, reason, fraction)

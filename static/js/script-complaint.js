@@ -196,9 +196,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sidebar = document.querySelector('.sidebar-container');
     const maincontent = document.querySelector('.main-content-complaint');
+    const form = document.getElementById('addLink');
 
-    sidebar.addEventListener('mouseenter', () => {
-        if (isHovered || isAnimating) return;
+    function isFormElement(target) {
+        const form = document.getElementById('addLink');
+        return form && form.contains(target);  
+    }
+
+    function isOpenButton(target) {
+        return modals.some(modal => document.querySelector(modal.openBtn) === target);
+    }
+
+    sidebar.addEventListener('mouseenter', (event) => {
+        if (isHovered || isAnimating || isFormElement(event.target) || isOpenButton(event.target)) return;
         isHovered = true;
         isAnimating = true;
 
@@ -210,13 +220,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 isAnimating = false;
             }, 1000);
             hoverTimeout = setTimeout(() => {
-                maincontent.style.width = 'calc(var(--screen-width) - 300px)'
+                maincontent.style.width = 'calc(var(--screen-width) - 300px)';
             }, 200);
         }, 100);
     });
 
-    sidebar.addEventListener('mouseleave', () => {
-        if (!isHovered || isAnimating) return; 
+    sidebar.addEventListener('mouseleave', (event) => {
+        if (!isHovered || isAnimating || isFormElement(event.target) || isOpenButton(event.target)) return; 
         isHovered = false;
         isAnimating = true;
 
@@ -228,14 +238,437 @@ document.addEventListener('DOMContentLoaded', () => {
                 isAnimating = false;
             }, 1000);
             hoverTimeout = setTimeout(() => {
-                maincontent.style.width = 'calc(var(--screen-width) - 400px)'
+                maincontent.style.width = 'calc(var(--screen-width) - 400px)';
             }, 80);
         }, 100);
     });
 
-    sidebar.addEventListener('click', () => {
+    sidebar.addEventListener('click', (event) => {
+        if (isFormElement(event.target) || isOpenButton(event.target)) return;
         sidebar.classList.toggle('open');
         maincontent.style.width = 'calc(var(--screen-width) - 400px)';
         maincontent.classList.toggle('open');
     });
 });
+
+document.querySelector('#claim-processing')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    const decisions = formData.getAll('decision'); 
+    const payload = {
+        ...Object.fromEntries(formData.entries()), 
+        decision: decisions
+    };
+
+    const validProcessing = ['accept', 'reject', 'hold'];
+    if (!validProcessing.includes(data.action)) {
+        showNotification('Выберите действие', true);
+        return;
+    }
+
+    if (!data.findings || !data.findings.trim()) {
+        showNotification('Введите обстоятельства', true);
+        return;
+    }
+
+    if (!data.consideration || !data.consideration.trim()) {   
+        showNotification('Введите рассмотрение, ссылаясь на закон', true);
+        return;
+    }
+
+    fetch('/create_court_order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+})
+
+document.querySelector('#court-hearing')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    const decisions = formData.getAll('decision'); 
+    const payload = {
+        ...Object.fromEntries(formData.entries()), 
+        decision: decisions
+    };
+
+    const validProcessing = ['reassign', 'appoint'];
+    if (!validProcessing.includes(data.action)) {
+        showNotification('Выберите действие', true);
+        return;
+    }
+
+    if (!data.findings || !data.findings.trim()) {
+        showNotification('Введите обстоятельства', true);
+        return;
+    }
+
+    if (!data.consideration || !data.consideration.trim()) {   
+        showNotification('Введите рассмотрение, ссылаясь на закон', true);
+        return;
+    }
+
+    if (!data.time || !data.time.trim()) {
+        showNotification('Введите время судебного заседания', true);
+        return;
+    }
+    
+    fetch('/create_court_order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+})
+
+document.querySelector('#decision-court')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    const decisions = formData.getAll('decision'); 
+    const payload = {
+        ...Object.fromEntries(formData.entries()), 
+        decision: decisions
+    };
+
+    if (!data.findings || !data.findings.trim()) {
+        showNotification('Введите обстоятельства', true);
+        return;
+    }
+
+    if (!data.consideration || !data.consideration.trim()) {   
+        showNotification('Введите рассмотрение, ссылаясь на закон', true);
+        return;
+    }
+
+    fetch('/create_court_order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+})
+
+document.querySelector('#prosecutor_delo')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    const validDelo = ['accusatory', 'blameless'];
+    if (!validDelo.includes(data.action)) {
+        showNotification('Выберите действие', true);
+        return;
+    }
+
+    fetch('/create_prosecutor', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(Object.fromEntries(formData.entries()))
+    })
+
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+})
+
+document.querySelector('#start_invest')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+
+    fetch('/create_prosecutor', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(Object.fromEntries(formData.entries()))
+    })
+
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+            
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+})
+
+document.querySelector('#create-petition')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    const validType = ['freeform', 'svidetel', 'expert', 'otvod'];
+    if (!validType.includes(data.action)) {
+        showNotification('Выберите действие', true);
+        return;
+    }
+
+    const validNickname = ['svidetel', 'expert', 'otvod'];
+    if (validNickname.includes(data.action)) {
+        if (!data.nickname || !data.nickname.trim()) {
+            showNotification('Введите nickname, случае выбора действия "Свидетель", "Эксперт" или "Отвод"', true);
+            return;
+        }
+        if (!data.static || !data.static.trim()) {
+            showNotification('Введите static, случае выбора действия "Свидетель", "Эксперт" или "Отвод"', true);
+            return;
+        }
+    }
+
+    if (!data.findings || !data.findings.trim()) {
+        showNotification('Введите тело ходатайства!', true);
+        return;
+    }
+
+    fetch('/create_petition', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(Object.fromEntries(formData.entries()))
+    })
+
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+            
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+})
+
+document.querySelector('#create-court-petition')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    const decisions = formData.getAll('decision'); 
+    const payload = {
+        ...Object.fromEntries(formData.entries()), 
+        decision: decisions
+    };
+
+    const validType = ['true-petition', 'false-petition'];
+    if (!validType.includes(data.action)) {
+        showNotification('Выберите действие', true);
+        return;
+    }
+
+    if (!data.findings || !data.findings.trim()) {
+        showNotification('Введите обстоятельства', true);   
+        return;
+    }
+
+    if (!data.consideration || !data.consideration.trim()) {   
+        showNotification('Введите рассмотрение, ссылаясь на закон', true);
+        return;
+    }
+
+    fetch('/create_court_pettion', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+            
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+})
+
+if (status == 'Created') {
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('addLink');
+        const submitContainer = document.getElementById('btn-container-1');
+
+        function getInputs() {
+            return form.querySelectorAll('input[type="url"], input[type="text"]');
+        }
+
+        function checkInputs() {
+            const hasValue = Array.from(getInputs()).some(input => input.value.trim() !== '');
+            submitContainer.style.display = hasValue ? 'block' : 'none';
+        }
+
+        getInputs().forEach(input => {
+            input.addEventListener('input', checkInputs);
+        });
+
+        checkInputs();
+    });
+}
+
+document.querySelector('#addLink')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    const evidences = formData.getAll('evidence'); 
+
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)\/(watch\?v=[\w-]+|.+)$/;
+    const rutubeRegex = /^(https?:\/\/)?(www\.)?rutube\.ru\/video\/[a-zA-Z0-9]+\/?$/;
+    const yapixRegex = /^(https?:\/\/)?(www\.)?yapix\.ru\/video\/[a-zA-Z0-9]+\/?$/;
+    const imgurRegex = /^(https?:\/\/)?(www\.)?imgur\.com\/[a-zA-Z0-9]+\/?$/;
+
+    paymentProofUrl = data.paymentProof;
+    const invalidPaymentProof = paymentProofUrl && !(yapixRegex.test(paymentProofUrl) || imgurRegex.test(paymentProofUrl));
+
+    const invalidEvidence = evidences.find(url => 
+        !youtubeRegex.test(url) && 
+        !rutubeRegex.test(url) && 
+        !yapixRegex.test(url) && 
+        !imgurRegex.test(url)
+    );
+
+    if (invalidEvidence) {
+        showNotification('Введите корректную ссылку youtube/rutube/yapix/imgur в поле доказательств', true);
+        return;
+    } else if (invalidPaymentProof) {
+        showNotification('Введите корректную ссылку yapix/imgur в поле оплаты гос. пошлины', true);
+        return;
+    }
+    const payload = {
+        ...data,
+        evidence: evidences
+    };
+
+    fetch('/add_link_court', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+            
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+})

@@ -41,12 +41,12 @@
                         <div class='form-input-modal'>
                             {{ form.password(class="form-input", id='password') }}
                         </div>
+                        <div class='remember_container'>
+                            <label for='remember_me' class='form-check-label'> Запомнить меня</label>    
+                            {{ form.remember_me(class="form-check-input", id='remember_me') }}
+                        </div> 
                         <span class="text-danger" id="is-invalid"></span>
-                    </div>      
-                    <div class='remember_container'>
-                        <label for='remember_me' class='form-check-label'> Запомнить меня</label>    
-                        {{ form.remember_me(class="form-check-input", id='remember_me') }}
-                    </div>         
+                    </div>              
                 </div>
                 <div class='submit-btn-contanier'>
                     {{ form.submit(class="submit-button") }}     

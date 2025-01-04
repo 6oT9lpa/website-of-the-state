@@ -18,6 +18,9 @@
     {% block header %}
         {% include 'header/header-doc.html' %}
     {% endblock %}
+    {% block error %}
+        {% include 'api/error-json.html' %}
+    {% endblock %}
 
     {% set user = Users.query.filter_by(static=district.created).first() %}
     {% set guest = guestUsers.query.filter_by(static=district.created).first() %}
@@ -89,23 +92,274 @@
                         }}
                     </p>
                 </div>
+                {% if status != 'Created' %}
+                    {% if isk.evidence %}
+                        {% if isk.evidence['paymentProof'] != '' %}
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ item['paymentProof'] }}">Оплата пошлины</a>
+                                </div>   
+                            </div> 
+                        {% endif %}
+                        
+                        {% if isk.evidence['evidences']|length == 1 %}
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][0] }}">Доказательство 1</a>
+                                </div>
+                            </div>
+                        {% elif isk.evidence['evidences']|length == 2 %}
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][0] }}">Доказательство 1</a>
+                                </div>
+                            </div>
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][1] }}">Доказательство 2</a>
+                                </div>
+                            </div>
+                        {% elif isk.evidence['evidences']|length == 3 %}
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][0] }}">Доказательство 1</a>
+                                </div>
+                            </div>
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][1] }}">Доказательство 2</a>
+                                </div>
+                            </div>
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][2] }}">Доказательство 3</a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                {% if status == 'Created' %}
+                    {% if isk.evidence %}
+                        {% if isk.evidence['paymentProof'] != '' %}
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ item['paymentProof'] }}">Оплата пошлины</a>
+                                </div>   
+                            </div> 
+                        {% else %}
+                        <form id="addLink" method="POST">
+                            <input type="hidden" name="uid" id="uidcompliant">
+                            <div class='form-control-1'>
+                                <label for="paymentProof">Оплата гос пошлины:</label>
+                                <div class="form-input-1">
+                                    <input 
+                                        type="url" 
+                                        id="paymentProof" 
+                                        name="paymentProof" 
+                                        placeholder="Введите ссылку" >
+                                </div>
+                            </div>
+                        </form>
+                        {% endif %}
+                        
+                        {% if isk.evidence['evidences']|length == 1 %}
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][0] }}">Доказательство 1</a>
+                                </div>
+                            </div>
+                            <form id="addLink" method="POST">
+                                <input type="hidden" name="uid" id="uidcompliant">
+                                <div class='form-control-1'>
+                                    <label for="evidence">Доказательства:</label>
+                                    <div class="form-input-1">
+                                        <input 
+                                            type="url" 
+                                            name="evidence" 
+                                            placeholder="Введите ссылку" >
+                                    </div>
+                                </div>
+                                <div class='form-control-1'>
+                                    <label for="evidence">Доказательства:</label>
+                                    <div class="form-input-1">
+                                        <input 
+                                            type="url" 
+                                            name="evidence" 
+                                            placeholder="Введите ссылку" >
+                                    </div>
+                                </div>
+                            </form>
+                        {% elif isk.evidence['evidences']|length == 2 %}
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][0] }}">Доказательство 1</a>
+                                </div>
+                            </div>
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][1] }}">Доказательство 2</a>
+                                </div>
+                            </div>
+                            <form id="addLink" method="POST">
+                                <input type="hidden" name="uid" id="uidcompliant">
+                                <div class='form-control-1'>
+                                    <label for="evidence">Доказательства:</label>
+                                    <div class="form-input-1">
+                                        <input 
+                                            type="url" 
+                                            name="evidence" 
+                                            placeholder="Введите ссылку" >
+                                    </div>
+                                </div>
+                            </form>
+                        {% elif isk.evidence['evidences']|length == 3 %}
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][0] }}">Доказательство 1</a>
+                                </div>
+                            </div>
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][1] }}">Доказательство 2</a>
+                                </div>
+                            </div>
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
+                                    <a href="{{ isk.evidence['evidences'][2] }}">Доказательство 3</a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <form id="addLink" method="POST">
+                                <input type="hidden" name="uid" id="uidcompliant">
+                                <div class='form-control-1'>
+                                    <label for="evidence">Доказательства:</label>
+                                    <div class="form-input-1">
+                                        <input 
+                                            type="url" 
+                                            name="evidence" 
+                                            placeholder="Введите ссылку" >
+                                    </div>
+                                </div>
+                                <div class='form-control-1'>
+                                    <label for="evidence">Доказательства:</label>
+                                    <div class="form-input-1">
+                                        <input 
+                                            type="url" 
+                                            name="evidence" 
+                                            placeholder="Введите ссылку" >
+                                    </div>
+                                </div>
+                                <div class='form-control-1'>
+                                    <label for="evidence">Доказательства:</label>
+                                    <div class="form-input-1">
+                                        <input 
+                                            type="url" 
+                                            name="evidence" 
+                                            placeholder="Введите ссылку" >
+                                    </div>
+                                </div>
+                            </form>   
+                        {% endif %}
+                    {% else %}
+                        <div class="created-section">
+                            <form id="addLink" method="POST">
+                                <input type="hidden" name="uid" id="uidcompliant">
+                                <div class='form-control-1'>
+                                    <label for="paymentProof">Оплата гос пошлины:</label>
+                                    <div class="form-input-1">
+                                        <input 
+                                            type="url" 
+                                            id="paymentProof" 
+                                            name="paymentProof" 
+                                            placeholder="Введите ссылку" >
+                                    </div>
+                                </div>
+                                <div id="evidenceContainer">
+                                    <div class='form-control-1'>
+                                        <label for="evidence">Доказательства:</label>
+                                        <div class="form-input-1">
+                                            <input 
+                                                type="url" 
+                                                name="evidence" 
+                                                placeholder="Введите ссылку">
+                                        </div>
+                                    </div>
+                                    <div class='form-control-1'>
+                                        <label for="evidence">Доказательства:</label>
+                                        <div class="form-input-1">
+                                            <input 
+                                                type="url" 
+                                                name="evidence" 
+                                                placeholder="Введите ссылку" >
+                                        </div>
+                                    </div>
+                                    <div class='form-control-1'>
+                                        <label for="evidence">Доказательства:</label>
+                                        <div class="form-input-1">
+                                            <input 
+                                                type="url" 
+                                                name="evidence" 
+                                                placeholder="Введите ссылку">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="complaint-btn-container" style="display: none;" id="btn-container-1">
+                                    <div class="complaint-btn">
+                                        <input type="submit" class="accept-petition" id="accept-petition" value="Сохранить">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    {% endif %}
+                {% endif %}
                 {% if status == 'Judge' and isk.judge %}
                     <div class='functional-menu'>
                         {% if district.prosecutor != '' %}
                             <div class='group-kick'> 
-                                {% if district.prosecutor %}<p>Прокурор: {{ Users.query.filter_by(id=district.prosecutor).first().nikname }} </p><div class='submit-btn-contanier'><div class='submit-btn'><form id="judgeForm" action="/judge_settings" method="POST"><input type="hidden" name="setting" value="otvodoth"><input type="hidden" name="uid" id="uidcompliant"><input type="hidden" name="type_otvod" value="prosecutor"><input type="hidden" name="name_otvod" value="{{ Users.query.filter_by(id=district.prosecutor).first().nikname }}"><input type="submit" class='accept-petition' value="Отстранить"></form></div></div> {% endif %}
-                                {% if district.otherme %}{% for index in district.otherme %}<p>{% if index.type == "svidetel" %}Свидетель{% elif index.type == "expert" %}Эксперт{% endif %}: {{ index.nickname }}</p><div class='submit-btn-contanier'><div class='submit-btn'><form id="judgeForm" action="/judge_settings" method="POST"><input type="hidden" name="setting" value="otvodoth"><input type="hidden" name="uid" id="uidcompliant"><input type="hidden" name="type_otvod" value="otherme"><input type="hidden" name="name_otvod" value="{{ index.nickname }}"><input type="submit" class='accept-petition' value="Отстранить"></form></div></div>{% endfor %}{% endif %}
+                                {% if district.prosecutor %}
+                                <form id="judgeForm" action="/judge_settings" method="POST">
+                                    <label>Отвод прокурора</label>
+                                    <div class="input-row">
+                                        <input 
+                                            class="input-nickname" 
+                                            value="{{ Users.query.filter_by(id=district.prosecutor).first().nikname }}" 
+                                            disabled>
+                                        <span class="divider">|</span>
+                                        <button class="remove-btn" onclick="removeProsecutor()">✖</button>
+                                    </div>
+                                    <input type="hidden" name="setting" value="otvodoth">
+                                    <input type="hidden" name="uid" id="uidcompliant">
+                                    <input type="hidden" name="type_otvod" value="prosecutor">
+                                    <input type="hidden" name="name_otvod" value="{{ Users.query.filter_by(id=district.prosecutor).first().nikname }}">
+                                </form>
+                                {% endif %}
+                                {% if district.otherme %}
+                                    {% for index in district.otherme %}
+                                    <p>{% if index.type == "svidetel" %}Свидетель
+                                        {% elif index.type == "expert" %}Эксперт
+                                        {% endif %}: {{ index.nickname }}
+                                    </p><div class='submit-btn-contanier'>
+                                        <div class='submit-btn'>
+                                            <form id="judgeForm" action="/judge_settings" method="POST">
+                                                <input type="hidden" name="setting" value="otvodoth">
+                                                <input type="hidden" name="uid" id="uidcompliant">
+                                                <input type="hidden" name="type_otvod" value="otherme">
+                                                <input type="hidden" name="name_otvod" value="{{ index.nickname }}">
+                                                <input type="submit" class='accept-petition' value="Отстранить">
+                                            </form>
+                                        </div>
+                                    </div>{% endfor %}{% endif %}
                             </div>
                         {% endif %}
 
-                        <div class='submit-btn-contanier'>
-                            <div class='submit-btn'>
+                        <div class='complaint-btn-container'>
+                            <div class='complaint-btn'>
                                 <input type="submit" class='accept-petition' id='open-btn-8' value="Привлечь лицо">   
                             </div>   
                         </div>
                         
-                        <div class='submit-btn-contanier'>
-                            <div class='submit-btn'>
+                        <div class='complaint-btn-container'>
+                            <div class='complaint-btn'>
                                 <form id="judgeForm" action="/judge_settings" method="POST">
                                 <input type="hidden" name="uid" id="uidcompliant">
                                 <input type="hidden" name="setting" value="samootvod">
@@ -120,43 +374,43 @@
                 <div class='block-btn'>
                     {% if status == 'Judge' %}
                         {% if district.status == 'Waitting' %}
-                            <div class='submit-btn-contanier'>
-                                <div class='submit-btn'>
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
                                     <input type="submit" class='accept-judge' id='open-btn-1' value="Обработка иска">   
                                 </div>   
                             </div> 
                         {% endif %}
 
                         {% if district.status != 'Waitting' and not district.judge %}
-                            <div class='submit-btn-contanier'>
-                                <div class='submit-btn'>
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
                                     <form id="judgeForm" action="/judge_settings" method="POST">
                                         <input type="hidden" name="uid" id="uidcompliant">
                                         <input type="hidden" name="setting" value="prinatisk">
                                         <input type="submit" class='accept-judge' value="Взять иск">
-                                        </form>      
+                                    </form>      
                                 </div>   
                             </div> 
                         {% endif %}
 
                         {% if repltoisk | selectattr('moderation', 'equalto', false) | list | length > 0  and district.status != 'Waitting' %}
-                            <div class='submit-btn-contanier'>
-                                <div class='submit-btn'>
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
                                     <input type="submit" class='accept-petition' id='open-btn-2' value="Обработка ходатайства">   
                                 </div>   
                             </div>
                         {% endif %}
 
                         {% if district.status == 'CompleteWork' or district.status == 'CourtHearing' %}
-                            <div class='submit-btn-contanier'>
-                                <div class='submit-btn'>
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
                                     <input type="submit" class='accept-judge' id='open-btn-6' value="Судебное заседание">   
                                 </div>   
                             </div>
                         {% endif %}
                         {% if district.status == 'CourtHearing' %}
-                            <div class='submit-btn-contanier'>
-                                <div class='submit-btn'>
+                            <div class='complaint-btn-container'>
+                                <div class='complaint-btn'>
                                     <input type="submit" class='accept-judge' id='open-btn-7' value="Вынести решение">   
                                 </div>   
                             </div>
@@ -165,8 +419,8 @@
 
                     {% if status and status != 'Judge' %}
                         {% if district.status != 'Rejectioned' %}
-                        <div class='submit-btn-contanier'>
-                            <div class='submit-btn'>
+                        <div class='complaint-btn-container'>
+                            <div class='complaint-btn'>
                                 <input type="submit" class='accept-petition' id='open-btn-3' value="Подать ходатайство">   
                             </div>   
                         </div> 
@@ -174,16 +428,16 @@
                     {% endif %}
 
                     {% if status == 'Prosecutor' and not isk.prosecutor  and district.status == 'Accepted' %}
-                        <div class='submit-btn-contanier'>
-                            <div class='submit-btn'>
+                        <div class='complaint-btn-container'>
+                            <div class='complaint-btn'>
                                 <input type="submit" class='investigation-start' id='open-btn-4' value="Начать расследование">   
                             </div>   
                         </div> 
                     {% endif %}
                     {% if status == 'Prosecutor' and isk.prosecutor and district.status != 'CompleteWork' %}
                         {% if district.status != 'Rejectioned' %}
-                        <div class='submit-btn-contanier'>
-                            <div class='submit-btn'>
+                        <div class='complaint-btn-container'>
+                            <div class='complaint-btn'>
                                 <input type="submit" class='investigation-complete' id='open-btn-5' value="Завершить расследование">   
                             </div>   
                         </div> 
@@ -307,7 +561,7 @@
                 </div>
             </div>
             {% elif item.type_doc == 'start_investigation' %}
-            {% set prosecutor = Users.query.filter_by(id=district.prosecutor).first() %}
+            {% set prosecutor = Users.query.filter_by(id=item.replyik['id_prosecutor']).first() %}
             {% set judge = Users.query.filter_by(id=district.judge).first() %}
             <div class='hodataistvo-complaint'>
                 <div class='main-content-complaint'>
@@ -336,7 +590,7 @@
                 </div>
             </div>
             {% elif item.type_doc == 'complete_delo' %}
-            {% set prosecutor = Users.query.filter_by(id=district.prosecutor).first() %}
+            {% set prosecutor = Users.query.filter_by(id=item.replyik['id_prosecutor']).first() %}
             {% set judge = Users.query.filter_by(id=district.judge).first() %}
             <div class='hodataistvo-complaint'>
                 <div class='main-content-complaint'>
@@ -393,7 +647,7 @@
 
     {% if district.status == 'Waitting' and status == 'Judge' %}
     <div class='modal-processing-complaint' id='modal-1' style='display:none;'>
-        <form method='POST' action='/create_court_order'>
+        <form method='POST' id='claim-processing'>
             <input type="hidden" name="uid" id="uidcompliant">
             <input type="hidden" name="type_court_order" value="processiong_complaint">
             <div class='content-modal'>
@@ -442,7 +696,7 @@
 
     {% if status == 'Judge' %}
     <div class='modal-processing-complaint' id='modal-2' style='display:none;'>
-        <form method='POST' action='/create_court_pettion'>
+        <form method='POST' id='create-court-petition'>
             <input type="hidden" name="uid" id="uidcompliant">
             <div class='content-modal'>
                 <div class="header-modal">
@@ -501,7 +755,7 @@
     {% endif %}
     {% if status != 'Judge' %}
     <div class='modal-processing-complaint' id='modal-3' style='display:none;'>
-        <form method='POST' action='/create_petition'>
+        <form method='POST' id='create-petition'>
             <input type="hidden" name="uid" id="uidcompliant">
             <div class='content-modal'>
                 <div class="header-modal">
@@ -550,7 +804,7 @@
     {% endif %}
     {% if status == 'Judge' %}
     <div class='modal-processing-complaint' style='display:none;' id='modal-8'>
-        <form method='POST' action='/judge_settings'>
+        <form method='POST' id='judge-settings'>
             <input type="hidden" name="uid" id="uidcompliant">
             <input type="hidden" name="setting" value="privlehenie">
             <div class='content-modal'>
@@ -561,16 +815,14 @@
 
                 <div class='form-control'>
                     <label for="role">Роль</label>
-                    <div class='form-input'>
-                        <select class="dropdown-select-isk-nohover" id="role" name="role">
-                            <option value="prosecutor"{% if district.prosecutor %} disabled {% endif %}>Прокурор</option>
-                            <option value="defendant">Ответчик</option>
-                            <option value="lawerc"{% if district.lawerc %} disabled {% endif %}>Адвокат истца</option>
-                            <option value="lawerd"{% if district.lawerd %} disabled {% endif %}>Адвокат ответчика</option>
-                            <option value="expert">Эксперт</option>
-                            <option value="svidetel">Свидетель</option>
-                        </select>
-                    </div>
+                    <select class="dropdown-select-isk-nohover" id="role" name="role">
+                        <option value="prosecutor"{% if district.prosecutor %} disabled {% endif %}>Прокурор</option>
+                        <option value="defendant">Ответчик</option>
+                        <option value="lawerc"{% if district.lawerc %} disabled {% endif %}>Адвокат истца</option>
+                        <option value="lawerd"{% if district.lawerd %} disabled {% endif %}>Адвокат ответчика</option>
+                        <option value="expert">Эксперт</option>
+                        <option value="svidetel">Свидетель</option>
+                    </select>
                 </div>
                 <div class='form-control'>
                     <label for="static">Статик</label>
@@ -590,7 +842,7 @@
     {% endif %}
     {% if status == "Prosecutor" %}
     <div class='modal-processing-complaint' style='display:none;' id='modal-4'>
-        <form method='POST' action='/create_prosecutor'>
+        <form method='POST' id='start_invest'>
             <input type="hidden" name="uid" id="uidcompliant">
             <input type="hidden" name="type_document" id="type_document" value="start_investigation">
             <div class='content-modal'>
@@ -610,7 +862,7 @@
         </form>
     </div>
     <div class='modal-processing-complaint' style='display:none;' id='modal-5'>
-        <form method='POST' action='/create_prosecutor'>
+        <form method='POST' id='prosecutor_delo'>
             <input type="hidden" name="uid" id="uidcompliant">
             <input type="hidden" name="type_document" id="type_document" value="complete_delo">
             <div class='content-modal'>
@@ -644,7 +896,7 @@
 
     {% if (district.status == 'CompleteWork' or district.status == 'CourtHearing') and status == 'Judge' %}
     <div class='modal-processing-complaint' id='modal-6' style='display:none;'>
-        <form method='POST' action='/create_court_order'>
+        <form method='POST' id='court-hearing'>
             <input type="hidden" name="uid" id="uidcompliant">
             <input type="hidden" name="type_court_order" value="appoint_court_session">
             <div class='content-modal'>
@@ -698,7 +950,7 @@
 
     {% if district.status == 'CourtHearing' and status == 'Judge' %}
     <div class='modal-processing-complaint' id='modal-7' style='display:none;'>
-        <form method='POST' action='/create_court_order'>
+        <form method='POST' id='decision-court'>
             <input type="hidden" name="uid" id="uidcompliant">
             <input type="hidden" name="type_court_order" value="decision_court_session">
             <div class='content-modal'>

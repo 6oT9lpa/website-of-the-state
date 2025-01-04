@@ -184,7 +184,7 @@ class ModerationDoc(commands.Cog):
         
         self.save_message_data()  
         
-    @tasks.loop(seconds=60)
+    @tasks.loop(hours=24)
     async def remove_old_messages(self):
         """Удаляет старые сообщения каждый день."""
         await self.clean_old_messages()

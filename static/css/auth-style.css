@@ -317,7 +317,7 @@ footer {
 .submit-btn-contanier {
     display: flex;
     justify-content: center;
-    padding: 10px;
+    padding: 20px 15px 0;
 }
 
 .submit-btn-contanier input {
@@ -389,9 +389,14 @@ a.change_pasw:hover {
 
 .remember_container {
     display: flex;
-    justify-content: start;
+    justify-content: end;
     font-size: 12px;
     gap: 5px;
+    padding: 5px 0;
+}
+
+.remember_container label {
+    font-size: 12px !important;
 }
 
 @media (max-width: 768px) {
