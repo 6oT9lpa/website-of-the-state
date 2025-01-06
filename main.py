@@ -2197,12 +2197,13 @@ def add_rank_and_adjust_users(organ, rank_id, current_data):
     if organ in current_data:
         current_data[organ] = [rank for rank in current_data[organ] if rank['id'] != rank_id]
     print(organ)
+    from sqlalchemy import and_
     users_with_removed_rank = Users.query.filter_by(curr_rank=rank_id, organ=organ).all()
     for user in users_with_removed_rank:
         if rank_id > 1:
             user.curr_rank += 1
 
-    higher_rank_users = Users.query.filter(Users.curr_rank > rank_id, organ=organ).all()
+    higher_rank_users = Users.query.filter(and_(Users.curr_rank > rank_id, organ=organ)).all()
     for user in higher_rank_users:
         user.curr_rank += 1
 
@@ -2218,7 +2219,7 @@ def delete_rank_and_adjust_users(organ, rank_id, current_data):
         if rank_id > 1: 
             user.curr_rank -= 1
 
-    higher_rank_users = Users.query.filter(Users.curr_rank > rank_id, organ=organ).all()
+    higher_rank_users = Users.query.filter(and_(Users.curr_rank > rank_id, organ=organ)).all()
     for user in higher_rank_users:
         user.curr_rank -= 1
 
