@@ -298,17 +298,19 @@
                 {% for fraction, rank_list in groups.items() %}
                 <div class="fraction-group" data-fraction="{{ fraction }}">
                     <h3>{{ fraction }}</h3>
-                    <!-- Лидерский ранг -->
-                    {% for rank in rank_list %}
-                        {% if rank.leader %}
-                        <li class="rank-item leader" data-id="{{ rank.id }}" data-leader="true">
-                            <input type="text" class="rank-id" value="{{ rank.id }}" readonly>
-                            <input type="text" class="rank-name" value="{{ rank.name }}" readonly>
-                            <span class="leader-label">Лидер</span>
-                        </li>
-                        {% endif %}
-                    {% endfor %}
+
                     <ul id="{{ fraction }}-list" class="rank-list">
+                        <!-- Лидерский ранг -->
+                        {% for rank in rank_list %}
+                            {% if rank.leader %}
+                            <li class="rank-item leader" data-id="{{ rank.id }}" data-leader="true">
+                                <input type="text" class="rank-id" id='rank-id-lider' value="{{ rank.id }}" readonly>
+                                <input type="text" class="rank-name" value="{{ rank.name }}" readonly>
+                                <span class="leader-label">Лидер</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
                         <!-- Обычные ранги -->
                         {% for rank in rank_list %}
                             {% if not rank.leader %}

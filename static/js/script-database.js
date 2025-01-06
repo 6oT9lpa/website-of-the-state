@@ -1,15 +1,20 @@
 document.querySelectorAll('.rank-list')?.forEach(rankList => {
     new Sortable(rankList, {
         animation: 150,
+        draggable: '.rank-item:not([data-leader="true"])', 
+
         onStart(evt) {
             const leaderItem = evt.from.querySelector('[data-leader="true"]');
-            if (leaderItem && evt.item === leaderItem) {
-                evt.item.setAttribute('draggable', 'false');
+            if (leaderItem) {
+                leaderItem.setAttribute('draggable', 'false');
             }
         },
+
         onEnd(evt) {
             evt.from.querySelectorAll('.rank-item').forEach(item => {
-                item.setAttribute('draggable', 'true');
+                if (item.getAttribute('data-leader') !== 'true') {
+                    item.setAttribute('draggable', 'true');
+                }
             });
 
             updateRankIds(evt.from);
@@ -50,27 +55,27 @@ document.querySelectorAll('.rank-list')?.forEach(rankList => {
     let ranksToAdd = [];
 
     function addRank(fraction) {
-    const rankList = document.getElementById(`${fraction}-list`);
-    const newId = generateNewId(rankList);
+        const rankList = document.getElementById(`${fraction}-list`);
+        const newId = generateNewId(rankList);
 
-    const newItem = document.createElement('li');
-    newItem.className = 'rank-item';
-    newItem.setAttribute('data-id', newId);
-    newItem.setAttribute('data-leader', 'false');
-    newItem.setAttribute('data-recon', 'true');
-    newItem.innerHTML = `
-        <input type="text" class="rank-id" value="${newId}" readonly>
-        <input type="text" class="rank-name" value="Новый ранг">
-        <button class="delete-rank" onclick="deleteRank('${fraction}', ${newId})">Удалить</button>
-    `;
+        const newItem = document.createElement('li');
+        newItem.className = 'rank-item';
+        newItem.setAttribute('data-id', newId);
+        newItem.setAttribute('data-leader', 'false');
+        newItem.setAttribute('data-recon', 'true');
+        newItem.innerHTML = `
+            <input type="text" class="rank-id" value="${newId}" readonly>
+            <input type="text" class="rank-name" value="Новый ранг">
+            <button class="delete-rank" onclick="deleteRank('${fraction}', ${newId})">Удалить</button>
+        `;
 
-    rankList.appendChild(newItem);
+        rankList.appendChild(newItem);
 
 
-    console.log('Новый ранг добавлен:', ranksToAdd);
+        console.log('Новый ранг добавлен:', ranksToAdd);
 
-    updateRankIds(rankList);
-}
+        updateRankIds(rankList);
+    }
 
     function generateNewId(rankList) {
         let maxId = 0;
