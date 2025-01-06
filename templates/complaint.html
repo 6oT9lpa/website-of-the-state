@@ -22,19 +22,19 @@
         {% include 'api/error-json.html' %}
     {% endblock %}
 
-    {% set user = Users.query.filter_by(static=district.created).first() %}
-    {% set guest = guestUsers.query.filter_by(static=district.created).first() %}
+    {% set user = Users.query.filter_by(static=isk.created).first() %}
+    {% set guest = guestUsers.query.filter_by(static=isk.created).first() %}
 
     <div class='container-complaint'>
         <div class='main-content-complaint'>
             <div class='header-content'>
                 <div class='header-statement'>
-                    <div class='img-header'><img src="{{ url_for('static', filename='img/DistrictCourt.png') }}"/></div>     
+                    <div class='img-header'>{% if court == 'district' %}<img src='{{ url_for("static", filename="img/DistrictCourt.png")}}'/>{% else %}<img src='{{ url_for("static", filename="img/supreme_court.png")}}'/>{% endif %}</div>  
                     <div class='text-header'>
-                        <h4>District Court of the State of San Andreas</h4>
+                        <h4>{{ 'DISCRICT COURT of the State of San Andreas' if court == 'district' else 'SUPREME COURT of the State of San Andreas'}}</h4>
                         <p>Plaintiff: <b>{{ user.nikname if user else (guest.nickname if guest else 'Не найден') }}</b></p>
-                        {% set user_plaintiff_c = Users.query.filter_by(id=district.lawerc).first() %}
-                        {% set guest_plaintiff_c = guestUsers.query.filter_by(id=district.lawerc).first() %}
+                        {% set user_plaintiff_c = Users.query.filter_by(id=isk.lawerc).first() %}
+                        {% set guest_plaintiff_c = guestUsers.query.filter_by(id=isk.lawerc).first() %}
                         <p>Attorney for the Plaintiff: <b>{{ user_plaintiff_c.nikname if user_plaintiff_c else (guest_plaintiff_c.nickname if guest_plaintiff_c else 'Не найден') }}</b></p>
                         <p style="width: 90%;font-size: 16px;font-weight: 700;"> v. </p>
                         <div class='content-defendant'>
@@ -48,11 +48,11 @@
                 </div>
             </div>
             <div class='description-content'>
-                <h3>Исковое заявление № {{ "%03d" | format(district.id) }}</h3>
+                <h3>Исковое заявление № {{ "%03d" | format(isk.id) }}</h3>
                 <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, пользуясь своими правами подаю исковое заявление в Окружной суд штата Сан-Андреас,
                     объясняя всю ситуацию, а также прилагая все необходимые суду доказательства.</p>
                 
-                <p>{{ district.discription }}</p>
+                <p>{{ isk.discription }}</p>
 
                 <h4>Исковые требования.</h4>
                 {% for item in claims %}
@@ -73,7 +73,7 @@
                 </b></p>
             </div>
         </div>
-        {% if district.status != 'CompletedTrial' %}
+        {% if isk.status != 'CompletedTrial' and isk.status != 'Rejectioned' %}
         <div class="sidebar-container">
             <div class='content-sidebar'>
                 <div class='header-sidebar'>
@@ -88,7 +88,7 @@
                                 'CourtHearing': 'Назначено заседание',
                                 'CompleteWork': 'Дело проведено в суд',
                                 'CompletedTrial': 'Завершенный судебный процесс'
-                            }.get(district.status, 'Неизвестный статус')
+                            }.get(isk.status, 'Неизвестный статус')
                         }}
                     </p>
                 </div>
@@ -314,15 +314,15 @@
                 {% endif %}
                 {% if status == 'Judge' and isk.judge %}
                     <div class='functional-menu'>
-                        {% if district.prosecutor != '' %}
+                        {% if isk.prosecutor != '' %}
                             <div class='group-kick'> 
-                                {% if district.prosecutor %}
+                                {% if isk.prosecutor %}
                                 <form id="judgeForm" action="/judge_settings" method="POST">
                                     <label>Отвод прокурора</label>
                                     <div class="input-row">
                                         <input 
                                             class="input-nickname" 
-                                            value="{{ Users.query.filter_by(id=district.prosecutor).first().nikname }}" 
+                                            value="{{ Users.query.filter_by(id=isk.prosecutor).first().nikname }}" 
                                             disabled>
                                         <span class="divider">|</span>
                                         <button class="remove-btn" onclick="removeProsecutor()">✖</button>
@@ -330,11 +330,11 @@
                                     <input type="hidden" name="setting" value="otvodoth">
                                     <input type="hidden" name="uid" id="uidcompliant">
                                     <input type="hidden" name="type_otvod" value="prosecutor">
-                                    <input type="hidden" name="name_otvod" value="{{ Users.query.filter_by(id=district.prosecutor).first().nikname }}">
+                                    <input type="hidden" name="name_otvod" value="{{ Users.query.filter_by(id=isk.prosecutor).first().nikname }}">
                                 </form>
                                 {% endif %}
-                                {% if district.otherme %}
-                                    {% for index in district.otherme %}
+                                {% if isk.otherme %}
+                                    {% for index in isk.otherme %}
                                     <p>{% if index.type == "svidetel" %}Свидетель
                                         {% elif index.type == "expert" %}Эксперт
                                         {% endif %}: {{ index.nickname }}
@@ -370,10 +370,10 @@
                     </div>
                 {% endif %}
 
-                {% if not district.status in ['Rejectioned', 'LeftMoved'] %}
+                {% if not isk.status in ['Rejectioned'] %}
                 <div class='block-btn'>
                     {% if status == 'Judge' %}
-                        {% if district.status == 'Waitting' %}
+                        {% if isk.status == 'Waitting' or isk.status == 'LeftMoved' %}
                             <div class='complaint-btn-container'>
                                 <div class='complaint-btn'>
                                     <input type="submit" class='accept-judge' id='open-btn-1' value="Обработка иска">   
@@ -381,7 +381,7 @@
                             </div> 
                         {% endif %}
 
-                        {% if district.status != 'Waitting' and not district.judge %}
+                        {% if isk.status != 'Waitting' and not isk.judge %}
                             <div class='complaint-btn-container'>
                                 <div class='complaint-btn'>
                                     <form id="judgeForm" action="/judge_settings" method="POST">
@@ -393,7 +393,7 @@
                             </div> 
                         {% endif %}
 
-                        {% if repltoisk | selectattr('moderation', 'equalto', false) | list | length > 0  and district.status != 'Waitting' %}
+                        {% if repltoisk | selectattr('moderation', 'equalto', false) | list | length > 0  and isk.status != 'Waitting' %}
                             <div class='complaint-btn-container'>
                                 <div class='complaint-btn'>
                                     <input type="submit" class='accept-petition' id='open-btn-2' value="Обработка ходатайства">   
@@ -401,14 +401,14 @@
                             </div>
                         {% endif %}
 
-                        {% if district.status == 'CompleteWork' or district.status == 'CourtHearing' %}
+                        {% if isk.status == 'CompleteWork' or isk.status == 'CourtHearing' %}
                             <div class='complaint-btn-container'>
                                 <div class='complaint-btn'>
                                     <input type="submit" class='accept-judge' id='open-btn-6' value="Судебное заседание">   
                                 </div>   
                             </div>
                         {% endif %}
-                        {% if district.status == 'CourtHearing' %}
+                        {% if isk.status == 'CourtHearing' %}
                             <div class='complaint-btn-container'>
                                 <div class='complaint-btn'>
                                     <input type="submit" class='accept-judge' id='open-btn-7' value="Вынести решение">   
@@ -418,7 +418,7 @@
                     {% endif %}
 
                     {% if status and status != 'Judge' %}
-                        {% if district.status != 'Rejectioned' %}
+                        {% if isk.status != 'Rejectioned' %}
                         <div class='complaint-btn-container'>
                             <div class='complaint-btn'>
                                 <input type="submit" class='accept-petition' id='open-btn-3' value="Подать ходатайство">   
@@ -427,15 +427,15 @@
                         {% endif %}
                     {% endif %}
 
-                    {% if status == 'Prosecutor' and not isk.prosecutor  and district.status == 'Accepted' %}
+                    {% if status == 'Prosecutor' and not isk.prosecutor  and isk.status == 'Accepted' %}
                         <div class='complaint-btn-container'>
                             <div class='complaint-btn'>
                                 <input type="submit" class='investigation-start' id='open-btn-4' value="Начать расследование">   
                             </div>   
                         </div> 
                     {% endif %}
-                    {% if status == 'Prosecutor' and isk.prosecutor and district.status != 'CompleteWork' %}
-                        {% if district.status != 'Rejectioned' %}
+                    {% if status == 'Prosecutor' and isk.prosecutor and isk.status != 'CompleteWork' %}
+                        {% if isk.status != 'Rejectioned' %}
                         <div class='complaint-btn-container'>
                             <div class='complaint-btn'>
                                 <input type="submit" class='investigation-complete' id='open-btn-5' value="Завершить расследование">   
@@ -458,7 +458,7 @@
                 <div class='main-content-complaint'>
                     <div class='header-content'>
                         <div class='header-statement'>
-                            <div class='img-header'><img src="{{ url_for('static', filename='img/DistrictCourt.png') }}"/></div>     
+                            <div class='img-header'>{% if court == 'district' %}<img src='{{ url_for("static", filename="img/DistrictCourt.pngg")}}'/>{% else %}<img src='{{ url_for("static", filename="img/supreme_court.png")}}'/>{% endif %}</div>     
                             <div class='text-header'>
                                 <h4>District Court of the State of San Andreas</h4>
                                 <p>От: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>
@@ -499,8 +499,8 @@
             <div class='container-position-order'>
                 <div class='contanier-court-order'>
                     <div class='header-content-order'>
-                        <div class='img-header-order-1'><img src='{{ url_for("static", filename="img/emblem_court.png")}}'/></div>
-                        <h4>DISCRICT COURT</h4>
+                        <div class='img-header-order-1'>{% if court == 'district' %}<img src='{{ url_for("static", filename="img/emblem_court.png")}}'/>{% else %}<img src='{{ url_for("static", filename="img/emblema_supreme.png")}}'/>{% endif %}</div>
+                        <h4>{{ 'DISCRICT COURT' if court == 'district' else 'SUPREME COURT'}}</h4>
                         <h5>state of San-Andreas</h5>
     
                         <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
@@ -509,20 +509,20 @@
                             <div class='group-order'>
                                 <div class='content-Plaintiff'>
                                     <p>Plaintiff: <b>{{ user.nikname if user else (guest.nickname if guest else 'Не найден') }}</b></p>
-                                    {% set user_plaintiff_c = Users.query.filter_by(id=district.lawerc).first() %}
-                                    {% set guest_plaintiff_c = guestUsers.query.filter_by(id=district.lawerc).first() %}
+                                    {% set user_plaintiff_c = Users.query.filter_by(id=isk.lawerc).first() %}
+                                    {% set guest_plaintiff_c = guestUsers.query.filter_by(id=isk.lawerc).first() %}
                                     <p>Attorney for the Plaintiff: <b>{{ user_plaintiff_c.nikname if user_plaintiff_c else (guest_plaintiff_c.nickname if guest_plaintiff_c else 'Не найден') }}</b></p>
                                 </div>
                             </div>
                             
                             <div class='title'>
-                                <h4>No. DC-{{ "%03d" | format(district.id) }}-2024</h4>
-                                <h4> ОПРЕДЕЛЕНИЕ No. DC-{{ "%03d" | format(district.id) }}-{{ "%02d" | format(item['id-court']) }} </h4>
+                                <h4>No. DC-{{ "%03d" | format(isk.id) }}-2024</h4>
+                                <h4> ОПРЕДЕЛЕНИЕ No. DC-{{ "%03d" | format(isk.id) }}-{{ "%02d" | format(item['id-court']) }} </h4>
                             </div>
                             <div class='group-order'>
                                 <div class='content-Defendant'>
-                                    {% set user_plaintiff_d = Users.query.filter_by(id=district.lawerd).first() %}
-                                    {% set guest_plaintiff_d = guestUsers.query.filter_by(id=district.lawerd).first() %}
+                                    {% set user_plaintiff_d = Users.query.filter_by(id=isk.lawerd).first() %}
+                                    {% set guest_plaintiff_d = guestUsers.query.filter_by(id=isk.lawerd).first() %}
                                     <p>Attorney for the Defendant: <b>{{ user_plaintiff_d.nikname if user_plaintiff_d else (guest_plaintiff_d.nickname if guest_plaintiff_d else 'Не найден') }}</b></p>
                                     <p>Defendant:
                                         {% for item in defendant %}
@@ -562,7 +562,7 @@
             </div>
             {% elif item.type_doc == 'start_investigation' %}
             {% set prosecutor = Users.query.filter_by(id=item.replyik['id_prosecutor']).first() %}
-            {% set judge = Users.query.filter_by(id=district.judge).first() %}
+            {% set judge = Users.query.filter_by(id=isk.judge).first() %}
             <div class='hodataistvo-complaint'>
                 <div class='main-content-complaint'>
                     <div class='header-content'>
@@ -591,7 +591,7 @@
             </div>
             {% elif item.type_doc == 'complete_delo' %}
             {% set prosecutor = Users.query.filter_by(id=item.replyik['id_prosecutor']).first() %}
-            {% set judge = Users.query.filter_by(id=district.judge).first() %}
+            {% set judge = Users.query.filter_by(id=isk.judge).first() %}
             <div class='hodataistvo-complaint'>
                 <div class='main-content-complaint'>
                     <div class='header-content'>
@@ -645,7 +645,7 @@
         {% endfor %}
     </div>
 
-    {% if district.status == 'Waitting' and status == 'Judge' %}
+    {% if (isk.status == 'Waitting' or isk.status == 'LeftMoved') and status == 'Judge' %}
     <div class='modal-processing-complaint' id='modal-1' style='display:none;'>
         <form method='POST' id='claim-processing'>
             <input type="hidden" name="uid" id="uidcompliant">
@@ -658,7 +658,7 @@
                         <div class="dropdown-menu" id='dropdown-menu-1'>
                             <a name='accept' data-action="accept">Принять иск</a>
                             <a name='reject' data-action="reject">Отказать в иске</a>
-                            <a name='hold' data-action="hold">Оставить без движения</a>
+                            <a name="hold" data-action="hold" {% if isk.status == 'LeftMoved' %}class="disabled"{% endif %}>Оставить без движения</a>
                         </div>
                     </div>
                 </div>
@@ -816,10 +816,10 @@
                 <div class='form-control'>
                     <label for="role">Роль</label>
                     <select class="dropdown-select-isk-nohover" id="role" name="role">
-                        <option value="prosecutor"{% if district.prosecutor %} disabled {% endif %}>Прокурор</option>
+                        <option value="prosecutor"{% if isk.prosecutor %} disabled {% endif %}>Прокурор</option>
                         <option value="defendant">Ответчик</option>
-                        <option value="lawerc"{% if district.lawerc %} disabled {% endif %}>Адвокат истца</option>
-                        <option value="lawerd"{% if district.lawerd %} disabled {% endif %}>Адвокат ответчика</option>
+                        <option value="lawerc"{% if isk.lawerc %} disabled {% endif %}>Адвокат истца</option>
+                        <option value="lawerd"{% if isk.lawerd %} disabled {% endif %}>Адвокат ответчика</option>
                         <option value="expert">Эксперт</option>
                         <option value="svidetel">Свидетель</option>
                     </select>
@@ -894,7 +894,7 @@
     </div>
     {% endif %}
 
-    {% if (district.status == 'CompleteWork' or district.status == 'CourtHearing') and status == 'Judge' %}
+    {% if (isk.status == 'CompleteWork' or isk.status == 'CourtHearing') and status == 'Judge' %}
     <div class='modal-processing-complaint' id='modal-6' style='display:none;'>
         <form method='POST' id='court-hearing'>
             <input type="hidden" name="uid" id="uidcompliant">
@@ -948,7 +948,7 @@
     </div>
     {% endif %}
 
-    {% if district.status == 'CourtHearing' and status == 'Judge' %}
+    {% if isk.status == 'CourtHearing' and status == 'Judge' %}
     <div class='modal-processing-complaint' id='modal-7' style='display:none;'>
         <form method='POST' id='decision-court'>
             <input type="hidden" name="uid" id="uidcompliant">
@@ -993,7 +993,7 @@
     <div class="overlay" id='overlay'></div>
     <div class="lines">
         {% for i in range(40) %}
-          <div class="line"></div>
+            <div class="line"></div>
         {% endfor %}
     </div>
 

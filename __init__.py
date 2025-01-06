@@ -127,9 +127,11 @@ class PermissionUsers(db.Model, UserMixin):
     tech = db.Column(db.Boolean, default=False)
     admin = db.Column(db.Boolean, default=False)
     lider = db.Column(db.Boolean, default=False)
+    dep_lider = db.Column(db.Boolean, default=False)
     high_staff = db.Column(db.Boolean, default=False)
     creation_doc = db.Column(db.Boolean, default=False)
     create_news = db.Column(db.Boolean, default=False)
+    judge = db.Column(db.Boolean, default=False)
     lawyer = db.Column(db.Boolean, default=False)
     prosecutor = db.Column(db.Boolean, default=False)
 
@@ -343,13 +345,33 @@ class courtOrder(db.Model):
 
     current_claim = db.relationship('claimsStatement', back_populates='court_order')
 
+class courtPrecedents(db.Model):
+    __tablename__ = 'court_precedents'
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.String(6), nullable=False)
+    
+    number_complaint = db.Column(db.String(256), nullable=False)
+    date_complaint = db.Column(db.DateTime, nullable=False)
+    link = db.Column(db.String(256), nullable=False)
+    author = db.Column(db.String(256), nullable=False)
+    findings = db.Column(db.PickleType, nullable=False)
+    court = db.Column(db.String(256), nullable=False)
+    
+    timespan = db.Column(db.DateTime, default=datetime.utcnow)
+    
+class permissionRoles(db.Model):
+    __tablename__ = 'permission_roles'
+    id = db.Column(db.Integer, primary_key=True)
 
+    fraction = db.Column(db.String(45), nullable=False)
+    position_rank = db.Column(db.Integer, nullable=False)
+    roles = db.Column(db.PickleType, nullable=False)
+    
 # Создание таблиц базы данных
 with app.app_context():
     db.create_all()
 
     """
-    
     characters = string.ascii_letters + string.digits + string.punctuation
     password = ''.join(random.choice(characters) for i in range(10))
     print(password)
@@ -369,7 +391,7 @@ with app.app_context():
     )
     db.session.add(new_user)
     db.session.commit()
-     
+
     user = Users.query.filter_by(static=77857).first()
     permission_entry = PermissionUsers(
         author_id=user.id,
@@ -382,8 +404,7 @@ with app.app_context():
     db.session.add(permission_entry)
     db.session.commit()
     """
-   
-    
+
 @login_manager.user_loader
 def load_user(user_id):
     user = Users.query.get(user_id) 

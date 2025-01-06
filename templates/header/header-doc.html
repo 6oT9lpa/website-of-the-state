@@ -16,7 +16,7 @@
         {% else %}
             <a href="{{ url_for('main.auth')}}">LOGIN</a> 
         {% endif %}
-        <a class="modal-complaint" href="{{ url_for('main.doc') }}">BACK</a>
+        <a class="modal-complaint" onclick='window.history.back();'>BACK</a>
     </nav>
 </header>
 <div class="navbar">

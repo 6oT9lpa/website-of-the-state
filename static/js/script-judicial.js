@@ -244,8 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateContentProsecutor('action-0');
             }
         } else if (!e.target.closest('.dropdown')) {
-            dropdownMenu.classList.remove('open');
-            dropdownBtn.classList.remove('active');
+            dropdownMenu?.classList.remove('open');
+            dropdownBtn?.classList.remove('active');
         }
 
         // Модальное окно

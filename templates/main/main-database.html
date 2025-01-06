@@ -1,10 +1,11 @@
 <main>
     <div class="search-container">
         {% if more_info %}
+        <!-- Подробная информация -->
         <div id="more_info" class="info-container">
-            <a href="/database" class="close-btn">&times;</a>
-            <div id="playerDetails" class="player-details">
-                <form method="POST" action="/database_change">
+            <form method="POST" id='database-change'>
+                <a href="/database" class="close-btn">&times;</a>
+                <div id="playerDetails" class="player-details">
                     <h2 class="section-title">Подробная информация</h2>
                     <p><strong>Никнейм:</strong> {{ user.nikname }}</p>
                     <p><strong>Static:</strong> {{ user.static }}</p>
@@ -16,121 +17,287 @@
                     <p><strong>Discord ID:</strong> 
                         <input type="text" class="inputdsdb" name="discordid" value="{{ user.discordid }}" {% if perm_change >= 3 %}{% else %} readonly {% endif %}>
                     </p>
-            </div>
-    
-            <div id="permissions" class="permissions-section">
+                </div>
                 <h2 class="section-title">Права пользователя</h2>
-                <input type="hidden" name="user_id" value="{{ user.id }}">
-                <label class="container">
-                    <input type="checkbox" name="tech" {% if user.permissions[0].tech %}checked="checked"{% endif %} disabled>
-                    Технический доступ
-                    <div class="checkmark"></div>
-                </label>
-                <label class="container">
-                    <input type="checkbox" name="lider" {% if user.permissions[0].lider %}checked="checked"{% endif %} {% if perm_change >= 4 %}{% else %} disabled {% endif %}>
-                    Лидерский доступ
-                    <div class="checkmark"></div>
-                </label>
-                <label class="container">
-                    <input type="checkbox" name="admin" {% if user.permissions[0].admin %}checked="checked"{% endif %} {% if perm_change >= 4 %}{% else %} disabled {% endif %}>
-                    Доступ Администратора
-                    <div class="checkmark"></div>
-                </label>
-                <label class="container">
-                    <input type="checkbox" name="high_staff" {% if user.permissions[0].high_staff %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
-                    Старший состав
-                    <div class="checkmark"></div>
-                </label>
-                <label class="container">
-                    <input type="checkbox" name="create_news" {% if user.permissions[0].create_news %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
-                    Доступ к созданию новостей
-                    <div class="checkmark"></div>
-                </label>
-                <label class="container">
-                    <input type="checkbox" name="creation_doc" {% if user.permissions[0].creation_doc %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
-                    Доступ к созданию документов
-                    <div class="checkmark"></div>
-                </label>
-                <label class="container">
-                    <input type="checkbox" name="lawyer" {% if user.permissions[0].lawyer %}checked="checked"{% endif %} {% if perm_change >= 1 %}{% else %} disabled {% endif %}>
-                    Доступ адвоката
-                    <div class="checkmark"></div>
-                </label>
-                <label class="container">
-                    <input type="checkbox" name="prosecutor" {% if user.permissions[0].prosecutor %}checked="checked"{% endif %} {% if perm_change >= 1 %}{% else %} disabled {% endif %}>
-                    Прокурорский доступ
-                    <div class="checkmark"></div>
-                </label>
+                <div id="permissions" class="permissions-section">
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                    <label class="container">
+                        <input type="checkbox" name="tech" {% if user.permissions[0].tech %}checked="checked"{% endif %} disabled>
+                        Доступ разработчика
+                        <div class="checkmark"></div>
+                    </label>
+                    <label class="container">
+                        <input type="checkbox" name="admin" {% if user.permissions[0].admin %}checked="checked"{% endif %} {% if perm_change >= 5 %}{% else %} disabled {% endif %}>
+                        Доступ Администратора
+                        <div class="checkmark"></div>
+                    </label>
+                    <label class="container">
+                        <input type="checkbox" name="lider" {% if user.permissions[0].lider %}checked="checked"{% endif %} {% if perm_change >= 4 %}{% else %} disabled {% endif %}>
+                        Доступ лидера
+                        <div class="checkmark"></div>
+                    </label>
+                    <label class="container">
+                        <input type="checkbox" name="dep_lider" {% if user.permissions[0].dep_lider %}checked="checked"{% endif %} {% if perm_change >= 3 %}{% else %} disabled {% endif %}>
+                        Доступ зам. лидера
+                        <div class="checkmark"></div>
+                    </label>
+                    <label class="container">
+                        <input type="checkbox" name="high_staff" {% if user.permissions[0].high_staff %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
+                        Старший состав
+                        <div class="checkmark"></div>
+                    </label>
+                    <label class="container">
+                        <input type="checkbox" name="create_news" {% if user.permissions[0].create_news %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
+                        Доступ к созданию новостей
+                        <div class="checkmark"></div>
+                    </label>
+                    <label class="container">
+                        <input type="checkbox" name="creation_doc" {% if user.permissions[0].creation_doc %}checked="checked"{% endif %} {% if perm_change >= 2 %}{% else %} disabled {% endif %}>
+                        Доступ к созданию документов
+                        <div class="checkmark"></div>
+                    </label>
+                    <label class="container">
+                        <input type="checkbox" name="judge" {% if user.permissions[0].judge %}checked="checked"{% endif %} {% if perm_change >= 1 %}{% else %} disabled {% endif %}>
+                        Доступ судьи
+                        <div class="checkmark"></div>
+                    </label>
+                    <label class="container">
+                        <input type="checkbox" name="lawyer" {% if user.permissions[0].lawyer %}checked="checked"{% endif %} {% if perm_change >= 1 %}{% else %} disabled {% endif %}>
+                        Доступ адвоката
+                        <div class="checkmark"></div>
+                    </label>
+                    <label class="container">
+                        <input type="checkbox" name="prosecutor" {% if user.permissions[0].prosecutor %}checked="checked"{% endif %} {% if perm_change >= 1 %}{% else %} disabled {% endif %}>
+                        Доступ прокурора
+                        <div class="checkmark"></div>
+                    </label>
+                </div>
                 
-            </div>
-                {% if perm_change < 1 %}{% else %}  <div class='container-submit-btn'> <button type="submit">Сохранить</button> </div> {% endif %}
-        </form>
-        <button id="toggleKaHistoryBtn" class="toggle-ka-history-btn">Показать Историю КА</button>
+                {% if perm_change >= 1 %}<div class='container-submit-btn'> <button type="submit">Сохранить</button> </div> {% endif %}
+            </form>
+            <button id="toggleKaHistoryBtn" class="toggle-ka-history-btn">Показать Историю КА</button>
         </div>
         {% else %}
-    <div id="players" class='players'>
-    <div class="tabs">
-        <button class="tab-button" onclick="showTab('users')">Пользователи</button>
-        <button class="tab-button" onclick="checkPermissions('ranks')">Ранги</button>
-    </div>
-    <div id="users" class="tab-content">
-        <div class="search-form">
-            <select name="filter" id="filter">
-                <option value="nickname">Имя Фамилия</option>
-                <option value="static">Статик</option>
-                <option value="discord">Дискорд</option>
-            </select>
-            <input type="text" name="text" id="searchInput" placeholder='поиск'>
+        <!-- Кнопки управления вкладками -->
+        <div id="players" class='players'>
+        <div class="tabs">
+            <button class="tab-button" onclick="showTab('users')">Пользователи</button>
+            <button class="tab-button" onclick="checkPermissions('ranks')">Ранги</button>
+            <button class="tab-button" onclick="checkPermissions('roles')">Роли</button>
         </div>
-        <table id="userTable">
-            <thead>
-                <tr>
-                    <th>Никнейм</th>
-                    <th>Static</th>
-                    <th>Фракция</th>
-                    <th>Ранг</th>
-                    <th>Discord</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in Users %}
-                <tr class="user-row" data-user-id="{{ user.id }}">
-                    <td>{{ user.nikname }}</td>
-                    <td>{{ user.static }}</td>
-                    <td>{{ user.organ }}</td>
-                    <td>{{ user.curr_rank }}</td>
-                    <td>{{ user.discordname }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <div id="userDetails" style="display: none; margin-top: 20px;">
-        <h2>Подробная информация</h2>
-        <p><strong>Никнейм:</strong> <span id="userName"></span></p>
-        <p><strong>Static:</strong> <span id="userStatic"></span></p>
-        <p><strong>Фракция:</strong> <span id="userOrgan"></span></p>
-        <p><strong>Ранг:</strong> <span id="userRank"></span></p>
-        <p><strong>Discord:</strong> <span id="userDiscord"></span></p>
-    </div>
 
-    <div id="ranks" class="tab-content" style="display:none;">
-        <label for="fraction">Фракция</label>
-        <select name="fraction" id="fraction" onchange="filterRanksByFraction(this.value)">
-            <option value="LSPD">Los-Santos Police Department</option>
-            <option value="LSCSD">Los-Santos Country Sheriff Department</option>
-            <option value="FIB">Federal Investigation Bureau</option>
-            <option value="SANG">San-Andreas National Guard</option>
-            <option value="EMS">Emergency Medical Services</option>
-            <option value="GOV">Government</option>
-            <option value="WN">Weazel News</option>
-        </select>
-    
-        <div id="ranks-container" style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
-            {% for fraction, rank_list in groups.items() %}
-            <div class="fraction-group" data-fraction="{{ fraction }}">
-                <h3>{{ fraction }}</h3>
-                <ul id="{{ fraction }}-list" class="rank-list">
+        <!-- Вкладка управления ролями -->
+        <div id="roles" class="tab-content" style="display:none;">
+            <label for="fraction">Фракция</label>
+            <select name="fraction" id="fraction" onchange="filterRanksByFraction(this.value)">
+                <option value="LSPD">Los-Santos Police Department</option>
+                <option value="LSCSD">Los-Santos Country Sheriff Department</option>
+                <option value="FIB">Federal Investigation Bureau</option>
+                <option value="SANG">San-Andreas National Guard</option>
+                <option value="EMS">Emergency Medical Services</option>
+                <option value="GOV">Government</option>
+                <option value="WN">Weazel News</option>
+            </select>
+            
+            <div id="roles-container" style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
+                {% for fraction, role_list in groups.items() %}
+                <div class="fraction-group" data-fraction="{{ fraction }}">
+                    <h3>{{ fraction }}</h3>
+                    <table class="role-table">
+                        <thead>
+                            <tr>
+                                <th>Должность</th>
+                                <th>Зам. лидера</th>
+                                <th>Старший состав</th>
+                                {% if fraction == 'GOV' %}
+                                <th>Судья</th>
+                                <th>Прокурор</th>
+                                <th>Адвокат</th>
+                                <th>Создание новостей</th>
+                                <th>Создание документации</th>
+                                {% elif fraction == 'WN' %}
+                                <th>Создание новостей</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for role in role_list %}
+                            {% if not loop.first %}
+                            <tr>
+                                <td>{{ role.name }}</td>
+                                <!-- Зам. лидера -->
+                                <td>
+                                    <label class="container" style='background-color: transparent;'>
+                                        <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="dep_lider"
+                                            {% for permission in roles_permission %}
+                                                {% if permission.fraction == fraction and permission.position_rank == role.id %}
+                                                    {% if permission.roles['dep_lider'] %} checked {% endif %}
+                                                {% endif %}
+                                            {% endfor %}>
+                                        <div class="checkmark"></div>
+                                    </label>
+                                </td>
+                                <!-- Старший состав -->
+                                <td>
+                                    <label class="container" style='background-color: transparent;'>
+                                        <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="high_staff"
+                                            {% for permission in roles_permission %}
+                                                {% if permission.fraction == fraction and permission.position_rank == role.id %}
+                                                    {% if permission.roles['high_staff'] %} checked {% endif %}
+                                                {% endif %}
+                                            {% endfor %}>
+                                        <div class="checkmark"></div>
+                                    </label>
+                                </td>
+                                {% if fraction == 'GOV' %}
+                                <!-- Судья -->
+                                <td>
+                                    <label class="container" style='background-color: transparent;'>
+                                        <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="judge"
+                                            {% for permission in roles_permission %}
+                                                {% if permission.fraction == fraction and permission.position_rank == role.id %}
+                                                    {% if permission.roles['judge'] %} checked {% endif %}
+                                                {% endif %}
+                                            {% endfor %}>
+                                        <div class="checkmark"></div>
+                                    </label>
+                                </td>
+                                <!-- Прокурор -->
+                                <td>
+                                    <label class="container"style='background-color: transparent;'>
+                                        <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="prosecutor"
+                                            {% for permission in roles_permission %}
+                                                {% if permission.fraction == fraction and permission.position_rank == role.id %}
+                                                    {% if permission.roles['prosecutor'] %} checked {% endif %}
+                                                {% endif %}
+                                            {% endfor %}>
+                                        <div class="checkmark"></div>
+                                    </label>
+                                </td>
+                                <!-- Адвокат -->
+                                <td>
+                                    <label class="container" style='background-color: transparent;'>
+                                        <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="lawyer"
+                                            {% for permission in roles_permission %}
+                                                {% if permission.fraction == fraction and permission.position_rank == role.id %}
+                                                    {% if permission.roles['lawyer'] %} checked {% endif %}
+                                                {% endif %}
+                                            {% endfor %}>
+                                        <div class="checkmark"></div>
+                                    </label>
+                                </td>
+                                <!-- Создание новостей -->
+                                <td>
+                                    <label class="container" style='background-color: transparent;'>
+                                        <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="news_creation"
+                                            {% for permission in roles_permission %}
+                                                {% if permission.fraction == fraction and permission.position_rank == role.id %}
+                                                    {% if permission.roles['news_creation'] %} checked {% endif %}
+                                                {% endif %}
+                                            {% endfor %}>
+                                        <div class="checkmark"></div>
+                                    </label>
+                                </td>
+                                <!-- Создание документации -->
+                                <td>
+                                    <label class="container" style='background-color: transparent;'>
+                                        <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="documentation_creation"
+                                            {% for permission in roles_permission %}
+                                                {% if permission.fraction == fraction and permission.position_rank == role.id %}
+                                                    {% if permission.roles['documentation_creation'] %} checked {% endif %}
+                                                {% endif %}
+                                            {% endfor %}>
+                                        <div class="checkmark"></div>
+                                    </label>
+                                </td>
+                                {% elif fraction == 'WN' %}
+                                <!-- Создание новостей -->
+                                <td>
+                                    <label class="container" style='background-color: transparent;'>
+                                        <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="news_creation"
+                                            {% for permission in roles_permission %}
+                                                {% if permission.fraction == fraction and permission.position_rank == role.id %}
+                                                    {% if permission.roles['news_creation'] %} checked {% endif %}
+                                                {% endif %}
+                                            {% endfor %}>
+                                        <div class="checkmark"></div>
+                                    </label>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                            
+                        </tbody>
+                    </table>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class='container-btn'>
+                <button id='save-roles'>Сохранить</button>
+            </div>
+        </div>        
+
+        <!-- Вкладка управления пользователями -->
+        <div id="users" class="tab-content">
+            <div class="search-form">
+                <select name="filter" id="filter">
+                    <option value="nickname">Имя Фамилия</option>
+                    <option value="static">Статик</option>
+                    <option value="discord">Дискорд</option>
+                </select>
+                <input type="text" name="text" id="searchInput" placeholder='поиск'>
+            </div>
+            <table id="userTable">
+                <thead>
+                    <tr>
+                        <th>Никнейм</th>
+                        <th>Static</th>
+                        <th>Фракция</th>
+                        <th>Ранг</th>
+                        <th>Discord</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in Users %}
+                    <tr class="user-row" data-user-id="{{ user.id }}">
+                        <td>{{ user.nikname }}</td>
+                        <td>{{ user.static }}</td>
+                        <td>{{ user.organ }}</td>
+                        <td>{{ user.curr_rank }}</td>
+                        <td>{{ user.discordname }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div id="userDetails" style="display: none; margin-top: 20px;">
+            <h2>Подробная информация</h2>
+            <p><strong>Никнейм:</strong> <span id="userName"></span></p>
+            <p><strong>Static:</strong> <span id="userStatic"></span></p>
+            <p><strong>Фракция:</strong> <span id="userOrgan"></span></p>
+            <p><strong>Ранг:</strong> <span id="userRank"></span></p>
+            <p><strong>Discord:</strong> <span id="userDiscord"></span></p>
+        </div>
+
+        <!-- Вкладка управления рангами -->
+        <div id="ranks" class="tab-content" style="display:none;">
+            <label for="fraction">Фракция</label>
+            <select name="fraction" id="fraction" onchange="filterRanksByFraction(this.value)">
+                <option value="LSPD">Los-Santos Police Department</option>
+                <option value="LSCSD">Los-Santos Country Sheriff Department</option>
+                <option value="FIB">Federal Investigation Bureau</option>
+                <option value="SANG">San-Andreas National Guard</option>
+                <option value="EMS">Emergency Medical Services</option>
+                <option value="GOV">Government</option>
+                <option value="WN">Weazel News</option>
+            </select>
+        
+            <div id="ranks-container" style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
+                {% for fraction, rank_list in groups.items() %}
+                <div class="fraction-group" data-fraction="{{ fraction }}">
+                    <h3>{{ fraction }}</h3>
                     <!-- Лидерский ранг -->
                     {% for rank in rank_list %}
                         {% if rank.leader %}
@@ -141,26 +308,26 @@
                         </li>
                         {% endif %}
                     {% endfor %}
-                    
-                    <!-- Обычные ранги -->
-                    {% for rank in rank_list %}
-                        {% if not rank.leader %}
-                        <li class="rank-item" data-id="{{ rank.id }}" data-leader="false">
-                            <input type="text" class="rank-id" value="{{ rank.id }}" readonly>
-                            <input type="text" class="rank-name" value="{{ rank.name }}"/>
-                            <button class="delete-rank" onclick="deleteRank('{{ fraction }}', {{ rank.id }})">Удалить</button>
-                        </li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
-                <button class="add-rank" onclick="addRank('{{ fraction }}')">Добавить ранг</button>
+                    <ul id="{{ fraction }}-list" class="rank-list">
+                        <!-- Обычные ранги -->
+                        {% for rank in rank_list %}
+                            {% if not rank.leader %}
+                            <li class="rank-item" data-id="{{ rank.id }}" data-leader="false">
+                                <input type="text" class="rank-id" value="{{ rank.id }}" readonly>
+                                <input type="text" class="rank-name" value="{{ rank.name }}"/>
+                                <button class="delete-rank" onclick="deleteRank('{{ fraction }}', {{ rank.id }})">Удалить</button>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                    <button class="add-rank" onclick="addRank('{{ fraction }}')">Добавить ранг</button>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+            <div class='container-btn'>
+                <button onclick="saveRanks()">Сохранить</button>
+            </div>
         </div>
-        <div class='container-btn'>
-            <button onclick="saveRanks()">Сохранить</button>
-        </div>
-    </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 {% endif %}

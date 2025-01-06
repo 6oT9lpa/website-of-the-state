@@ -95,7 +95,7 @@ def check_isk_status(isk):
     if any(current_user.static == defenda['static'] for defenda in result):
       status = 'Defenda'
       
-    elif current_user.user_type == 'user' and (current_user.id == isk.judge or (not isk.judge and current_user.curr_rank in [13, 15, 21])):
+    elif current_user.user_type == 'user' and (current_user.id == isk.judge or current_user.permissions[0].judge):
       status = 'Judge'
       
     elif ((isk.prosecutor and current_user.id == isk.prosecutor) or (not isk.prosecutor and current_user.permissions[0].prosecutor)) and current_user.user_type == 'user':
@@ -472,7 +472,7 @@ def create_guest():
 
 @main.route('/validate-verificate-code', methods=['POST', 'GET'])
 def validate_code():
-  from __init__ import cipher, guestUsers, db, PermissionUsers
+  from __init__ import cipher, guestUsers, db, PermissionUsers, get_next_id_user
 
   print(cipher.decrypt(session.get('verification_code').encode()).decode())
 
@@ -485,15 +485,17 @@ def validate_code():
 
     try:
       new_guest = guestUsers(
+        id=get_next_id_user(),
         nickname=nickname,
         static=static,
         discord_id=discord,
         password=password
       )
-
-      new_permission = PermissionUsers( )
-      db.session.add(new_permission)
       db.session.add(new_guest)
+      db.session.commit()
+      
+      new_permission = PermissionUsers( guest_id = new_guest.id )
+      db.session.add(new_permission)
       db.session.commit()
 
       session.pop('nickname', None)
@@ -890,7 +892,6 @@ def claim_state():
 
     return render_template(
       'complaint.html',
-      district=claim_statement_district,
       Users=Users,
       guestUsers=guestUsers,
       createat=display_date,
@@ -900,6 +901,7 @@ def claim_state():
       combined_data=combined_data,
       repltoisk=repltoisk,
       isk=isk,
+      court='district'
     )
   
   elif claim_statement_supreme:
@@ -949,7 +951,6 @@ def claim_state():
 
     return render_template(
       'complaint.html',
-      district=claim_statement_supreme,
       Users=Users,
       guestUsers=guestUsers,
       createat=display_date,
@@ -959,6 +960,7 @@ def claim_state():
       combined_data=combined_data,
       repltoisk=repltoisk,
       isk=isk,
+      court='supreme'
       )
   else:
     flash('Данный иск удален или поврежден!')
@@ -1334,7 +1336,7 @@ def courtPettion():
 
 @main.route('/create_court_order', methods=['POST'])
 def courtOrder():
-    from __init__ import courtOrder, db, iskdis, claimsStatement
+    from __init__ import courtOrder, db, iskdis, isksup, claimsStatement
     
     data = request.get_json()
     uid = data.get('uid')
@@ -1344,7 +1346,7 @@ def courtOrder():
     if not is_send_allowed():
       return jsonify({"success": False, "message": "Попробуйте позже!"}), 400
 
-    if current_user.user_type != 'user' and current_user.curr_rank not in [13, 15, 21]:
+    if current_user.user_type != 'user' and current_user.permissions[0].judge:
       return jsonify({"success": False, "message": "Вы не можете составлять опредение под иско!"}), 403
 
     typeOrderCourt = data.get('type_court_order')
@@ -1359,21 +1361,23 @@ def courtOrder():
         if not all([findings, consideration, action]):
           return jsonify({"success": False, "message": "Все поля должны быть заполнены!"}), 400
 
-        complaint = iskdis.query.filter_by(current_uid=uid).first()
+        claimState = claimsStatement.query.filter_by(uid=uid).first()
+        complaint = iskdis.query.filter_by(current_uid=uid).first() or isksup.query.filter_by(current_uid=uid).first()
         if not complaint:
           return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 404
 
         if action == 'accept':
             complaint.status = 'Accepted'
-            complaint.judge = True
+            complaint.judge = current_user.id
         elif action == 'reject':
             complaint.status = 'Rejectioned'
-            complaint.judge = True
+            claimState.is_archived = True
+            complaint.judge = current_user.id
         elif action == 'hold':
             complaint.status = 'LeftMoved'
-            complaint.judge = True
+            complaint.judge = current_user.id
         else:
-            return jsonify({"success": False, "message": "Ошшибка действия над иском!"}), 400
+            return jsonify({"success": False, "message": "Ошибка действия над иском!"}), 400
 
         try:
             new_order = courtOrder(
@@ -1400,7 +1404,7 @@ def courtOrder():
         if not all([findings, consideration, action]):
             return jsonify({"success": False, "message": "Все поля должны быть заполнены!"}), 400
 
-        complaint = iskdis.query.filter_by(current_uid=uid).first()
+        complaint = iskdis.query.filter_by(current_uid=uid).first() or isksup.query.filter_by(current_uid=uid).first()
         claimState = claimsStatement.query.filter_by(uid=uid).first()
 
         if not complaint or not claimState:
@@ -1442,7 +1446,7 @@ def courtOrder():
         if not all([findings, consideration]):
             return jsonify({"success": False, "message": "Все поля должны быть заполнены!"}), 400
 
-        complaint = iskdis.query.filter_by(current_uid=uid).first()
+        complaint = iskdis.query.filter_by(current_uid=uid).first() or isksup.query.filter_by(current_uid=uid).first()
         claimState = claimsStatement.query.filter_by(uid=uid).first()
 
         if not complaint or not claimState:
@@ -1514,7 +1518,7 @@ def auth():
 
     if guest:
         if check_password_hash(guest.password, form.password.data):
-          login_user(user, remember=form.remember_me.data)
+          login_user(guest, remember=form.remember_me.data)
           return redirect(url_for('main.profile'))
         else:
           flash("Неверный static или password!")
@@ -1839,14 +1843,15 @@ def process_dismissal(user, reason, fraction):
     user.action = 'Dismissal'
     user.prev_rank = user.curr_rank
     user.curr_rank = 0
-    db.session.commit()
 
-    permission_user.tech = False
-    permission_user.admin = False
     permission_user.lider = False
+    permission_user.dep_lider = False
     permission_user.high_staff = False
     permission_user.creation_doc = False
-    db.session.commit()
+    permission_user.create_news = False
+    permission_user.judge = False
+    permission_user.lawyer = False
+    permission_user.prosecutor = False
 
     new_action = ActionUsers(
       discordid=user.discordid,
@@ -1892,7 +1897,7 @@ def audit():
   from __init__ import db, Users
 
   permission = current_user.permissions[0]
-  if not (permission.high_staff or permission.lider or permission.admin or permission.tech):
+  if not (permission.high_staff or permission.lider or permission.dep_lider or permission.admin or permission.tech):
     return jsonify({"success": False, "message": "Доступ запрещен, отсутствуют права.", "redirect_url": request.referrer}), 403
 
   if request.method == 'POST':
@@ -2027,13 +2032,16 @@ def profile():
   
 def check_perm_changedata():
   if current_user.permissions[0].tech:
-    return 4
+    return 5
   elif current_user.permissions[0].admin:
-    return 3
+    return 4
   elif current_user.permissions[0].lider:
+    return 3
+  elif current_user.permissions[0].dep_lider:
     return 2
   elif current_user.permissions[0].high_staff:
     return 1
+  
   return 0
 
 @main.route('/getSearchUser', methods=['GET'])
@@ -2071,7 +2079,7 @@ def get_search_data():
 @login_required
 def check_permissions():
     permission = current_user.permissions[0]
-    if not (permission.lider or permission.admin or permission.tech):
+    if not (permission.lider or permission.dep_lider or permission.admin or permission.tech):
         return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия."}), 403
     return jsonify({"success": True, "message": "Доступ разрешен."}), 200
 
@@ -2079,7 +2087,7 @@ def check_permissions():
 @check_user_action
 @login_required
 def database():
-  from __init__ import Users, guestUsers
+  from __init__ import Users, permissionRoles
   perm_level = check_perm_changedata()
   if perm_level == 0:
     return redirect(url_for('main.audit'))
@@ -2092,18 +2100,72 @@ def database():
   ranks = read_ranks(filename)
   rank_name = get_rank_info(ranks, organ, rank)
   updated_ranks = ranks.get("updated_ranks", {})
+  
+  roles_permission = permissionRoles.query.all()
+  
   groups = {}
   for group_name, rank_items in updated_ranks.items():
     groups[group_name] = rank_items
 
-  return render_template('database.html', rank_name=rank_name, color=color, current_user=current_user, Users=users, ranks=ranks, groups=groups, more_info=False)
+  return render_template('database.html', roles_permission=roles_permission, rank_name=rank_name, color=color, current_user=current_user, Users=users, ranks=updated_ranks, groups=groups, more_info=False)
 
 DATA_FILE = "./python/name-ranks.json"
 def write_data(data):
     with open(DATA_FILE, 'w') as file:
         json.dump(data, file, indent=4)
         
+
+@main.route('/save_roles', methods=['POST'])
+def save_roles():
+  from __init__ import permissionRoles, db
+  
+  if not (current_user.permissions[0].lider or current_user.permissions[0].admin or current_user.permissions[0].tech):
+    return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия."}), 403
+  
+  data = request.get_json()
+  if current_user.permissions[0].lider and current_user.organ != data['fraction'] and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
+    return jsonify({"success": False, "message": "Вы не можете изменять данные другой организации!"}), 403
+  
+  fraction = data.get('fraction')
+  roles = data.get('roles', [])
+  
+  if not fraction or not isinstance(roles, list):
+    return jsonify({"success": False, "message": "Отсутствуют необходимые данные для сохранения."}), 400
+  
+  try:
+    for role_data in roles:
+      role_id = role_data['id']
+      role_permissions = {
+        'dep_lider': role_data['dep_lider'],
+        'high_staff': role_data['high_staff'],
+        'judge': role_data['judge'],
+        'prosecutor': role_data['prosecutor'],
+        'lawyer': role_data['lawyer'],
+        'news_creation': role_data['news_creation'],
+        'documentation_creation': role_data['documentation_creation'],
+      }
+
+      existing_role = permissionRoles.query.filter_by(fraction=fraction, position_rank=role_id).first()
+      if existing_role:
+        existing_role.roles = role_permissions
+        db.session.add(existing_role)
         
+      else:
+        new_role = permissionRoles(
+          fraction=fraction,
+          position_rank=role_data.get('id', 0), 
+          roles=role_permissions
+        )
+        db.session.add(new_role)
+
+    db.session.commit()
+    return jsonify({"success": True, "message": "Данные успешно сохранены."}), 200
+
+  except Exception and SQLAlchemyError as e:
+    db.session.rollback()
+    print(f"Ошибка при сохранении ролей: {e}")
+    return jsonify({"success": False, "message": f"Ошибка при сохранении ролей"}), 500
+    
 @main.route('/save_ranks', methods=['POST'])
 def save_ranks():
     new_data = request.json
@@ -2168,32 +2230,53 @@ def delete_rank_and_adjust_users(organ, rank_id, current_data):
 def database_change():
   from __init__ import Users, db
   perm_level = check_perm_changedata()
-  if perm_level != 0:
-    user_id = request.form.get('user_id')
-    user = Users.query.get(user_id)
-    admin = request.form.get('admin')
-    lider = request.form.get('lider')
-    prosecutor = request.form.get('prosecutor')
-    high_staff = request.form.get('high_staff')
-    creation_doc = request.form.get('creation_doc')
-    create_news = request.form.get('create_news')
-    lawer = request.form.get('lawyer')
-    discordname = request.form.get('discordname')
-    discordid = request.form.get('discordid')
-    if perm_level >= 2:
+  
+  if perm_level == 0:
+    return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия!"}), 403
+  
+  data = request.get_json()
+  
+  user_id = data.get('user_id')
+  user = Users.query.get(user_id)
+  admin = data.get('admin')
+  lider = data.get('lider')
+  dep_lider = data.get('dep_lider')
+  prosecutor = data.get('prosecutor')
+  high_staff = data.get('high_staff')
+  creation_doc = data.get('creation_doc')
+  create_news = data.get('create_news')
+  lawer = data.get('lawyer')
+  discordname = data.get('discordname')
+  discordid = data.get('discordid')
+  
+  try:
+    if perm_level >= 1:
       user.permissions[0].prosecutor = True if prosecutor == 'on' else False
-      user.permissions[0].high_staff = True if high_staff == 'on' else False
-      user.permissions[0].creation_doc = True if creation_doc == 'on' else False
       user.permissions[0].lawyer = True if lawer == 'on' else False
-      user.discordname = discordname
-      user.discordid = discordid
+      user.permissions[0].judge = True if lawer == 'on' else False 
+      
+    if perm_level >= 2:
+      user.permissions[0].high_staff = True if high_staff == 'on' else False
+      
     if perm_level >= 3:
       user.permissions[0].create_news = True if create_news == 'on' else False
-    if perm_level == 4:
-      user.permissions[0].admin = True if admin == 'on' else False
+      user.permissions[0].dep_lider = True if dep_lider == 'on' else False
+      user.discordname = discordname
+      user.discordid = discordid
+      
+    if perm_level >= 4:
       user.permissions[0].lider = True if lider == 'on' else False
+      
+    if perm_level == 5:
+      user.permissions[0].admin = True if admin == 'on' else False
+      
     db.session.commit()
-  return redirect(url_for('main.database'))
+    return jsonify({"success": True, "message": "Данные успешно изменены!"}), 200
+  
+  except Exception and SQLAlchemyError as e:
+    print (str(e))
+    return jsonify({"success": False, "message": "Произошла ошибка, попробуйте позже!"}), 500
+
 
 @main.route('/database_getdata', methods=['GET'])
 def database_getdata():
@@ -2280,7 +2363,7 @@ def doc():
 
   perm_user = current_user.permissions[0]
 
-  if not perm_user or not (perm_user.creation_doc or perm_user.lider or perm_user.tech): 
+  if not perm_user or not (perm_user.creation_doc or perm_user.dep_lider or perm_user.lider or perm_user.tech): 
     message = 'У вас отстутсвуют права для использования данной функции!', 403
     return render_template('doc.html', is_permission=False, is_authenticated=True, message=message)
 
@@ -3186,7 +3269,7 @@ def get_prosecution_office_content():
 
 @main.route('/district_court/information=<info_type>')
 def district_court_info(info_type):
-    from __init__ import iskdis, Users, guestUsers, claimsStatement
+    from __init__ import iskdis, Users, guestUsers, claimsStatement, courtPrecedents
     now = datetime.now()
     count = 0
     title = ""
@@ -3211,11 +3294,12 @@ def district_court_info(info_type):
 
     elif info_type == 'precedents':
       title = "Сборник прецедентов"
-
+      precedents = courtPrecedents.query.all()
       return render_template(
         'info_district.html',
         title=title,
-        info_type=info_type
+        info_type=info_type,
+        precedents=precedents
       )
 
     elif info_type == 'rules':
@@ -3227,5 +3311,38 @@ def district_court_info(info_type):
         info_type=info_type
       )
 
-    
+@main.route('/create-precedents', methods=['POST'])
+def create_precedents():
+  from __init__ import courtPrecedents, db
+  
+  if not current_user.permissions[0].judge:
+    return jsonify({"success": False, "message": "У вас нет доступа т.к. вы не судья"}), 403
+  
+  data = request.get_json()
+  complaint = data.get('complaint')
+  date = data.get('date')
+  author = data.get('author')
+  link = data.get('link')
+  findings = data.get('findings')
+  action = data.get('action')
+  date_object = datetime.strptime(date, "%d.%m.%Y %H:%M")
+  
+  try:
+    new_precedent = courtPrecedents(
+      author_id=current_user.id, 
+      number_complaint=complaint, 
+      date_complaint=date_object, 
+      author=author, 
+      link=link, 
+      findings=findings,
+      court=action
+      )
+    db.session.add(new_precedent)
+    db.session.commit()
 
+    return jsonify({"success": True, "message": "Прецедент успешно создан"}), 200
+  
+  except Exception and SQLAlchemyError as e:
+    db.session.rollback()
+    print(str(e))
+    return jsonify({"success": False, "message": "Ошибка при создании прецедента"}), 500

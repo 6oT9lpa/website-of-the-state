@@ -230,7 +230,6 @@ a.accept-judge {
 .content-sidebar {
     height: 100%;
     display: flex;
-    justify-content: center;
     align-items: center;
     flex-direction: column;
 }
@@ -244,6 +243,18 @@ a.accept-judge {
     justify-content: flex-end;
 
 }
+a.disabled {
+    color: #a3a3a3 !important;
+    background: #2d2d2d;
+    cursor: not-allowed;
+}
+
+a.disabled:hover {
+    color: #a3a3a3 !important;
+    background: #2d2d2d !important;
+    cursor: not-allowed;
+}
+
 
 .content-modal {
     color: #f0f8ff;
@@ -301,7 +312,7 @@ a.accept-judge {
 
 .modal-processing-complaint {
     opacity: 0;
-    z-index: 100;
+    z-index: 150;
 }
 .modal-processing-complaint.show-modal {
     opacity: 1;
@@ -624,9 +635,9 @@ a.accept-judge {
 }
 
 .functional-menu {
-    margin-top: 20px;
+    width: 100%;
+    margin-top: 10px;
 }
-
 .group-kick {
     width: 100%;
 }
@@ -866,3 +877,4 @@ button.add-evidence-btn {
     font-weight: 600;
     cursor: pointer;
 }
+

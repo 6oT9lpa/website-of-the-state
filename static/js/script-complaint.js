@@ -50,6 +50,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
         dropdownMenu.addEventListener('click', (e) => {
             e.preventDefault();
+
+            if (e.target.classList.contains('disabled')) {
+                return;
+            }
+            
             const action = e.target.dataset.action;
             dropdownBtn.textContent = e.target.textContent;
             document.getElementById(hiddenInputId).value = action;
@@ -74,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { openBtn: '#open-btn-6', closeBtn: '#close-btn-6', modal: '#modal-6' },
         { openBtn: '#open-btn-7', closeBtn: '#close-btn-7', modal: '#modal-7' },
         { openBtn: '#open-btn-8', closeBtn: '#close-btn-8', modal: '#modal-8' },
+        { openBtn: '#open-btn-9', closeBtn: '#close-btn-9', modal: '#modal-9' },
     ];
 
     modals.forEach(({ openBtn, closeBtn, modal }) => {
@@ -86,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDropdown(document.querySelector('#dropdown-4'), document.querySelector('#dropdown-btn-4'), document.querySelector('#dropdown-menu-4'), 'action-4');
     setupDropdown(document.querySelector('#dropdown-5'), document.querySelector('#dropdown-btn-5'), document.querySelector('#dropdown-menu-5'), 'action-5');
     setupDropdown(document.querySelector('#dropdown-6'), document.querySelector('#dropdown-btn-6'), document.querySelector('#dropdown-menu-6'), 'action-6');
+    setupDropdown(document.querySelector('#dropdown-7'), document.querySelector('#dropdown-btn-7'), document.querySelector('#dropdown-menu-7'), 'action-7');
 
     function initInputGroup(addButtonSelector, groupSelector, deleteButtonSelector) {
         let counter = 1;
