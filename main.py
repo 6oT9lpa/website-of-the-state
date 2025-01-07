@@ -236,6 +236,11 @@ def read_ranks(filename):
     data = json.load(f)
   return data
 
+def write_ranks(filename):
+  with open(filename, 'r+', encoding='utf-8') as f:
+    data = json.load(f)
+  return data
+
 def get_rank_info(ranks, organization, rank_level):
   rank_info = None
   if organization in ranks:
@@ -1716,21 +1721,59 @@ def process_new_invite(static, rank, nickname, discord_id, reason, fraction):
 
 
 def process_raise(user, rank, reason, fraction):
-    from __init__ import db, ActionUsers
+    from __init__ import db, ActionUsers, permissionRoles
     """Обрабатывает повышение пользователя."""
 
     permission_current = current_user.permissions[0]
     permission_user = user.permissions[0]
     if not permission_current.tech or not permission_current.admin:
-        if permission_user and (permission_user.admin or permission_user.tech):
-            return jsonify({"success": False, "message": "Вы не можете уволить админа/разработчика."}), 403
+      if permission_user and (permission_user.admin or permission_user.tech):
+        return jsonify({"success": False, "message": "Вы не можете уволить админа/разработчика."}), 403
 
-        if current_user.organ != user.organ:
-            return jsonify({"success": False, "message": "Вы не можете уволить игрока другой фракции."}), 403
+      if current_user.organ != user.organ:
+        return jsonify({"success": False, "message": "Вы не можете уволить игрока другой фракции."}), 403
 
-        if current_user.curr_rank <= user.curr_rank:
-            return jsonify({"success": False, "message": "Вы не можете повысить игрока, если вы ниже рангом."}), 403
-
+      if current_user.curr_rank <= user.curr_rank:
+        return jsonify({"success": False, "message": "Вы не можете повысить игрока, если вы ниже рангом."}), 403
+          
+    permissions_roles = permissionRoles.query.filter_by(fraction=fraction).all()
+    for permissions_role in permissions_roles:
+      if int(permissions_role.position_rank) == int(rank):
+        if permissions_role.roles['dep_lider']:
+          permission_user.dep_lider = True
+        else:
+          permission_user.dep_lider = False
+          
+        if permissions_role.roles['high_staff']:
+          permission_user.high_staff = True
+        else:
+          permission_user.high_staff = False
+          
+        if permissions_role.roles['judge']:
+          permission_user.judge = True
+        else:
+          permission_user.judge = False
+          
+        if permissions_role.roles['prosecutor']:
+          permission_user.prosecutor = True
+        else:
+          permission_user.prosecutor = False
+          
+        if permissions_role.roles['lawyer']:
+          permission_user.lawyer = True
+        else:
+          permission_user.lawyer = False
+          
+        if permissions_role.roles['news_creation']:
+          permission_user.create_news = True
+        else:
+          permission_user.create_news = False
+          
+        if permissions_role.roles['documentation_creation']:
+          permission_user.creation_doc = True
+        else:
+          permission_user.creation_doc = False
+        
     try:
         user.action = 'Raising'
         user.prev_rank = user.curr_rank
@@ -1768,7 +1811,7 @@ def process_raise(user, rank, reason, fraction):
 
 
 def process_demotion(user, rank, reason, fraction):
-    from __init__ import db, ActionUsers
+    from __init__ import db, ActionUsers, permissionRoles
     """Обрабатывает понижение пользователя."""
 
     permission_current = current_user.permissions[0]
@@ -1783,6 +1826,44 @@ def process_demotion(user, rank, reason, fraction):
         if current_user.curr_rank <= user.curr_rank:
             return jsonify({"success": False, "message": "Вы не можете понизить игрока, если вы ниже рангом."}), 403
 
+    permissions_roles = permissionRoles.query.filter_by(fraction=fraction).all()
+    for permissions_role in permissions_roles:
+      if int(permissions_role.position_rank) == int(rank):
+        if permissions_role.roles['dep_lider']:
+          permission_user.dep_lider = True
+        else:
+          permission_user.dep_lider = False
+          
+        if permissions_role.roles['high_staff']:
+          permission_user.high_staff = True
+        else:
+          permission_user.high_staff = False
+          
+        if permissions_role.roles['judge']:
+          permission_user.judge = True
+        else:
+          permission_user.judge = False
+          
+        if permissions_role.roles['prosecutor']:
+          permission_user.prosecutor = True
+        else:
+          permission_user.prosecutor = False
+          
+        if permissions_role.roles['lawyer']:
+          permission_user.lawyer = True
+        else:
+          permission_user.lawyer = False
+          
+        if permissions_role.roles['news_creation']:
+          permission_user.create_news = True
+        else:
+          permission_user.create_news = False
+          
+        if permissions_role.roles['documentation_creation']:
+          permission_user.creation_doc = True
+        else:
+          permission_user.creation_doc = False
+    
     try:
         user.action = 'Demotion'
         user.prev_rank = user.curr_rank
@@ -1841,6 +1922,7 @@ def process_dismissal(user, reason, fraction):
 
   try:
     user.action = 'Dismissal'
+    user.organ = 'Гражданин'
     user.prev_rank = user.curr_rank
     user.curr_rank = 0
 
@@ -1910,15 +1992,27 @@ def audit():
     dismissal = data.get('dismissal')
     fraction = data.get('fraction', current_user.organ)
     
-    rank_data = int(rank_data)
-      
-    print(rank_data)
-    print(type(rank_data))
+    filename = "./python/name-ranks.json"
+    ranks = read_ranks(filename)
+
     
-    if current_user.discordid == discord_id:
+    if fraction not in ranks:
+      return jsonify({"success": False, "message": "Неверная фракция."}), 400
+    
+    rank_id = int(rank_data)
+    fraction_ranks = ranks[fraction]
+    
+    if not any(rank['id'] == rank_id for rank in fraction_ranks):
+      return jsonify({"success": False, "message": "Указанный ранг не существует в данной фракции."}), 400
+    
+    leader_rank = next((rank for rank in fraction_ranks if rank.get("leader")), None)
+    if (leader_rank and rank_id == leader_rank["id"]) and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
+      return jsonify({"success": False, "message": f"Ошибка: выбранный ранг с ID {rank_id} является рангом лидера {leader_rank['name']}."}), 400
+    
+    if current_user.discordid == discord_id and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
       return jsonify({"success": False, "message": "Вы не можете выбрать себя."}), 400
 
-    if current_user.curr_rank > rank_data and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
+    if current_user.curr_rank > int(rank_data) and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
       return jsonify({"success": False, "message": "Ваш текущий ранг выше выбранного. Вы не можете выбрать этот ранг."}), 400
       
     try:    
@@ -1968,9 +2062,8 @@ def audit():
   color = color_organ(organ)
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
-  updated_ranks = ranks.get("updated_ranks", {})
 
-  return render_template('ka.html', organ=organ, color=color, ranks=updated_ranks)
+  return render_template('ka.html', organ=organ, color=color, ranks=ranks)
 
 @main.route('/logout', methods=['GET', 'POST'])
 @login_required
@@ -1995,9 +2088,9 @@ def switch_account(user_id):
         "success": True,
         "message": f"Вы переключились на аккаунт {new_user.nikname}.",
         "new_user": {
-            "id": new_user.id,
-            "nikname": new_user.nikname,
-            "discordid": new_user.discordid
+          "id": new_user.id,
+          "nikname": new_user.nikname,
+          "discordid": new_user.discordid
         }
       }), 200
     else:
@@ -2019,8 +2112,7 @@ def profile():
 
     filename = "./python/name-ranks.json"
     ranks = read_ranks(filename)
-    updated_ranks = ranks.get("updated_ranks", {})
-    rank_name = get_rank_info(updated_ranks, organ, rank)
+    rank_name = get_rank_info(ranks , organ, rank)
     curr_users = Users.query.filter(
             Users.discordid == current_user.discordid,
             Users.id != current_user.id
@@ -2099,15 +2191,14 @@ def database():
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
   rank_name = get_rank_info(ranks, organ, rank)
-  updated_ranks = ranks.get("updated_ranks", {})
-  
+
   roles_permission = permissionRoles.query.all()
   
   groups = {}
-  for group_name, rank_items in updated_ranks.items():
+  for group_name, rank_items in ranks.items():
     groups[group_name] = rank_items
 
-  return render_template('database.html', roles_permission=roles_permission, rank_name=rank_name, color=color, current_user=current_user, Users=users, ranks=updated_ranks, groups=groups, more_info=False)
+  return render_template('database.html', roles_permission=roles_permission, rank_name=rank_name, color=color, current_user=current_user, Users=users, ranks=ranks, groups=groups, more_info=False)
 
 DATA_FILE = "./python/name-ranks.json"
 def write_data(data):
@@ -2166,63 +2257,82 @@ def save_roles():
     print(f"Ошибка при сохранении ролей: {e}")
     return jsonify({"success": False, "message": f"Ошибка при сохранении ролей"}), 500
     
+    
 @main.route('/save_ranks', methods=['POST'])
 def save_ranks():
-    new_data = request.json
-    ranks_to_delete = new_data.get("ranks_to_delete", [])
-    ranks_to_add = new_data.get("ranks_to_add", [])
-    
-    with open(DATA_FILE, 'r') as file:
-        current_data = json.load(file)
+  from __init__ import db, Users
+  
+  if not (current_user.permissions[0].lider or current_user.permissions[0].admin or current_user.permissions[0].tech):
+      return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия."}), 403
+  
+  data = request.get_json()
+  if current_user.permissions[0].lider and current_user.organ != data['fraction'] and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
+      return jsonify({"success": False, "message": "Вы не можете изменять данные другой организации!"}), 403
+  
+  fraction = data.get('fraction')
+  added = data.get('added', [])
+  updated = data.get('updated', [])
+  deleted = data.get('deleted', [])
+  
+  if not fraction or not isinstance(added, list) or not isinstance(updated, list) or not isinstance(deleted, list):
+      return jsonify({"success": False, "message": "Отсутствуют необходимые данные для сохранения."}), 400
+  
+  filename = "./python/name-ranks.json"    
+  updated_ranks = write_ranks(filename)
 
-    write_data(new_data)
-    if ranks_to_delete:
-        for rank in ranks_to_delete:
-            organ = rank.get("organ")
-            rank_id = rank.get("id")
-            if organ and rank_id:
-                delete_rank_and_adjust_users(organ, rank_id, current_data)
+  try:
+    for rank_data in added:          
+      if any(rank['id'] == int(rank_data['id']) and rank['name'] == rank_data['name'] for rank in updated_ranks[fraction]):
+        continue
+      
+      new_rank = {
+        'id': int(rank_data['id']),
+        'name': rank_data['name'],
+        'leader': False
+      }
+      updated_ranks[fraction].append(new_rank)
+      
+      maxId = len(updated_ranks[fraction]) + 1
+      for rank in updated_ranks[fraction]:
+        rank['id'] = maxId - 1
+        maxId = rank['id']
+        
+        users = Users.query.filter(Users.organ == fraction, Users.curr_rank == int(rank['id'])).all() 
+        for user in users:
+          user.curr_rank += 1
 
-    if ranks_to_add:
-        for rank in ranks_to_add:
-            organ = rank.get("organ")
-            rank_id = rank.get("id")
-            if organ and rank_id:
-                add_rank_and_adjust_users(organ, rank_id, current_data)
+    for rank_data in updated:
+      for rank in updated_ranks[fraction]:
+        if rank['id'] == int(rank_data['id']) and rank['name'] != rank_data['name']:
+          rank_id = next((rank["id"] for rank in updated_ranks[fraction] if rank["name"] == rank_data['name']), None)
+          print(rank_id)
+          print(rank_data['id'])
+          rank['name'] = rank_data['name']
+          
+          if rank_id != None and rank_id != int(rank_data['id']):
+            users = Users.query.filter(Users.organ == fraction, Users.curr_rank == int(rank_id)).all()
+            for user in users:
+              user.curr_rank = int(rank_data['id']) 
+          
+    updated_ranks[fraction] = sorted(updated_ranks[fraction], key=lambda x: int(x['id']), reverse=True)
+          
+    for rank_data in deleted:         
+      updated_ranks[fraction] = [rank for rank in updated_ranks[fraction] if not (int(rank['id']) == int(rank_data['id']) and rank['name'] == rank_data['name'])]
 
-    return jsonify({"status": "success"})
-
-def add_rank_and_adjust_users(organ, rank_id, current_data):
-    from __init__ import Users, db
-    if organ in current_data:
-        current_data[organ] = [rank for rank in current_data[organ] if rank['id'] != rank_id]
-
-    users_with_removed_rank = Users.query.filter_by(curr_rank=rank_id).all()
-    for user in users_with_removed_rank:
-        if rank_id > 1:
-            user.curr_rank += 1
-
-    higher_rank_users = Users.query.filter(Users.curr_rank > rank_id).all()
-    for user in higher_rank_users:
-        user.curr_rank += 1
+      maxId = len(updated_ranks[fraction]) + 1
+      for rank in updated_ranks[fraction]:
+        rank['id'] = maxId - 1
+        maxId = rank['id']
 
     db.session.commit()
-    
-def delete_rank_and_adjust_users(organ, rank_id, current_data):
-    from __init__ import Users, db
-    if organ in current_data:
-        current_data[organ] = [rank for rank in current_data[organ] if rank['id'] != rank_id]
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(updated_ranks, f, ensure_ascii=False, indent=4)
+    return jsonify({"success": True, "message": "Данные успешно сохранены."}), 200
 
-    users_with_removed_rank = Users.query.filter_by(curr_rank=rank_id).all()
-    for user in users_with_removed_rank:
-        if rank_id > 1: 
-            user.curr_rank -= 1
-
-    higher_rank_users = Users.query.filter(Users.curr_rank > rank_id).all()
-    for user in higher_rank_users:
-        user.curr_rank -= 1
-
-    db.session.commit()
+  except Exception as e:
+    db.session.rollback()
+    print(f"Ошибка при сохранении рангов: {e}")
+    return jsonify({"success": False, "message": "Ошибка при сохранении рангов"}), 500
 
 
 @main.route('/database_change', methods=['POST'])
@@ -2246,22 +2356,28 @@ def database_change():
   creation_doc = data.get('creation_doc')
   create_news = data.get('create_news')
   lawer = data.get('lawyer')
-  discordname = data.get('discordname')
+  judge = data.get('judge')
   discordid = data.get('discordid')
   
   try:
     if perm_level >= 1:
       user.permissions[0].prosecutor = True if prosecutor == 'on' else False
       user.permissions[0].lawyer = True if lawer == 'on' else False
-      user.permissions[0].judge = True if lawer == 'on' else False 
+      user.permissions[0].judge = True if judge == 'on' else False 
       
     if perm_level >= 2:
       user.permissions[0].high_staff = True if high_staff == 'on' else False
       
     if perm_level >= 3:
       user.permissions[0].create_news = True if create_news == 'on' else False
+      user.permissions[0].creation_doc = True if creation_doc == 'on' else False
       user.permissions[0].dep_lider = True if dep_lider == 'on' else False
-      user.discordname = discordname
+      
+      dsname = send_to_bot_get_dsname(discordid)
+      if dsname == 'Не определен':
+        return jsonify({"success": False, "message": "Вы ввели недействительный Discord ID"}), 400
+      
+      user.discordname = dsname
       user.discordid = discordid
       
     if perm_level >= 4:

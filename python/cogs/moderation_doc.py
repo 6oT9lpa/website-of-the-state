@@ -1,9 +1,6 @@
 import disnake, json, redis, asyncio, traceback
 from disnake.ext import commands, tasks
-from disnake import ButtonStyle, Intents
-from datetime import datetime
-from disnake.ui import View, Button
-import os, time, sys
+import os, time
 
 class ModerationDoc(commands.Cog):
     def __init__(self, bot):

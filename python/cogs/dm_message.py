@@ -1,9 +1,7 @@
 import disnake, json, redis, asyncio, traceback
-from disnake.ext import commands, tasks
-from disnake import ButtonStyle, Intents
-from datetime import datetime
+from disnake.ext import commands
+from disnake import ButtonStyle
 from disnake.ui import View, Button
-import os, time, sys
 
 class SendDmMessage(commands.Cog):
     def __init__(self, bot):

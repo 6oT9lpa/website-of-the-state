@@ -9,9 +9,6 @@ if __name__ == "__main__":
     try:
         bot_process = Process(target=start_bot)
         bot_process.start()
-
-        print("Процесс run_bot запущен.")
-
         app.run(host='26.120.213.68', port=8000)
 
     except Exception as e:

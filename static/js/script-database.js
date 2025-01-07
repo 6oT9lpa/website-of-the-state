@@ -1,7 +1,8 @@
+
 document.querySelectorAll('.rank-list')?.forEach(rankList => {
     new Sortable(rankList, {
         animation: 150,
-        draggable: '.rank-item:not([data-leader="true"])', 
+        draggable: '.rank-item:not([data-leader="true"])',
 
         onStart(evt) {
             const leaderItem = evt.from.querySelector('[data-leader="true"]');
@@ -22,161 +23,174 @@ document.querySelectorAll('.rank-list')?.forEach(rankList => {
     });
 });
 
-    function updateRankIds(list) {
+function updateRankIds(list) {
     let index = list.querySelectorAll('.rank-item').length; 
     list.querySelectorAll('.rank-item').forEach(item => {
-        const newId = index--; 
+        const newId = index--;
+        item.setAttribute('data-id', newId); 
+        
         const rankIdInput = item.querySelector('.rank-id');
+        rankIdInput.value = newId;
+        rankIdInput.setAttribute('value', newId);
+    });
+}
 
-        if (rankIdInput) {
-            rankIdInput.value = newId;
-        }
-
-        if (item.getAttribute('data-recon') === 'true') {
-            item.setAttribute('data-id', newId);
-
-            if (rankIdInput) {
-                rankIdInput.value = newId;
-            }
+// Фильтрация рангов по фракции
+function filterRanksByFraction(fraction) {
+    document.querySelectorAll('.fraction-group').forEach(group => {
+        if (!fraction || group.dataset.fraction === fraction) {
+            group.style.display = '';
+        } else {
+            group.style.display = 'none';
         }
     });
 }
 
-    function filterRanksByFraction(fraction) {
-        document.querySelectorAll('.fraction-group').forEach(group => {
-            if (!fraction || group.dataset.fraction === fraction) {
-                group.style.display = '';
-            } else {
-                group.style.display = 'none';
+// Функция для добавления нового ранга
+function addRank(fraction) {
+    const rankList = document.getElementById(`${fraction}-list`);
+    const newId = generateNewId(rankList);
+
+    const newItem = document.createElement('li');
+    newItem.className = 'rank-item';
+    newItem.setAttribute('data-id', newId);
+    newItem.setAttribute('data-leader', 'false');
+    newItem.setAttribute('data-recon', 'true');
+    newItem.innerHTML = `
+        <input type="text" class="rank-id" value="${newId}" readonly>
+        <input type="text" class="rank-name" value="Новый ранг">
+        <button class="delete-rank">Удалить</button>
+    `;
+
+    rankList.appendChild(newItem);
+
+    updateRankIds(rankList);
+    updateLeaderIds(fraction);
+}
+
+function generateNewId(rankList) {
+    let minId = 30;
+    rankList.querySelectorAll('.rank-item').forEach(item => {
+        item.querySelectorAll('.rank-id').forEach(element => {
+            if(parseInt(element.value) < minId) {
+                minId = parseInt(element.value);
             }
-        });
+        })
+    });
+    return minId;
+}
+
+function generateMaxId(rankList) {
+    let maxId = 0;
+    rankList.querySelectorAll('.rank-item').forEach(item => {
+        item.querySelectorAll('.rank-id').forEach(element => {
+            if(parseInt(element.value) > maxId) {
+                maxId = parseInt(element.value);
+            }
+        })
+    });
+    return maxId + 1;
+}
+
+document.body.addEventListener('click', function (e) {
+    if (e.target && e.target.classList.contains('delete-rank')) {
+
+        const rankItem = e.target.closest('.rank-item');
+        const fraction = rankItem.closest('.fraction-group').dataset.fraction;
+        const rankId = rankItem.getAttribute('data-id');
+        rankName = rankItem.querySelector('.rank-name').value;
+        
+        deleteRank(fraction, rankId, rankName);
     }
+});
 
-    let ranksToAdd = [];
-
-    function addRank(fraction) {
-        const rankList = document.getElementById(`${fraction}-list`);
-        const newId = generateNewId(rankList);
-
-        const newItem = document.createElement('li');
-        newItem.className = 'rank-item';
-        newItem.setAttribute('data-id', newId);
-        newItem.setAttribute('data-leader', 'false');
-        newItem.setAttribute('data-recon', 'true');
-        newItem.innerHTML = `
-            <input type="text" class="rank-id" value="${newId}" readonly>
-            <input type="text" class="rank-name" value="Новый ранг">
-            <button class="delete-rank" onclick="deleteRank('${fraction}', ${newId})">Удалить</button>
-        `;
-
-        rankList.appendChild(newItem);
-
-
-        console.log('Новый ранг добавлен:', ranksToAdd);
-
-        updateRankIds(rankList);
-    }
-
-    function generateNewId(rankList) {
-        let maxId = 0;
-        rankList.querySelectorAll('.rank-item').forEach(item => {
-            const id = parseInt(item.querySelector('.rank-id').value, 10);
-            if (id > maxId) maxId = id;
-        });
-        return maxId + 1;
-    }
-
-    let ranksToDelete = [];
-
-    function deleteRank(fraction, id) {
+let ranksToDelete = [];  
+function deleteRank(fraction, id, name) {
     const rankItem = document.querySelector(`[data-fraction="${fraction}"] [data-id="${id}"]`);
     if (rankItem) {
-        if (rankItem.getAttribute('data-recon') === 'true') {
-
-        } else {
-            ranksToDelete.push({
-                organ: fraction,
-                id: id
-            });
-        }
+        ranksToDelete.push({
+            fraction: fraction,
+            id: id,
+            name: name
+        });
 
         rankItem.remove();
         updateRankIds(document.getElementById(`${fraction}-list`));
+        updateLeaderIds(fraction);
+    }
+}
+
+function updateLeaderIds(fraction) {
+    const leaderItem = document.querySelector(`.leader-${fraction}`);
+    if (leaderItem) {
+        const maxLeaderId = generateMaxId(document.getElementById(`${fraction}-list`));
+        leaderItem.setAttribute('data-id', maxLeaderId);
+        leaderItem.querySelector('.rank-id').value = maxLeaderId;
     }
 }
 
 function saveRanks() {
-    const updatedRanks = {};
+    const addedRanks = [];
+    const updatedRanks = [];
+    const deletedRanks = ranksToDelete;
+    const fraction = document.getElementById('fraction-ranks').value;
+    console.log(fraction);
+    const rankList = document.getElementById(`${fraction}-list`);
 
-    document.querySelectorAll('.fraction-group').forEach(group => {
-        const fraction = group.dataset.fraction;
-        const ranks = [];
-        group.querySelectorAll('.rank-item').forEach(item => {
-            const leaderSpan = item.querySelector('.leader-label');
-            const isLeader = leaderSpan !== null;
+    document.querySelector(`.fraction-ranks[data-fraction="${fraction}"]`).querySelectorAll('.rank-item').forEach(item => {
+        const rankId = item.getAttribute('data-id');
+        const rankName = item.querySelector('.rank-name').value;
+        const isLeader = item.getAttribute('data-leader') === 'true';
 
-            ranks.push({
-                id: parseInt(item.querySelector('.rank-id').value),
-                name: item.querySelector('.rank-name').value,
-                leader: isLeader
+        if (item.getAttribute('data-recon') === 'true') {
+            addedRanks.push({
+                id: rankId,
+                name: rankName,
+                leader: isLeader,
+                fraction: rankList.id.replace('-list', '')
             });
-        });
-        updatedRanks[fraction] = ranks;
+        } else {
+            updatedRanks.push({
+                id: rankId,
+                name: rankName,
+                leader: isLeader,
+                fraction: rankList.id.replace('-list', '')
+            });
+        }
     });
 
-    const reconElements = document.querySelectorAll('[data-recon="true"]');
-    reconElements.forEach(element => {
-        rankidadd = element.querySelector('.rank-id').value;
-        ranknameadd = element.querySelector('.rank-name').value;
-        element.setAttribute('data-recon', 'false');
-
-        const deleteButton = element.querySelector('.delete-rank'); 
-        const onclickAttr = deleteButton.getAttribute('onclick'); 
-        const fractionMatch = onclickAttr.match(/deleteRank\('([^']+)'/); 
-        const fraction = fractionMatch ? fractionMatch[1] : null;
-
-        ranksToAdd.push({
-        organ: fraction,
-        id: rankidadd,
-        name: ranknameadd,
-        leader: false
-    });
-    });
-
-    const dataToSend = {
-        updated_ranks: updatedRanks,
-        ranks_to_delete: ranksToDelete,
-        ranks_to_add: ranksToAdd
+    const payload = {
+        fraction: fraction,
+        added: addedRanks,
+        updated: updatedRanks,
+        deleted: deletedRanks
     };
-
-    console.log('Saving ranks:', dataToSend);
-
-    ranksToDelete = [];
-    ranksToAdd = [];
 
     fetch('/save_ranks', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(dataToSend)
-    }).then(response => {
-        if (response.ok) {
-            alert('Изменения сохранены!');
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+
+            console.log(addedRanks);
+            console.log(updatedRanks);
+            console.log(deletedRanks);
         } else {
-            alert('Ошибка при сохранении.');
+            showNotification(data.message, true);
         }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
     });
 }
-    
-    document.querySelectorAll('.rank-list').forEach(rankList => {
-        new Sortable(rankList, {
-            animation: 150,
-            onEnd: function (evt) {
-                console.log('Rank reordered:', evt);
-            }
-        });
-    });
+
 
     document.querySelectorAll('.user-row').forEach(row => {
         row.addEventListener('dblclick', function() {

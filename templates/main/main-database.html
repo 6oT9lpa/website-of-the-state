@@ -284,7 +284,7 @@
         <!-- Вкладка управления рангами -->
         <div id="ranks" class="tab-content" style="display:none;">
             <label for="fraction">Фракция</label>
-            <select name="fraction" id="fraction" onchange="filterRanksByFraction(this.value)">
+            <select name="fraction" id="fraction-ranks" onchange="filterRanksByFraction(this.value)">
                 <option value="LSPD">Los-Santos Police Department</option>
                 <option value="LSCSD">Los-Santos Country Sheriff Department</option>
                 <option value="FIB">Federal Investigation Bureau</option>
@@ -296,30 +296,29 @@
         
             <div id="ranks-container" style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
                 {% for fraction, rank_list in groups.items() %}
-                <div class="fraction-group" data-fraction="{{ fraction }}">
+                <div class="fraction-group fraction-ranks" data-fraction="{{ fraction }}">
                     <h3>{{ fraction }}</h3>
-
+        
+                    <!-- Лидерский ранг -->
+                    {% for rank in rank_list %}
+                    {% if rank.leader %}
+                    <li class="rank-item leader-{{ fraction }} leader" data-id="{{ rank.id }}" data-leader="true" readonly>
+                        <input type="text" class="rank-id" id='rank-id-lider' value="{{ rank.id }}" readonly>
+                        <input type="text" class="rank-name" value="{{ rank.name }}" readonly>
+                        <span class="leader-label">Лидер</span>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
                     <ul id="{{ fraction }}-list" class="rank-list">
-                        <!-- Лидерский ранг -->
-                        {% for rank in rank_list %}
-                            {% if rank.leader %}
-                            <li class="rank-item leader" data-id="{{ rank.id }}" data-leader="true">
-                                <input type="text" class="rank-id" id='rank-id-lider' value="{{ rank.id }}" readonly>
-                                <input type="text" class="rank-name" value="{{ rank.name }}" readonly>
-                                <span class="leader-label">Лидер</span>
-                            </li>
-                            {% endif %}
-                        {% endfor %}
-                        
                         <!-- Обычные ранги -->
                         {% for rank in rank_list %}
-                            {% if not rank.leader %}
-                            <li class="rank-item" data-id="{{ rank.id }}" data-leader="false">
-                                <input type="text" class="rank-id" value="{{ rank.id }}" readonly>
-                                <input type="text" class="rank-name" value="{{ rank.name }}"/>
-                                <button class="delete-rank" onclick="deleteRank('{{ fraction }}', {{ rank.id }})">Удалить</button>
-                            </li>
-                            {% endif %}
+                        {% if not rank.leader %}
+                        <li class="rank-item" data-id="{{ rank.id }}" data-leader="false">
+                            <input type="text" class="rank-id" value="{{ rank.id }}" >
+                            <input type="text" class="rank-name" value="{{ rank.name }}"/>
+                            <button class="delete-rank">Удалить</button>
+                        </li>
+                        {% endif %}
                         {% endfor %}
                     </ul>
                     <button class="add-rank" onclick="addRank('{{ fraction }}')">Добавить ранг</button>

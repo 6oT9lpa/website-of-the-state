@@ -1,9 +1,7 @@
 import disnake, json, redis, asyncio, traceback
-from disnake.ext import commands, tasks
-from disnake import ButtonStyle, Intents
+from disnake.ext import commands
 from datetime import datetime
-from disnake.ui import View, Button
-import os, time, sys
+
 
 def find_fraction_channel(fraction):
     fraction_channels = {
