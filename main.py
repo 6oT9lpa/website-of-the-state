@@ -2281,9 +2281,10 @@ def save_ranks():
   updated_ranks = write_ranks(filename)
 
   try:
-    for rank_data in added:          
-      if any(rank['id'] == int(rank_data['id']) and rank['name'] == rank_data['name'] for rank in updated_ranks[fraction]):
-        continue
+    for rank_data in added:   
+      for rank in updated_ranks[fraction]:
+        if rank['name'] == rank_data['name']:
+          return jsonify({"success": False, "message": "Ранг с таким именем уже существует."}), 400
       
       new_rank = {
         'id': int(rank_data['id']),
