@@ -2031,6 +2031,9 @@ def audit():
         return jsonify({"success": False, "message": "Вы не можете производить действия над собой."}), 400
 
       user = Users.query.filter_by(static=static).first()
+      if fraction != user.organ:
+        return jsonify({"success": False, "message": "Вы не можете выбрать ранг другой фракции."}), 400
+      
       if not user:
         process_new_invite(static, rank_data, nickname, discord_id, reason, fraction)
         return jsonify({"success": True, "message": f"Вы успешно приняли {user.nikname} #{user.static}"}), 200
