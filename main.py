@@ -2280,51 +2280,43 @@ def save_ranks():
   filename = "./python/name-ranks.json"    
   updated_ranks = write_ranks(filename)
 
-  try:
-    for rank_data in added:   
+  try:  
+    if len(updated) >= 30:
+      return jsonify({"success": False, "message": "Количество рангов не должно превышать 30."}), 400
+    
+    for rank_data in added:
       for rank in updated_ranks[fraction]:
         if rank['name'] == rank_data['name']:
           return jsonify({"success": False, "message": "Ранг с таким именем уже существует."}), 400
-      
-      new_rank = {
-        'id': int(rank_data['id']),
-        'name': rank_data['name'],
-        'leader': False
-      }
-      updated_ranks[fraction].append(new_rank)
-      
-      maxId = len(updated_ranks[fraction]) + 1
-      for rank in updated_ranks[fraction]:
-        rank['id'] = maxId - 1
-        maxId = rank['id']
-        
-        users = Users.query.filter(Users.organ == fraction, Users.curr_rank == int(rank['id'])).all() 
-        for user in users:
-          user.curr_rank += 1
-
+    
     for rank_data in updated:
+      rank_ids = [rank['id'] for rank in updated_ranks[fraction] if rank['name'] == rank_data['name']]
+      if rank_ids:
+        for rank in updated_ranks[fraction]:
+          if rank['id'] in rank_ids and rank['name'] == rank_data['name']:
+            rank['id'] = int(rank_data['id'])
+            
+      else:
+        new_rank = {
+          'id': int(rank_data['id']),
+          'name': rank_data['name'],
+          'leader': False
+        }
+        updated_ranks[fraction].append(new_rank)
+            
+    updated_ranks[fraction] = sorted(updated_ranks[fraction], key=lambda x: x['id'], reverse=True)
+    
+    for rank_data in deleted:
       for rank in updated_ranks[fraction]:
-        if rank['id'] == int(rank_data['id']) and rank['name'] != rank_data['name']:
-          rank_id = next((rank["id"] for rank in updated_ranks[fraction] if rank["name"] == rank_data['name']), None)
-          print(rank_id)
-          print(rank_data['id'])
-          rank['name'] = rank_data['name']
-          
-          if rank_id != None and rank_id != int(rank_data['id']):
-            users = Users.query.filter(Users.organ == fraction, Users.curr_rank == int(rank_id)).all()
-            for user in users:
-              user.curr_rank = int(rank_data['id']) 
-          
-    updated_ranks[fraction] = sorted(updated_ranks[fraction], key=lambda x: int(x['id']), reverse=True)
-          
-    for rank_data in deleted:         
-      updated_ranks[fraction] = [rank for rank in updated_ranks[fraction] if not (int(rank['id']) == int(rank_data['id']) and rank['name'] == rank_data['name'])]
-
-      maxId = len(updated_ranks[fraction]) + 1
+        if rank['id'] == int(rank_data['id']) and rank['name'] == rank_data['name']:
+          updated_ranks[fraction].remove(rank)
+          break
+        
+      maxid = len(updated_ranks[fraction])
       for rank in updated_ranks[fraction]:
-        rank['id'] = maxId - 1
-        maxId = rank['id']
-
+        rank['id'] = maxid
+        maxid -= 1
+              
     db.session.commit()
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(updated_ranks, f, ensure_ascii=False, indent=4)

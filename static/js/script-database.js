@@ -146,17 +146,14 @@ function saveRanks() {
             addedRanks.push({
                 id: rankId,
                 name: rankName,
-                leader: isLeader,
-                fraction: rankList.id.replace('-list', '')
+                leader: isLeader
             });
-        } else {
-            updatedRanks.push({
-                id: rankId,
-                name: rankName,
-                leader: isLeader,
-                fraction: rankList.id.replace('-list', '')
-            });
-        }
+        } 
+
+        updatedRanks.push({
+            id: rankId,
+            name: rankName
+        });
     });
 
     const payload = {
@@ -181,6 +178,7 @@ function saveRanks() {
             console.log(addedRanks);
             console.log(updatedRanks);
             console.log(deletedRanks);
+
         } else {
             showNotification(data.message, true);
         }
