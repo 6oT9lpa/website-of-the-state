@@ -2029,18 +2029,18 @@ def audit():
 
       if static == current_user.static:
         return jsonify({"success": False, "message": "Вы не можете производить действия над собой."}), 400
-
-      user = Users.query.filter_by(static=static).first()
-      if fraction != user.organ:
-        return jsonify({"success": False, "message": "Вы не можете выбрать ранг другой фракции."}), 400
       
+      user = Users.query.filter_by(static=static).first()
       if not user:
         process_new_invite(static, rank_data, nickname, discord_id, reason, fraction)
-        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nikname} #{user.static}"}), 200
+        return jsonify({"success": True, "message": f"Вы успешно приняли игрока."}), 200
 
       elif user and user.action == 'Dismissal' and dismissal != 'dismissal':
         process_invite_action(user, rank_data, reason, fraction)
-        return jsonify({"success": True, "message": f"Вы успешно приняли {user.nikname} #{user.static}"}), 200
+        return jsonify({"success": True, "message": f"Вы успешно приняли игрока."}), 200
+    
+      if fraction != user.organ and user:
+        return jsonify({"success": False, "message": "Вы не можете выбрать ранг другой фракции."}), 400
 
       elif user and dismissal == 'dismissal':
         process_dismissal(user, reason, fraction)
