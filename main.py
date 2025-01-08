@@ -2101,13 +2101,14 @@ def switch_account(user_id):
 @check_user_action
 @login_required
 def profile():
-  from __init__ import Users, guestUsers
+  from __init__ import Users, guestUsers, ActionUsers
   is_guest = current_user.user_type == 'guest'
   if not is_guest:
     organ = current_user.organ
     rank = current_user.curr_rank
     color = color_organ(organ)
-
+    
+    ka_log = ActionUsers.query.filter_by(static=current_user.static).all()
     filename = "./python/name-ranks.json"
     ranks = read_ranks(filename)
     rank_name = get_rank_info(ranks , organ, rank)
@@ -2116,7 +2117,7 @@ def profile():
             Users.id != current_user.id
         ).all()
     
-    return render_template('profile.html', rank_name=rank_name, color=color, current_user=current_user, is_guest=is_guest, curr_users=curr_users)
+    return render_template('profile.html', ka_log=ka_log, rank_name=rank_name, color=color, current_user=current_user, is_guest=is_guest, curr_users=curr_users)
   else:
     return render_template('profile.html', current_user=current_user, is_guest=is_guest, guestUsers=guestUsers)
   

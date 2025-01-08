@@ -23,6 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 450);
     }
 
+    document.querySelector('#open-modal-2').addEventListener('click', () => {
+        showModal(document.querySelector('#modal-2'));
+        document.querySelector('#close-btn-2').addEventListener('click', () => hideModal(document.querySelector('#modal-2')));
+    });
+
     function setupDropdown(dropdown, dropdownBtn, dropdownMenu, hiddenInputId) {
         if (!dropdown || !dropdownBtn || !dropdownMenu) return;
 

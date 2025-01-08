@@ -1,3 +1,21 @@
+html {
+  scroll-behavior: smooth;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;  
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(255, 96, 96, 0); 
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(0, 0, 0); 
+  border: 2px solid #e81c5a; 
+  border-radius: 3px; 
+}
+
 main{
   display: flex;
   justify-content: center;
@@ -315,3 +333,147 @@ main{
   flex-direction: column;
 }
 .button-back { display: none;}
+
+.ka-history {
+  flex-direction: column;
+  margin-top: 20px;
+  width: 80%;
+  max-height: 400px;
+  overflow-y: auto;
+  background: #1f1e1e;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 0 10px 4px #0d0d0d;
+  position: absolute;
+  top: 5rem;
+  right: 0;
+}
+
+.history-item {
+  background: #2c2a2a;
+  margin-bottom: 15px;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.history-item p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.ka-history {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  width: 50%;
+  max-height: 50%;
+  background-color: #1a1a1a;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: rgba(0, 0, 0, 0.7) 0 4px 20px;
+  overflow-y: auto;
+  color: #f0f8ff;
+  z-index: 9999;
+}
+
+.ka-history-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #f0f8ff;
+}
+
+.ka-log {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.ka-item {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: rgba(0, 0, 0, 0.3) 0 4px 10px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.ka-item:hover {
+  transform: translateX(10px);
+}
+
+.ka-timespan {
+  font-size: 12px;
+  font-style: italic;
+  color: #b0b0b0;
+}
+
+input[type="text"]:disabled {
+  background-color: #555;
+  border: 2px solid #777;
+}
+
+.close-btn {
+  font-size: 30px;
+  color: #4a4949;
+  align-self: flex-end;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  text-decoration: none;
+  font-size: 25px;
+  font-weight: 600;
+}
+
+.close-btn:hover {
+  color: #8c8c8c;
+}
+
+.ka-item p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.ka-item p strong {
+  color: #bc2e59;
+}
+
+.hidden-modal {
+  opacity: 0;
+  transform: scale(0.7);
+  transition: all 0.5s ease-in-out;
+}
+
+.show-modal {
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.5s ease-in-out;
+}
+
+.toggle-ka-history-btn {
+  width: 250px;
+  background-color: #e81c5a;
+  color: #f0f8ff;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 10px 0;
+  transition: all 0.5s ease-in-out;
+}
+
+.toggle-ka-history-btn:hover {
+  background-color: #8a1136;
+  color: #8a8b8b;
+}
+
+a.toggle-ka-history-btn {
+  text-align: center;
+  text-decoration: none;
+  color: #f0f8ff;
+  font-size: 14px;
+  font-weight: 600;
+}
+.container-btn {
+  display: flex;
+  justify-content: center;
+}

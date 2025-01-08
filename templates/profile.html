@@ -34,6 +34,25 @@
         {% endfor %}
     </div>
 
+    <div id="modal-2" class="ka-history hidden-modal" style='display: none; transform: translateX(-50%);'>
+        <div class='header-modal'>
+            <h2 class="ka-history-title">История КА</h2>
+            <span class="btn-modal-close" id="close-btn-2">&times;</span>
+        </div>
+        <div class="ka-log">
+            {% for log in ka_log %}
+                <div class="ka-item">
+                    <p class="ka-timespan">{{ log.timespan }}</p>
+                    <p><strong>Имя:</strong> {{ log.nikname }} | <strong>Discord:</strong> {{ log.discordname }}</p>
+                    <p><strong>Static:</strong> {{ log.static }} | <strong>Discord ID:</strong> {{ log.discordid }}</p>
+                    <p><strong>Ранг до:</strong> {{ log.prev_rank }} | <strong>Ранг после:</strong> {{ log.curr_rank }}</p>
+                    <p><strong>Действие:</strong> {{ log.action }}</p>
+                    <p><strong>КА написал:</strong> {{ log.user.nikname }} | {{ log.user.static }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
     <div class="overlay" id='overlay'></div>
     <script src="{{ url_for('static', filename='js/script-profile.js') }}"></script>
 </body>
