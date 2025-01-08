@@ -36,8 +36,7 @@ class ManagerAuditMessage(commands.Cog):
     async def handle_action(self, action, static_to, discord_id_from, discord_id_to, curr_rank, prev_rank, nikname_from, nikname_to, reason, fraction):
         channel = self.bot.get_channel(find_fraction_channel(fraction))
         filename = "./python/name-ranks.json"
-        ranks = read_ranks(filename)
-        updated_ranks = ranks.get("updated_ranks", {})
+        updated_ranks = read_ranks(filename)
         curr_rank_name = get_rank_info(updated_ranks, fraction, curr_rank)
         prev_rank_name = get_rank_info(updated_ranks, fraction, prev_rank)
         

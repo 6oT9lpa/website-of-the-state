@@ -1995,7 +1995,6 @@ def audit():
     filename = "./python/name-ranks.json"
     ranks = read_ranks(filename)
 
-    
     if fraction not in ranks:
       return jsonify({"success": False, "message": "Неверная фракция."}), 400
     
@@ -2062,7 +2061,6 @@ def audit():
   color = color_organ(organ)
   filename = "./python/name-ranks.json"
   ranks = read_ranks(filename)
-
   return render_template('ka.html', organ=organ, color=color, ranks=ranks)
 
 @main.route('/logout', methods=['GET', 'POST'])
@@ -2279,6 +2277,7 @@ def save_ranks():
   
   filename = "./python/name-ranks.json"    
   updated_ranks = write_ranks(filename)
+  old_ranks = read_ranks(filename)
 
   try:  
     if len(updated) >= 30:
@@ -2289,13 +2288,14 @@ def save_ranks():
         if rank['name'] == rank_data['name']:
           return jsonify({"success": False, "message": "Ранг с таким именем уже существует."}), 400
     
+    updated_ranks[fraction] = sorted(updated_ranks[fraction], key=lambda x: x['id'], reverse=False)
+    
     for rank_data in updated:
       rank_ids = [rank['id'] for rank in updated_ranks[fraction] if rank['name'] == rank_data['name']]
       if rank_ids:
         for rank in updated_ranks[fraction]:
           if rank['id'] in rank_ids and rank['name'] == rank_data['name']:
-            rank['id'] = int(rank_data['id'])
-            
+            rank['id'] = int(rank_data['id']) 
       else:
         new_rank = {
           'id': int(rank_data['id']),
@@ -2303,9 +2303,9 @@ def save_ranks():
           'leader': False
         }
         updated_ranks[fraction].append(new_rank)
-            
+        
     updated_ranks[fraction] = sorted(updated_ranks[fraction], key=lambda x: x['id'], reverse=True)
-    
+
     for rank_data in deleted:
       for rank in updated_ranks[fraction]:
         if rank['id'] == int(rank_data['id']) and rank['name'] == rank_data['name']:
@@ -2316,6 +2316,20 @@ def save_ranks():
       for rank in updated_ranks[fraction]:
         rank['id'] = maxid
         maxid -= 1
+    
+    for rank in updated_ranks[fraction]:
+      for old_rank in old_ranks[fraction]:
+        if old_rank['id'] != rank['id'] and old_rank['name'] == rank['name']:
+          users = Users.query.filter(Users.organ == fraction, Users.curr_rank == old_rank['id']).all()
+          if users:
+            for u in users:
+              u.curr_rank = rank['id']
+        
+        elif old_rank['id'] == rank['id'] and old_rank['name'] != rank['name']:
+          users = Users.query.filter(Users.organ == fraction, Users.curr_rank == rank['id']).all()
+          if users:
+            for u in users:
+              u.curr_rank = old_rank['id']
               
     db.session.commit()
     with open(filename, 'w', encoding='utf-8') as f:
