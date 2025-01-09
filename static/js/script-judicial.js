@@ -156,7 +156,7 @@ districtButton.addEventListener('click', function(event) {
 });
 
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {    
     let claimCounter = 1;
 
     document.addEventListener('click', (e) => {
@@ -380,4 +380,90 @@ function hideModal() {
         }, 450);
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const message = sessionStorage.getItem('notification');
+    const isError = sessionStorage.getItem('isError') === 'true';
+
+    if (message) {
+        showNotification(message, isError);
+        sessionStorage.removeItem('notification');
+        sessionStorage.removeItem('isError');
+    }
+});
+
+function FetchClick(e) {
+    e.preventDefault();
+
+    const form = e.target.closest('form');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    const defenda = formData.getAll('defenda'); 
+    const claims = formData.getAll('claims');
+
+    defenda.forEach(d => { 
+        if (d == '') {
+            showNotification('Поле "ответчик" не может быть пустым.', true);
+        }
+
+        const pattern = /^[A-Z][a-z]+ [A-Z][a-z]+ \d{1,7}$/;
+        if (!pattern.test(d)) {
+            showNotification('Введите данные в формате "Nick Name static"');
+        }
+    });
+
+    claims.forEach(claim => {
+        if (claim == '') {
+            showNotification('Поле "исковые требования" не может быть пустым.', true);
+        }
+    });
+
+    const validType = ['criminal_case', 'common_complaint'];
+    if (isProsecutor) {
+        if (!validType.includes(data.action)) {
+            showNotification('Выберите действие', true);
+            return;
+        }
+    }
+
+    if (!data['phone-plaintiff'] || !data['phone-plaintiff'].trim()) {
+        showNotification('Поле "номер телефона" не может быть пустым.', true);
+    }
+
+    if (!data['card'] || !data['card'].trim()) {
+        showNotification('Поле "номер карта" не может быть пустым.', true);
+    }
+
+    if (!data['description'] || !data['description'].trim()) {
+        showNotification('Поле "ситуации" не может быть пустым.', true);
+    }
+
+    const payload = {
+        ...data, 
+        defenda: defenda, 
+        claims: claims
+    };
+
+    fetch('/create-claim-state', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)  // Сериализация данных в JSON строку
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            sessionStorage.setItem('notification', data.message);
+            sessionStorage.setItem('isError', 'false');
+            window.location.reload();
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        showNotification('Произошла ошибка. Пожалуйста, попробуйте снова.', true);
+    });
+};
 

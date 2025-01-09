@@ -748,3 +748,4 @@ function resetCustomForm() {
     }
     inputCount = 0;
 }
+

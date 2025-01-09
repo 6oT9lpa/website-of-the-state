@@ -1,38 +1,54 @@
 
-    <div class="container">
-        <div class="profile-card">
-            <div class="profile-header">
-                <div class="avatar">
-                    <img src="{{ url_for('static', filename='img/ava.png')}}">
-                    <span>edit</span>
-                </div>
-                <div class="profile-info">
-                    <div class="profile-info-row">
-                        <div class="profile-info-label"><p>NIK NAME</p></div>
-                        <div class="profile-info-value"><p>{{ current_user.nikname if not is_guest else current_user.nickname }}</p></div>
-                    </div>
-                    {% if not is_guest %}
-                        <div class="profile-info-row">
-                            <div class="profile-info-label"><p>RANK</p></div>
-                            <div class="profile-info-value"><p>{{ current_user.curr_rank }} | {{ rank_name }}</p></div>
-                        </div>
-                        <div class="profile-info-row">
-                            <div class="profile-info-label"><p>ORGAN</p></div>
-                            <div class="profile-info-value"><p>{{ current_user.organ }}</p></div>
-                        </div>
-                        <div class="profile-info-row">
-                            <div class="profile-info-label"><p>WARNS</p></div>
-                            <div class="profile-info-value"><p><SW>{{ current_user.SW }}/3</SW> <YW>{{ current_user.YW }}/2</YW></p></div>
-                        </div>
-                        <div class='container-btn'>
-                            <a class="toggle-ka-history-btn" id='open-modal-2'>мои кадровые изменения</a>
-                        </div>
-                    {% endif %}
-                </div>
+    <div class="container-profile">
+        <div class='side-profile'>
+            <div class="avatar-container">
+                <img src="{{ url_for('static', filename='uploads/images/' + current_user.url_image) }}" alt="Аватар персонажа" class="avatar-image">
             </div>
         </div>
+        <div class='content-profile'>
+            <h4> Информация о персонаже </h4>
+            <div class='main-profile'>
+                <div class='information-me'>
+                    <label for='nickname'>Ник персонажа</label>
+                    <div class='container-input'>
+                        <input type='text' class='info-input' value='{{ current_user.nikname if current_user.user_type == 'user' else current_user.nickname }}' disabled>
+                    </div>   
+                </div>
+                <div class='information-me'>
+                    <label for='nickname'>Паспорт персонажа</label>
+                    <div class='container-input'>
+                        <input type='text' class='info-input' value='{{ current_user.static }}' disabled>
+                    </div>   
+                </div>
+                {% if current_user.user_type == 'user' %}
+                <div class='information-me'>
+                    <label for='nickname'>Гос. структура</label>
+                    <div class='container-input'>
+                        <input type='text' class='info-input' value='{{ current_user.organ if current_user.user_type == 'user' else '' }}' disabled>
+                    </div>   
+                </div>
+                <div class='information-me'>
+                    <label for='nickname'>Текущий ранг в гос. структуре</label>
+                    <div class='container-input'>
+                        <input type='text' class='info-input' value='{{ current_user.curr_rank if current_user.user_type == 'user' else '' }}  |  {{ rank_name }}' disabled>
+                    </div>   
+                </div>
+                <div class='information-me'>
+                    <label for='nickname'>Текущий выговоры</label>
+                    <div class='container-input'>
+                        <input type='text' class='info-input' value='Строгий: {{ current_user.YW if current_user.user_type == 'user' else '' }}' disabled>
+                        <input type='text' class='info-input' value='Устный: {{ current_user.SW if current_user.user_type == 'user' else '' }}' disabled>
+                    </div>   
+                </div>
+                {% endif %}
+            </div>
+            {% if current_user.user_type == 'user' %}
+            <div class='container-btn'>
+                <a class="toggle-ka-history-btn" id='open-modal-2'>мои кадровые изменения</a>
+            </div>
+            {% endif %}
+        </div>
     </div>
-
     <div class='modal-settings' id='modal-1' style='display:none;'>
         <div class='content-modal'>
             <div class="header-modal">
@@ -113,7 +129,23 @@
                         </div>
                     </div>
                 </form>
-            </form>
+                <form method="POST" id="settings-avatar-form" enctype="multipart/form-data">
+                    <input type="hidden" name="action" id="action-0">
+                    <div class="settings-avatar" style="display:none; flex-direction: column;">
+                        <div class="form-control">
+                            <label class="input-file">
+                                <input type="file" name="avatar" id="avatar" accept="image/*" required>
+                                <span>Выберите аватарку</span>
+                            </label>
+                            <span class="text-danger" id="is-invalid"></span>
+                        </div>
+                        <div class="complaint-btn-container">
+                            <div class="complaint-btn">
+                                <input type="submit" value="Сохранить">
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div> 
         </div> 
     </div>

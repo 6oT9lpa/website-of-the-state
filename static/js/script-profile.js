@@ -65,16 +65,25 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.settings-nickname').style.display = 'flex';
             document.querySelector('.settings-password').style.display = 'none';
             document.querySelector('.settings-discordID').style.display = 'none';
+            document.querySelector('.settings-avatar').style.display = 'none';
 
         }  else if (action === 'password') {
             document.querySelector('.settings-nickname').style.display = 'none';
             document.querySelector('.settings-password').style.display = 'flex';
             document.querySelector('.settings-discordID').style.display = 'none';
+            document.querySelector('.settings-avatar').style.display = 'none';
 
         }   else if (action === 'discord') {
             document.querySelector('.settings-nickname').style.display = 'none';
             document.querySelector('.settings-password').style.display = 'none';
+            document.querySelector('.settings-avatar').style.display = 'none';
             document.querySelector('.settings-discordID').style.display = 'flex';
+
+        }   else if (action === 'avatar') {
+            document.querySelector('.settings-nickname').style.display = 'none';
+            document.querySelector('.settings-password').style.display = 'none';
+            document.querySelector('.settings-discordID').style.display = 'none';
+            document.querySelector('.settings-avatar').style.display = 'flex';
         }
     }
 
@@ -175,6 +184,40 @@ document.getElementById('settings-discordID-form').addEventListener('submit', fu
     });
 });
 
+document.querySelector('.input-file input[type=file]').addEventListener('change', function(e) {
+    let file = e.target.files[0];
+    e.target.nextElementSibling.innerHTML = file.name;
+});
+
+document.getElementById('settings-avatar-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const actionValue = document.getElementById('action-0').value;
+    formData.append('action', actionValue);
+
+    fetch('/profile_settings', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message);
+
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+});
+
 function switchAccount(userId) {
     fetch(`/switch_account/${userId}`, {
         method: 'POST',
@@ -201,7 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (message) {
         showNotification(message, isError);
-
         sessionStorage.removeItem('notification');
         sessionStorage.removeItem('isError');
     }

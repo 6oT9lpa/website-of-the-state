@@ -127,7 +127,6 @@ async def process_ka_messages(manager_audit):
         message = pubsub.get_message()
         if message and message['type'] == 'message':
             try:
-                print(f"Получено сообщение: {message['data']}")
                 data = json.loads(message['data'])
                 action = data['action']
                 discord_id_from = data['discord_id_from']
@@ -145,9 +144,8 @@ async def process_ka_messages(manager_audit):
                 print(f"Ошибка обработки сообщения: {e}")
                 traceback.print_exc()
         await asyncio.sleep(1)    
-       
+        
 def setup(bot):
     manager_audit =  ManagerAuditMessage(bot)
     bot.loop.create_task(process_ka_messages(manager_audit))
     bot.add_cog(ManagerAuditMessage(bot))
-   

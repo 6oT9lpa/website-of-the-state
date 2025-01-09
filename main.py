@@ -20,7 +20,7 @@ from logging import handlers
 import sqlalchemy
 from sqlalchemy import func
 from sqlalchemy.types import JSON
-import base64, random
+import base64, random, uuid, asyncio, time
 from pickle import loads
 
 """
@@ -66,10 +66,10 @@ def is_send_allowed(wait_seconds=30):
     remaining_time = (last_sent_time + timedelta(seconds=wait_seconds)) - datetime.now()
     
     if remaining_time.total_seconds() > 0:
-      # Вычисляем оставшиеся секунды и выводим сообщение
       seconds_left = int(remaining_time.total_seconds())
+      
       flash(f"Пожалуйста, подождите {seconds_left} секунд перед повторной отправкой.")
-      return False
+      return False, seconds_left
 
   # Обновляем временную метку, если отправка разрешена
   session['last_sent_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -248,6 +248,11 @@ def get_rank_info(ranks, organization, rank_level):
       if rank_data['id'] == rank_level:
         return rank_data['name']
   return rank_info
+
+def allowed_file(filename):
+    """Проверяет, допустимо ли расширение файла."""
+    from __init__ import app
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 # подключение redis как обрабочик сообщений
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -574,53 +579,53 @@ def create_claim():
   from __init__ import iskdis, isksup, db, claimsStatement, Users, guestUsers
 
   if not current_user.is_authenticated:
-    flash('Вы не вошли в акаунт!')
-    return redirect(url_for('main.auth'))
+    return jsonify({'success': False, 'message': 'Вы не вошли в акаунт!'}), 401
 
+  data = request.get_json()
+  
   criminal_case = 'common_complaint'
   if current_user.permissions[0].prosecutor:
-    criminal_case = request.form.get('action')
+    criminal_case = data.get('action')
 
   if criminal_case == 'common_complaint':
-    defendants = request.form.getlist('defenda[]')
-    phone_plaintiff = request.form.get('phone-plaintiff')
-    card_plaintiff = request.form.get('card-plaintiff') 
-    claims = request.form.getlist('claims[]')
-    description = request.form.get('description') 
-    court_type = request.form.get('court')
-    
-    lower = request.form.get('lower')
+    defendants = data.get('defenda')
+    phone_plaintiff = data.get('phone-plaintiff')
+    card_plaintiff = data.get('card-plaintiff') 
+    claims = data.get('claims')
+    description = data.get('description') 
+    court_type = data.get('court')
+    lower = data.get('lower')
 
     static = None
     if lower:
       static = lower.split(' ', 2)[2] if len(lower.split()) > 2 else None
   
-      
     if static != None and lower:
       user_lower = Users.query.filter_by(static=static).first()
       guest_lower = guestUsers.query.filter_by(static=static).first()
 
       if not user_lower and not guest_lower:
-        flash('Представитель не является частным или государственным адвокатом')
-        return redirect(url_for('main.doc'))
+        return jsonify({'success': False, 'message': 'Представитель не является частным или государственным адвокатом.'}), 400
 
       if user_lower:
         if not user_lower.permissions or not user_lower.permissions[0].lawyer:
-          flash('Представитель не является адвокатом')
-          return redirect(url_for('main.doc'))
+          return jsonify({'success': False, 'message': 'Представитель не является адвокатом.'}), 400
 
       if guest_lower and not user_lower:
         if not user_lower.permissions or not guest_lower.permissions[0].lawyer:
-          flash('Представитель не является частным адвокатом')
-          return redirect(url_for('main.doc'))
+          return jsonify({'success': False, 'message': 'Представитель не является частным адвокатом.'}), 400
           
     if not all([phone_plaintiff, card_plaintiff, description]):
-      flash('Неверный формат. Поля должны быть заполнены')
-      return redirect(url_for('main.doc'))
+      return jsonify({'success': False, 'message': 'Неверный формат. Поля должны быть заполнены'}), 400
     
     if not defendants or not claims:
-      flash('Неверный формат. Поля должны быть заполнены')
-      return redirect(url_for('main.doc'))
+      return jsonify({'success': False, 'message': 'Неверный формат. Поля должны быть заполнены'}), 400
+    
+    defendants=[item for item in defendants if item]
+    pattern_nick = r'^[A-Z][a-z]+ [A-Z][a-z]+ \d{1,7}$'
+    for defendant in defendants:
+      if not re.match(pattern_nick, defendant):
+        return jsonify({"success": False, "message": "Некорректая имя отвечика. Пример: 'Имя Фамилия Статик'."}), 400
     
     try:
       claim = claimsStatement()
@@ -654,54 +659,36 @@ def create_claim():
         db.session.add(supreme_claim)
 
       db.session.commit()
-      defenda = district_claim.defendant
-      result = []
-      for item in defenda:
-          nickname, static = item.rsplit(' ', 1) 
-          if not static.isdigit():
-            raise ValueError("Номер должен быть числом.")
-
-      if court_type == "district":
-        district_claim = iskdis(
-          current_uid=claim.uid,
-          discription=description,
-          claims=claims, 
-          phone=phone_plaintiff,
-          cardn=card_plaintiff,
-          created=current_user.static,
-          defendant=defendants,
-          lawerc= None if static == None else (user_lower.id if user_lower else guest_lower.id)
-        )
-        db.session.add(district_claim)
-      db.session.commit()
-      defenda = district_claim.defendant
-      result = []
-      for item in defenda:
-          nickname, static = item.rsplit(' ', 1) 
-          if not static.isdigit():
-            raise ValueError("Номер должен быть числом.")
-
-          result.append({'nickname': nickname.strip(), 'static': int(static)})
-      for defenda in result:
-          defendant = Users.query.filter_by(static=defenda['static']).first()
-          if defendant:
-            send_to_bot_notification(f"На вас подано исковое заявление №{district_claim.id}.", defendant.discordid, f"http://26.45.155.104:8000/complaint?uid={district_claim.current_uid}")
-
-      return redirect(url_for('main.doc'))
+      return jsonify({'success': True, 'message': 'Заявление успешно подано!'}), 200
+    
     except Exception as e:
       db.session.rollback()
       print(f'Ошибка {str(e)}')
-      return redirect(url_for('main.doc'))
+      return jsonify({'success': False, 'message': 'Ошибка при обработке заявления.'}), 500
 
   elif criminal_case == 'criminal_case':    
-    defendants = request.form.getlist('defenda')
-    link_case = request.form.get('criminal_case')
-    date_case = request.form.get('date_investigation')
-    court_type = request.form.get('court')
+    defendants = data.get('defenda')
+    link_case = data.get('criminal_case')
+    date_case = data.get('date_investigation')
+    court_type = data.get('court')
+    
+    pattern_link = r"^https:\/\/docs\.google\.com\/document\/.*"
+    if not re.match(pattern_link, link_case):
+      return jsonify({"success": False, "message": "Некорректная ссылка. Ссылка должна начинаться с https://docs.google.com/"}), 400
+    
+    pattern_date = r'^\d{2}\.\d{2}\.\d{4}$'
+    if not re.match(pattern_date, date_case):
+      return jsonify({"success": False, "message": "Некорректаня дата. Пример:'ДД.ММ.ГГГГ'."}), 400
 
+    defendants=[item for item in defendants if item]
+    pattern_nick = r'^[A-Z][a-z]+ [A-Z][a-z]+ \d{1,7}$'
+    for defendant in defendants:
+      print(defendant)
+      if not re.match(pattern_nick, defendant) and defendant != '':
+        return jsonify({"success": False, "message": "Некорректая имя отвечика. Пример: 'Имя Фамилия Статик'."}), 400
+    
     if not all([link_case, date_case]):
-      flash('Неверный формат. Поля должны быть заполнены')
-      return redirect(url_for('main.doc'))
+      return jsonify({'success': False, 'message': 'Неверный формат. Поля должны быть заполнены'}), 400
     
     try:
       claim = claimsStatement()
@@ -713,7 +700,11 @@ def create_claim():
           current_uid=claim.uid,
           created=current_user.static,
           prosecutor=current_user.id,
-          defendant=defendants
+          defendant=defendants,
+          type_criminal=True,
+          link_case=link_case,
+          date_case=date_case,
+          status='CompleteWork'
         )
         db.session.add(district_claim)
       
@@ -722,26 +713,28 @@ def create_claim():
           current_uid=claim.uid,
           created=current_user.static,
           prosecutor=current_user.id,
-          defendant=defendants
+          defendant=defendants,
+          type_criminal=True,
+          link_case=link_case,
+          date_case=date_case,
+          status='CompleteWork'
         )
 
         db.session.add(supreme_claim)
 
       db.session.commit()
-
-      return redirect(url_for('main.doc'))
-
+      return jsonify({'success': True, 'message': 'Заявление успешно подано!'}), 200
+    
     except Exception as e:
       db.session.rollback()
       print(f'Ошибка {str(e)}')
-      return redirect(url_for('main.doc'))
+      return jsonify({'success': False, 'message': 'Ошибка при обработке заявления.'}), 500
     
-    
-  return redirect(url_for('main.doc'))
+  return jsonify({'success': True, 'message': 'Заявление успешно подано!'}), 200
     
 @main.route('/judge_settings', methods=['POST'])
 def judge_settings():
-  from __init__ import iskdis, isksup, repltoisks, Users, guestUsers, claimsStatement, db
+  from __init__ import repltoisks, Users, claimsStatement, db
 
   uid = request.form.get('uid')
   if not uid:
@@ -764,7 +757,8 @@ def judge_settings():
       current_uid=uid,
       author_id=current_user.id,
       replyik=replyik,
-      type_doc='log'
+      type_doc='log',
+      moderation=True
     )
     db.session.add(new_log)
     
@@ -822,7 +816,8 @@ def judge_settings():
         current_uid=uid,
         author_id=current_user.id,
         replyik=replyik,
-        type_doc='log'
+        type_doc='log',
+        moderation=True
       )
       db.session.add(new_log)
 
@@ -901,7 +896,6 @@ def claim_state():
       guestUsers=guestUsers,
       createat=display_date,
       defendant=isk.defendant,
-      claims=isk.claims,
       status=status,
       combined_data=combined_data,
       repltoisk=repltoisk,
@@ -1197,8 +1191,9 @@ def courtPettion():
   if not uid:
     return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 400
   
-  if not is_send_allowed():
-    return jsonify({"success": False, "message": "Попробуйте позже!"}), 400
+  isSend, seconds_left = is_send_allowed()
+  if not isSend:
+    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
   
   action = data.get('action')
   pettion = data.get('petition')
@@ -1348,8 +1343,9 @@ def courtOrder():
     if not uid:
       return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 400
 
-    if not is_send_allowed():
-      return jsonify({"success": False, "message": "Попробуйте позже!"}), 400
+    isSend, seconds_left = is_send_allowed()
+    if not isSend:
+      return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
 
     if current_user.user_type != 'user' and current_user.permissions[0].judge:
       return jsonify({"success": False, "message": "Вы не можете составлять опредение под иско!"}), 403
@@ -1592,20 +1588,28 @@ def send_to_bot_dismissal(discord_id, static, organ):
   }
   redis_client.publish('dismissal_channel', json.dumps(message))
 
+def process_ds_avatarka(discord_id):
+  message = {
+    'discord_id': discord_id
+  }
+  redis_client.publish('ds_avatarka', json.dumps(message))
+
 from flask import jsonify
+
 
 def process_invite_action(user, rank, reason, fraction):
     from __init__ import db, ActionUsers
     """Обрабатывает Инвайт если пользователя есть в БД"""
     password = generate_random_password()
     hash_password = generate_password_hash(password)
-
+    
     try:
         user.password = hash_password
         user.prev_rank = 0
         user.curr_rank = 1
         user.action = 'Invite'
         user.organ = fraction
+        
         db.session.commit()
 
     except SQLAlchemyError as e:
@@ -1614,35 +1618,34 @@ def process_invite_action(user, rank, reason, fraction):
         return jsonify({"success": False, "message": "Произошла ошибка при сохранении данных. Попробуйте снова."}), 500
 
     try:
-        new_action = ActionUsers(
-            discordid = user.discordid,
-            discordname = user.discordname,
-            static = user.static,
-            nikname = user.nikname,
-            action = 'Invite',
-            curr_rank = 1,
-            prev_rank = 0,
-            author_id = current_user.id
-        )
-        db.session.add(new_action)
-        db.session.commit()
+      new_action = ActionUsers(
+        discordid = user.discordid,
+        discordname = user.discordname,
+        static = user.static,
+        nikname = user.nikname,
+        action = 'Invite',
+        curr_rank = 1,
+        prev_rank = 0,
+        author_id = current_user.id
+      )
+      db.session.add(new_action)
+      db.session.commit()
+      
 
     except SQLAlchemyError as e:
-        db.session.rollback()
-        logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
-        return jsonify({"success": False, "message": "Ошибка при сохранении действия пользователя."}), 500
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+      return jsonify({"success": False, "message": "Ошибка при сохранении действия пользователя."}), 500
 
     else:
-        send_to_bot_ka('Invite', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
-        send_to_bot_invite(password, user.discordid, user.static, user.organ)
-        logging.info('Пользователь был успешно добавлен в бд Users.')
-
-        if int(rank) > 1:
-            process_raise(user, rank, reason, fraction)
-            return jsonify({"success": True, "message": "Инвайт отправлен, пользователь был повышен."}), 200
-        
-        return jsonify({"success": True, "message": "Пользователь успешно добавлен!"}), 200
-
+      send_to_bot_ka('Invite', user.static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
+      send_to_bot_invite(password, user.discordid, user.static, user.organ)
+      logging.info('Пользователь был успешно добавлен в бд Users.')      
+      if int(rank) > 1:
+          process_raise(user, rank, reason, fraction)
+          return jsonify({"success": True, "message": "Инвайт отправлен, пользователь был повышен."}), 200
+      
+      return jsonify({"success": True, "message": "Пользователь успешно добавлен!"}), 200
 
 def process_new_invite(static, rank, nickname, discord_id, reason, fraction):
     from __init__ import db, Users, ActionUsers, PermissionUsers, get_next_id_user, get_next_id_permission
@@ -1655,28 +1658,29 @@ def process_new_invite(static, rank, nickname, discord_id, reason, fraction):
     hash_password = generate_password_hash(password)
 
     try:
+      try:
         new_user = Users(
-            id=get_next_id_user(),
-            discordid=discord_id,
-            discordname=discord_name,
-            static=static,
-            nikname=nickname,
-            action='Invite',
-            organ=fraction,
-            prev_rank=0,
-            curr_rank=1,
-            password=hash_password
+          id=get_next_id_user(),
+          discordid=discord_id,
+          discordname=discord_name,
+          static=static,
+          nikname=nickname,
+          action='Invite',
+          organ=fraction,
+          prev_rank=0,
+          curr_rank=1,
+          password=hash_password
         )
         db.session.add(new_user)
         db.session.commit()
 
-    except SQLAlchemyError as e:
+      except SQLAlchemyError as e:
         db.session.rollback()
         logging.error(f"Ошибка сохранения в базе данных (Users): {str(e)}")
         return jsonify({"success": False, "message": "Произошла ошибка при сохранении данных. Попробуйте снова."}), 500
 
-    user = Users.query.filter_by(static=static).first()
-    try:
+      user = Users.query.filter_by(static=static).first()
+      try:
         new_permission = PermissionUsers(
             id=get_next_id_permission(),
             author_id=user.id
@@ -1684,35 +1688,39 @@ def process_new_invite(static, rank, nickname, discord_id, reason, fraction):
         db.session.add(new_permission)
         db.session.commit()
 
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        logging.error(f"Ошибка сохранения в базе данных (PermissionUsers): {str(e)}")
-        return jsonify({"success": False, "message": "Ошибка при сохранении прав пользователя."}), 500
+      except SQLAlchemyError as e:
+          db.session.rollback()
+          logging.error(f"Ошибка сохранения в базе данных (PermissionUsers): {str(e)}")
+          return jsonify({"success": False, "message": "Ошибка при сохранении прав пользователя."}), 500
 
-    try:
-        new_action = ActionUsers(
-            discordid = discord_id,
-            discordname = discord_name,
-            static = static,
-            nikname = nickname,
-            action = 'Invite',
-            curr_rank = 1,
-            prev_rank = 0,
-            author_id = current_user.id
-        )
-        db.session.add(new_action)
-        db.session.commit()
+      try:
+          new_action = ActionUsers(
+              discordid = discord_id,
+              discordname = discord_name,
+              static = static,
+              nikname = nickname,
+              action = 'Invite',
+              curr_rank = 1,
+              prev_rank = 0,
+              author_id = current_user.id
+          )
+          db.session.add(new_action)
+          db.session.commit()
 
+      except SQLAlchemyError as e:
+          db.session.rollback()
+          logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
+          return jsonify({"success": False, "message": "Ошибка при сохранении действия пользователя."}), 500
+    
     except SQLAlchemyError as e:
-        db.session.rollback()
-        logging.error(f"Ошибка сохранения в базе данных (ActionUsers): {str(e)}")
-        return jsonify({"success": False, "message": "Ошибка при сохранении действия пользователя."}), 500
+      db.session.rollback()
+      logging.error(f"Ошибка сохранения: {str(e)}")
+      return jsonify({"success": False, "message": "Ошибка при сохранении действия пользователя."}), 500
 
     else:
         send_to_bot_ka('Invite', static, current_user.discordid, user.discordid, user.curr_rank, user.prev_rank, current_user.nikname, user.nikname, reason, fraction)
         send_to_bot_invite(password, discord_id, static, user.organ)
         logging.info('Пользователь был успешно добавлен в бд Users.')
-
         if int(rank) > 1:
             process_raise(user, rank, reason, fraction)
             return jsonify({"success": True, "message": "Инвайт отправлен, пользователь был повышен."}), 200
@@ -2013,53 +2021,48 @@ def audit():
 
     if current_user.curr_rank > int(rank_data) and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
       return jsonify({"success": False, "message": "Ваш текущий ранг выше выбранного. Вы не можете выбрать этот ранг."}), 400
-      
-    try:    
-      nickname_regex = r'^[A-Za-z]+(?:\s[A-Za-z]+)*$'
-      if not re.match(nickname_regex, nickname):
-        return jsonify({"success": False, "message": "Ник должен быть в формате 'Nick Name'"}), 400
-      
-      discord_id_regex = r'^\d{17,19}$'
-      if not re.match(discord_id_regex, discord_id):
-        return jsonify({"success": False, "message": "Discord ID должен быть числовым значением длиной от 17 до 19 символов."}), 400
-      
-      valid_fractions = ['LSPD', 'LSCSD', 'EMS', 'SANG', 'GOV', 'FIB']
-      if fraction not in valid_fractions:
-        return jsonify({ 'success': False, 'message': "Не неверное название фракции." }), 400
-
-      if static == current_user.static:
-        return jsonify({"success": False, "message": "Вы не можете производить действия над собой."}), 400
-      
-      user = Users.query.filter_by(static=static).first()
-      if not user:
-        process_new_invite(static, rank_data, nickname, discord_id, reason, fraction)
-        return jsonify({"success": True, "message": f"Вы успешно приняли игрока."}), 200
-
-      elif user and user.action == 'Dismissal' and dismissal != 'dismissal':
-        process_invite_action(user, rank_data, reason, fraction)
-        return jsonify({"success": True, "message": f"Вы успешно приняли игрока."}), 200
+         
+    nickname_regex = r'^[A-Za-z]+(?:\s[A-Za-z]+)*$'
+    if not re.match(nickname_regex, nickname):
+      return jsonify({"success": False, "message": "Ник должен быть в формате 'Nick Name'"}), 400
     
-      if fraction != user.organ and user:
-        return jsonify({"success": False, "message": "Вы не можете выбрать ранг другой фракции."}), 400
-
-      elif user and dismissal == 'dismissal':
-        process_dismissal(user, reason, fraction)
-        return jsonify({"success": True, "message": f"Вы успешно уволили {user.nikname} #{user.static}"}), 200
-
-      elif user and user.curr_rank < int(rank_data):
-        process_raise(user, rank_data, reason, fraction)
-        return jsonify({"success": True, "message": f"Вы успешно повысили {user.nikname} #{user.static}"}), 200
-
-      elif user and user.curr_rank > int(rank_data):
-        process_demotion(user, rank_data, reason, fraction)
-        return jsonify({"success": True, "message": f"Вы успешно понизили {user.nikname} #{user.static}"}), 200
-
-      return jsonify({"success": False, "message": "Не удалось выполнить действие."}), 400
-
-    except Exception as e:
-      logging.error(f"Ошибка на стороне сервера: {str(e)}")
-      return jsonify({"success": False, "message": "Произошла ошибка, попробуйте позже."}), 500
+    discord_id_regex = r'^\d{17,19}$'
+    if not re.match(discord_id_regex, discord_id):
+      return jsonify({"success": False, "message": "Discord ID должен быть числовым значением длиной от 17 до 19 символов."}), 400
     
+    valid_fractions = ['LSPD', 'LSCSD', 'EMS', 'SANG', 'GOV', 'FIB']
+    if fraction not in valid_fractions:
+      return jsonify({ 'success': False, 'message': "Не неверное название фракции." }), 400
+
+    if static == current_user.static:
+      return jsonify({"success": False, "message": "Вы не можете производить действия над собой."}), 400
+    
+    user = Users.query.filter_by(static=static).first()
+    if not user:
+      process_new_invite(static, rank_data, nickname, discord_id, reason, fraction)
+      return jsonify({"success": True, "message": f"Вы успешно приняли игрока."}), 200
+
+    elif user and user.action == 'Dismissal' and dismissal != 'dismissal':
+      process_invite_action(user, rank_data, reason, fraction)
+      return jsonify({"success": True, "message": f"Вы успешно приняли игрока."}), 200
+  
+    if fraction != user.organ and user:
+      return jsonify({"success": False, "message": "Вы не можете выбрать ранг другой фракции."}), 400
+
+    elif user and dismissal == 'dismissal':
+      process_dismissal(user, reason, fraction)
+      return jsonify({"success": True, "message": f"Вы успешно уволили {user.nikname} #{user.static}"}), 200
+
+    elif user and user.curr_rank < int(rank_data):
+      process_raise(user, rank_data, reason, fraction)
+      return jsonify({"success": True, "message": f"Вы успешно повысили {user.nikname} #{user.static}"}), 200
+
+    elif user and user.curr_rank > int(rank_data):
+      process_demotion(user, rank_data, reason, fraction)
+      return jsonify({"success": True, "message": f"Вы успешно понизили {user.nikname} #{user.static}"}), 200
+
+    return jsonify({"success": False, "message": "Не удалось выполнить действие."}), 400
+  
   organ = current_user.organ
   color = color_organ(organ)
   filename = "./python/name-ranks.json"
@@ -2119,7 +2122,6 @@ def profile():
             Users.discordid == current_user.discordid,
             Users.id != current_user.id
         ).all()
-    
     return render_template('profile.html', ka_log=ka_log, rank_name=rank_name, color=color, current_user=current_user, is_guest=is_guest, curr_users=curr_users)
   else:
     return render_template('profile.html', current_user=current_user, is_guest=is_guest, guestUsers=guestUsers)
@@ -2430,12 +2432,12 @@ def send_to_bot_change_nickname(new_nickname, old_nickname, static, reason, disc
 @main.route('/profile_settings', methods=['POST'])
 @login_required
 def profile_settings():
-  from __init__ import db
+  from __init__ import db, app
   try:
-    data = request.get_json()
-    action = data.get('action')
+    action = request.form.get('action')
     
     if action == 'nickname':
+      data = request.get_json()
       new_nickname = data.get('new_nickname')
       reason = data.get('reason')
       nickname_regex = r'^[A-Za-z]+(?:\s[A-Za-z]+)*$'
@@ -2446,6 +2448,7 @@ def profile_settings():
       return jsonify({"success": True, "message": "Nickname был отправлен на одобрение!"}), 200
         
     elif action == 'discord':
+      data = request.get_json()
       discord = data.get('new_discordid')
       password = data.get('password-teds')
             
@@ -2463,6 +2466,7 @@ def profile_settings():
       return jsonify({"success": False, "message": "Вы ввели неверный пароль, проверьте его правильность!"}), 404
     
     elif action == 'password':
+      data = request.get_json()
       password_old = data.get('password-s')
       password_new = data.get('password-n')
       
@@ -2476,11 +2480,76 @@ def profile_settings():
         db.session.commit()
         return jsonify({"success": True, "message": "Пароль был изменен"}), 200
       return jsonify({"success": False, "message": "Вы ввели неверный пароль, проверьте его правильность!"}), 404
-        
+    
+    elif action == 'avatar':
+      if 'avatar' not in request.files:
+        return jsonify({'success': False, 'message': 'Аватарка не была загружена'}), 400
+            
+      avatar = request.files['avatar']
+      if avatar.filename == '':
+          return jsonify({'success': False, 'message': 'Файл не выбран'}), 400
+      
+      if not allowed_file(avatar.filename):
+          return jsonify({'success': False, 'message': 'Недопустимый формат файла'}), 400
+      
+      if current_user.url_image:
+        old_avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], current_user.url_image)
+        if os.path.exists(old_avatar_path):
+            os.remove(old_avatar_path)
+      
+      file_uid = str(uuid.uuid4()).replace("-", "")[:16]
+      file_extension = avatar.filename.rsplit('.', 1)[1].lower()
+      filename = f"{file_uid}.{file_extension}"
+      file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+      
+      avatar.save(file_path)
+      
+      current_user.url_image = filename
+      db.session.commit()
+      return jsonify({"success": True, "message": "Аватара была изменена"}), 200
+      
   except Exception as e:
     logging.error(f"Ошибка на стороне сервера: {str(e)}")
     return jsonify({"success": False, "message": "Произошла ошибка, попробуйте позже."}), 500
 
+@main.route('/delete-document')
+def delete_document():
+  from __init__  import PDFDocument, ResolutionTheUser, CustomResolutionTheUser, OrderTheUser, db
+  uid = request.args.get('uid')
+  
+  if not uid:
+    return jsonify({"success": False, "message": "Данного документа не существует"}), 400
+  
+  if not (current_user.permissions[0].dep_lider or current_user.permissions[0].lider or current_user.permissions[0].admin or current_user.permissions[0].tech):
+    return jsonify({"success": False, "message": "У вас не прав на данное действие"}), 403
+  
+  document = PDFDocument.query.filter_by(uid=uid).first()
+  resolution = ResolutionTheUser.query.filter_by(current_uid=uid).first()
+  resolution_custom = CustomResolutionTheUser.query.filter_by(current_uid=uid).first()
+  order = OrderTheUser.query.filter_by(current_uid=uid).first()
+  if current_user.url_image:
+    file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
+    if os.path.exists(file_path):
+      os.remove(file_path)
+
+  try:
+    if document:
+      db.session.delete(document)
+      
+    if resolution:
+      db.session.delete(resolution)
+    elif resolution_custom:
+      db.session.delete(resolution_custom)
+    elif order:
+      db.session.delete(order)
+      
+    db.session.commit()
+    return redirect(url_for('main.doc'))
+  
+  except Exception and SQLAlchemyError as e:
+    print (f'Ошибка сохранения {str(e)}')
+    db.session.rollback()
+    return jsonify({"success": False, "message": "Произошла ошибка, попробуйте позже."}), 500
 
 @main.route('/doc')
 def doc():
@@ -2489,12 +2558,10 @@ def doc():
     return render_template('doc.html', is_permission=False, is_authenticated=False, message=message)
 
   perm_user = current_user.permissions[0]
-
   if not perm_user or not (perm_user.creation_doc or perm_user.dep_lider or perm_user.lider or perm_user.tech): 
     message = 'У вас отстутсвуют права для использования данной функции!', 403
     return render_template('doc.html', is_permission=False, is_authenticated=True, message=message)
-
-
+  
   from form import FormCreateDoc, FormCreateResolution, FormCreateOrder
 
   form = FormCreateDoc()
@@ -2515,7 +2582,8 @@ def create_doc():
   formResolution = FormCreateResolution()
   formOrder = FormCreateOrder()
 
-  if not is_send_allowed():
+  isSend, seconds_left = is_send_allowed()
+  if not isSend:
     return redirect(url_for('main.doc'))
 
   if not current_user.is_authenticated:
@@ -2809,12 +2877,10 @@ def create_doc():
       buffer.seek(0)
 
       uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
-      file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
+      file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
       with open(file_path, 'wb') as f:
         f.write(buffer.getvalue())
 
-      # Создание и сохранение документа в базе данных
-      # Создание и добавление записи в PDFDocument
       pdf_document = PDFDocument(
         author_id=current_user.id,
         uid=uid,
@@ -2948,7 +3014,7 @@ def create_doc():
       uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
       session['uid'] = uid
       
-      file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
+      file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
       with open(file_path, 'wb') as f:
           f.write(buffer.getvalue())
       
@@ -3047,7 +3113,7 @@ def create_doc():
       uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
       session['uid'] = uid
       
-      file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
+      file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
       with open(file_path, 'wb') as f:
         f.write(buffer.getvalue())
       
@@ -3234,7 +3300,8 @@ def edit_resolution():
   
   form = FormEditResolution()
   if request.method == 'POST':
-    if not is_send_allowed():
+    isSend, seconds_left = is_send_allowed()
+    if not isSend:
       return redirect(url_for('main.doc'))
 
     doc = ResolutionTheUser.query.filter_by(current_uid=uid).first()
@@ -3330,7 +3397,7 @@ def edit_resolution():
     pdf.save()
     buffer.seek(0)
     
-    file_path = os.path.join('static', 'uploads', f'{uid}.pdf')
+    file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
     with open(file_path, 'wb') as f:
       f.write(buffer.getvalue())
 

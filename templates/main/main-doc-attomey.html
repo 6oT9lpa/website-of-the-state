@@ -16,6 +16,7 @@
             <div class="buttons-container">
                 <a href="/resolution?uid={{ doc.item.current_uid }}" class="open-link">Открыть</a>
                 <a href="{{ doc.item.current_document.content }}" download="{{ doc.type }}_{{ doc.number }}.pdf" class="save-link">Скачать PDF</a>
+                <a href="/delete-document?uid={{ doc.item.current_uid }}" class="delete-link">Удалить</a>
             </div>
         </div>
     {% endfor %}

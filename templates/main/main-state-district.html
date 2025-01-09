@@ -87,7 +87,7 @@
     </div>
     <div class='line-modal'></div>
     <div class='main-content-modal'>
-        <form id="form-modal-district" method="POST" action="/create-claim-state">
+        <form method="POST" action="/create-claim-state">
             <input type="hidden" id="court-type" name="court" value="district">
             {% if current_user.permissions[0].prosecutor %} <input type="hidden" name="action" id="action-0"> {% endif %}
             {% if current_user.permissions[0].prosecutor %}
@@ -132,7 +132,7 @@
                             <div class='content-defenda'>
                                 <label for="defenda">Ответчик.</label>
                                 <div class='form-input-modal' id='defendant-input'>
-                                    <input id="defendant" name="defenda[]" placeholder='Введите ник и статик'>
+                                    <input id="defendant" name="defenda" placeholder='Введите ник и статик'>
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
@@ -176,7 +176,7 @@
                             <div class='content-claim'>
                                 <label for="claims">Исковое требование.</label>
                                 <div class='form-input-modal' id='claim-input'>
-                                    <input id="claim" name="claims[]" placeholder='Введите требование'>
+                                    <input id="claim" name="claims" placeholder='Введите требование'>
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
@@ -198,7 +198,7 @@
             </div>        
             <div class='submit-btn-contanier'>
                 <div class='submit-btn'>
-                    <input type="submit" value="Оставить ответ">   
+                    <input type="submit" onclick="FetchClick(event)" value="Оставить ответ">   
                 </div>   
             </div> 
         </form>

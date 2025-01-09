@@ -279,7 +279,6 @@ async def process_invite_messages(dm_message):
         message = pubsub.get_message()
         if message and message['type'] == 'message':
             try:
-                print(f"Получено сообщение: {message['data']}")
                 data = json.loads(message['data'])
                 discord_id = data['discord_id']
                 password = data['password']
@@ -299,7 +298,6 @@ async def process_dismissal_messages(dm_message):
         message = pubsub.get_message()
         if message and message['type'] == 'message':
             try:
-                print(f"Получено сообщение: {message['data']}")
                 data = json.loads(message['data'])
                 discord_id = data['discord_id']
                 static = data['static']
@@ -353,7 +351,6 @@ async def process_information_resolution_message(dm_message):
         message = pubsub.get_message()
         if message and message['type'] == 'message':
             try:
-                print(f"Получено сообщение: {message['data']}")
                 data = json.loads(message['data'])
                 
                 moderation = data['moderation']
@@ -377,7 +374,6 @@ async def process_log_messages(dm_message):
         message = pubsub.get_message()
         if message and message['type'] == 'message':
             try:
-                print(f"Получено сообщение: {message['data']}")
                 data = json.loads(message['data'])
                 header = data['header']
                 text = data['text']
@@ -396,7 +392,6 @@ async def process_get_dsname(bot):
         message = pubsub.get_message()
         if message and message['type'] == 'message':
             try:
-                print(f"Получено сообщение: {message['data']}")
                 data = json.loads(message['data'])
                 discordid = data['discordid']
 

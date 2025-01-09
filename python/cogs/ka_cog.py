@@ -16,7 +16,6 @@ engine = create_engine('mysql://root:Qwerty123!@localhost:3306/db_majestic')
 Session = sessionmaker(bind=engine)
 db_session = Session()
 
-print('123')
 intents = Intents.default()
 intents.members = True
 intents.message_content = True

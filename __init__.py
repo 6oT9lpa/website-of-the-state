@@ -4,9 +4,36 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, LoginManager
 from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
-import logging, uuid
+import logging, uuid, os
 from cryptography.fernet import Fernet
 from datetime import timedelta
+import pytz
+
+from flask import render_template, redirect, url_for, request, flash, Blueprint, session, send_file, make_response, jsonify, abort
+from functools import wraps
+from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.security import check_password_hash, generate_password_hash
+from form import FormAuthPush
+from flask_login import login_user, login_required, logout_user, current_user
+from datetime import datetime, timedelta
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4, letter
+from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from io import BytesIO
+from textwrap import wrap
+from PyPDF2 import PdfReader, PdfWriter
+from pdf2image import convert_from_path
+from cryptography.fernet import Fernet
+import random, string, redis, json, os, re, shutil, logging, json, pickle
+from logging import handlers
+import sqlalchemy
+from sqlalchemy import func
+from sqlalchemy.types import JSON
+import base64, random, uuid
+from pickle import loads
+
 
 from main import main
 
@@ -20,11 +47,17 @@ app.config['DEBUG'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Qwerty123!@localhost:3306/db_majestic'
 app.config['FERNET_KEY'] = b'RZP6DxiYrL_hz7fX1IN0v4YAtfMwwz5Gp53JRVvLw6M='
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=7)
+
+app.config['UPLOAD_FOLDER'] = 'static/uploads/images'
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 cipher = Fernet(app.config['FERNET_KEY'])
 app.register_blueprint(main)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
+moscow_tz = pytz.timezone('Europe/Moscow')
 
 def generate_uid():
     return str(uuid.uuid4()).replace("-", "")[:16]
@@ -88,6 +121,7 @@ class Users(db.Model, UserMixin):
     YW = db.Column(db.Integer, nullable=False, default=0)
     SW = db.Column(db.Integer, nullable=False, default=0)
     password = db.Column(db.String(255), nullable=False)
+    url_image = db.Column(db.String(255), nullable=True)
 
     @property
     def is_guest(self):
@@ -110,6 +144,7 @@ class guestUsers(db.Model, UserMixin):
     static = db.Column(db.Integer, nullable=False, unique=True)
     nickname = db.Column(db.String(45), nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    url_image = db.Column(db.String(255), nullable=True)
 
     @property
     def is_guest(self):
@@ -151,7 +186,7 @@ class ActionUsers(db.Model, UserMixin):
     action = db.Column(db.String(20), nullable=False)
     prev_rank = db.Column(db.Integer, nullable=False)
     curr_rank = db.Column(db.Integer, nullable=False)
-    timespan = db.Column(db.DateTime, default=datetime.utcnow)
+    timespan = db.Column(db.DateTime, default=lambda: datetime.now(moscow_tz))
 
     user = db.relationship('Users', back_populates='action_log')
 
@@ -163,7 +198,7 @@ class PDFDocument(db.Model, UserMixin):
 
     uid = db.Column(db.String(26), unique=True, nullable=False)
     content = db.Column(db.String(256), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(moscow_tz))
 
     custom_resolution = db.relationship('CustomResolutionTheUser', back_populates='current_document')
     resolution = db.relationship('ResolutionTheUser', back_populates='current_document')
@@ -180,7 +215,7 @@ class CustomResolutionTheUser(db.Model):
     current_number = db.Column(db.Integer)
 
     custom_fields = db.Column(db.JSON)
-    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    date_created = db.Column(db.DateTime, default=lambda: datetime.now(moscow_tz))
     is_modertation = db.Column(db.Boolean, default=False)
 
     user = db.relationship('Users', back_populates='custom_resolution')
@@ -208,7 +243,7 @@ class ResolutionTheUser(db.Model):
     dismissal_employee = db.Column(db.Boolean, default=False)
     temporarily_suspend = db.Column(db.Boolean, default=False)
 
-    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    date_created = db.Column(db.DateTime, default=lambda: datetime.now(moscow_tz))
     is_modertation = db.Column(db.Boolean, default=False)
 
     user = db.relationship('Users', back_populates='resolution')
@@ -235,7 +270,7 @@ class OrderTheUser(db.Model):
     time = db.Column(db.String(60), default='null')
     type_order = db.Column(db.String(20), nullable=False)
 
-    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    date_created = db.Column(db.DateTime, default=lambda: datetime.now(moscow_tz))
     is_modertation = db.Column(db.Boolean, default=False)
 
     current_document = db.relationship('PDFDocument', back_populates='order')
@@ -257,7 +292,7 @@ class claimsStatement(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, default=get_next_id_isk)
     uid = db.Column(db.String(16), unique=True, default=generate_uid)
-    create_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    create_at = db.Column(db.DateTime, default=lambda: datetime.now(moscow_tz))
     date_court_session = db.Column(db.DateTime, nullable=True)
     criminal_case = db.Column(db.Boolean, default=False)
     is_archived = db.Column(db.Boolean, default=False)
@@ -286,6 +321,10 @@ class iskdis(db.Model):
     otherme = db.Column(db.PickleType, nullable=True)
     status = db.Column(db.String(15), default='Waitting')
     evidence = db.Column(db.PickleType, nullable=True)
+    
+    type_criminal = db.Column(db.Boolean, default=False)
+    link_case = db.Column(db.String(256), nullable=True)
+    date_case = db.Column(db.String(256), nullable=True)
 
     current_claim = db.relationship('claimsStatement', back_populates='district_court')
 
@@ -308,6 +347,10 @@ class isksup(db.Model):
     otherme = db.Column(db.PickleType, nullable=True)
     status = db.Column(db.String(15), default='Waitting')
     evidence = db.Column(db.PickleType, nullable=True)
+    
+    type_criminal = db.Column(db.Boolean, default=False)
+    link_case = db.Column(db.String(256), nullable=True)
+    date_case = db.Column(db.String(256), nullable=True)
 
     current_claim = db.relationship('claimsStatement', back_populates='supreme_court')
 
@@ -323,7 +366,7 @@ class repltoisks(db.Model):
     moderation = db.Column(db.Boolean, default=False)
     type_doc = db.Column(db.String(45), nullable=False)
 
-    timespan = db.Column(db.DateTime, default=datetime.utcnow)
+    timespan = db.Column(db.DateTime, default=lambda: datetime.now(moscow_tz))
 
     current_claim = db.relationship('claimsStatement', back_populates='reply')
 
@@ -341,7 +384,7 @@ class courtOrder(db.Model):
 
     type_doc = db.Column(db.String(45), nullable=False)
 
-    timespan = db.Column(db.DateTime, default=datetime.utcnow)
+    timespan = db.Column(db.DateTime, default=lambda: datetime.now(moscow_tz))
 
     current_claim = db.relationship('claimsStatement', back_populates='court_order')
 
@@ -357,7 +400,7 @@ class courtPrecedents(db.Model):
     findings = db.Column(db.PickleType, nullable=False)
     court = db.Column(db.String(256), nullable=False)
     
-    timespan = db.Column(db.DateTime, default=datetime.utcnow)
+    timespan = db.Column(db.DateTime, default=lambda: datetime.now(moscow_tz))
     
 class permissionRoles(db.Model):
     __tablename__ = 'permission_roles'
@@ -370,7 +413,6 @@ class permissionRoles(db.Model):
 # Создание таблиц базы данных
 with app.app_context():
     db.create_all()
-
     """
     characters = string.ascii_letters + string.digits + string.punctuation
     password = ''.join(random.choice(characters) for i in range(10))
@@ -391,7 +433,7 @@ with app.app_context():
     )
     db.session.add(new_user)
     db.session.commit()
-
+    
     user = Users.query.filter_by(static=77857).first()
     permission_entry = PermissionUsers(
         author_id=user.id,

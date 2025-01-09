@@ -50,3 +50,40 @@ document.getElementById('load-judicial-office').addEventListener('click', functi
     loadContent('/get_judicial_office_content', 'judicial-content', 'load-judicial-office');
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+    const message = sessionStorage.getItem('notification');
+    const isError = sessionStorage.getItem('isError') === 'true';
+
+    if (message) {
+        showNotification(message, isError);
+
+        sessionStorage.removeItem('notification');
+        sessionStorage.removeItem('isError');
+    }
+});
+
+
+document.querySelector('.delete-link')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    const url = e.target.href;
+
+    fetch(url, {
+        method: 'GET',
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '/doc';
+
+            sessionStorage.setItem('notification', data.message);
+            sessionStorage.setItem('isError', 'false');
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
+    });
+});

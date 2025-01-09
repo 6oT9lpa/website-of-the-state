@@ -262,7 +262,6 @@ async def process_new_resolution_message(moderation_doc):
         message = pubsub.get_message()
         if message and message['type'] == 'message':
             try:
-                print(f"Получено сообщение: {message['data']}")
                 data = json.loads(message['data'])
                 uid = data['uid']
                 nickname = data['nickname']
@@ -285,7 +284,6 @@ async def process_permission_messages():
         message = pubsub.get_message()
         if message and message['type'] == 'message':
             try:
-                print(f"Получено сообщение: {message['data']}")
                 data = json.loads(message['data'])
                 
                 permission_none = data['permission_none']
