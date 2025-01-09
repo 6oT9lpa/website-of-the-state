@@ -300,7 +300,7 @@ function saveRanks() {
     }
 
     function updateTable(users) {
-        const tableBody = document.querySelector('table tbody');
+        const tableBody = document.querySelector('#userTable tbody');
         if (!tableBody) {
             console.error('Таблица не найдена в DOM.');
             return;
