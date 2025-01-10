@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/index-style.css') }}">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/animation-bg.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/doc-style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/complaint-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/header-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/info-style.css') }}">
     <title>{{ title }}</title>
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
@@ -54,7 +53,7 @@
 
     {% if info_type == 'precedents' %}
     {% if current_user.permissions[0].judge %}
-    <div class='modal-processing-complaint' id='modal-9' style='display:none;'>
+    <div class='modal' id='modal-9' style='display:none;'>
         <form method='POST' id='create-precedent'>
             <div class='content-modal'>
                 <div class="header-modal">
@@ -267,12 +266,6 @@
             const dateTimeRegex = /^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$/;
             if (!dateTimeRegex.test(data.date)) {
                 showNotification("Дата должна быть 'ДД.ММ.ГГГГ ЧЧ:ММ'")
-                return;
-            }
-
-            const lawsuitRegex = /^Исковое заявление №\d+$/;
-            if (lawsuitRegex.test(data.complaint)) {
-                showNotification("Номер Искового заявления должен быть 'Исковое заявление №XXX'")
                 return;
             }
         

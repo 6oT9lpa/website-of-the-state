@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
     
             const newContentDiv = document.createElement("div");
-            newContentDiv.classList.add("form-input-modal");
+            newContentDiv.classList.add("form-input");
             newContentDiv.id = `decision-input-${counter}`;
     
             const inputWrapper = document.createElement("div");
@@ -198,64 +198,72 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     let isHovered = false;
-    let isAnimating = false;
-    let hoverTimeout;
+let isAnimating = false;
+let hoverTimeout;
 
-    const sidebar = document.querySelector('.sidebar-container');
-    const maincontent = document.querySelector('.main-content-complaint');
+const sidebar = document.querySelector('.sidebar-container');
+const maincontent = document.querySelector('.main-content-complaint');
+const form = document.getElementById('addLink');
+
+function isFormElement(target) {
     const form = document.getElementById('addLink');
+    return form && form.contains(target);
+}
 
-    function isFormElement(target) {
-        const form = document.getElementById('addLink');
-        return form && form.contains(target);  
-    }
+function isOpenButton(target) {
+    return modals.some(modal => document.querySelector(modal.openBtn) === target);
+}
 
-    function isOpenButton(target) {
-        return modals.some(modal => document.querySelector(modal.openBtn) === target);
-    }
+function isMobile() {
+    return window.innerWidth < 1025;
+}
 
-    sidebar.addEventListener('mouseenter', (event) => {
-        if (isHovered || isAnimating || isFormElement(event.target) || isOpenButton(event.target)) return;
-        isHovered = true;
-        isAnimating = true;
+sidebar.addEventListener('mouseenter', (event) => {
+    if (isMobile()) return;
+    if (isHovered || isAnimating || isFormElement(event.target) || isOpenButton(event.target)) return;
+    isHovered = true;
+    isAnimating = true;
 
-        clearTimeout(hoverTimeout);
-        sidebar.classList.remove('hover-out');
+    clearTimeout(hoverTimeout);
+    sidebar.classList.remove('hover-out');
+    hoverTimeout = setTimeout(() => {
+        sidebar.classList.add('hover-in');
         hoverTimeout = setTimeout(() => {
-            sidebar.classList.add('hover-in');
-            hoverTimeout = setTimeout(() => {
-                isAnimating = false;
-            }, 1000);
-            hoverTimeout = setTimeout(() => {
-                maincontent.style.width = 'calc(var(--screen-width) - 300px)';
-            }, 200);
-        }, 100);
-    });
-
-    sidebar.addEventListener('mouseleave', (event) => {
-        if (!isHovered || isAnimating || isFormElement(event.target) || isOpenButton(event.target)) return; 
-        isHovered = false;
-        isAnimating = true;
-
-        clearTimeout(hoverTimeout);
-        sidebar.classList.remove('hover-in');
+            isAnimating = false;
+        }, 1000);
         hoverTimeout = setTimeout(() => {
-            sidebar.classList.add('hover-out');
-            hoverTimeout = setTimeout(() => {
-                isAnimating = false;
-            }, 1000);
-            hoverTimeout = setTimeout(() => {
-                maincontent.style.width = 'calc(var(--screen-width) - 400px)';
-            }, 80);
-        }, 100);
-    });
+            maincontent.style.width = 'calc(var(--screen-width) - 300px)';
+        }, 200);
+    }, 100);
+});
 
-    sidebar.addEventListener('click', (event) => {
-        if (isFormElement(event.target) || isOpenButton(event.target)) return;
-        sidebar.classList.toggle('open');
-        maincontent.style.width = 'calc(var(--screen-width) - 400px)';
-        maincontent.classList.toggle('open');
-    });
+sidebar.addEventListener('mouseleave', (event) => {
+    if (isMobile()) return;
+    if (!isHovered || isAnimating || isFormElement(event.target) || isOpenButton(event.target)) return;
+    isHovered = false;
+    isAnimating = true;
+
+    clearTimeout(hoverTimeout);
+    sidebar.classList.remove('hover-in');
+    hoverTimeout = setTimeout(() => {
+        sidebar.classList.add('hover-out');
+        hoverTimeout = setTimeout(() => {
+            isAnimating = false;
+        }, 1000);
+        hoverTimeout = setTimeout(() => {
+            maincontent.style.width = 'calc(var(--screen-width) - 400px)';
+        }, 80);
+    }, 100);
+});
+
+sidebar.addEventListener('click', (event) => {
+    if (isMobile()) return;
+    if (isFormElement(event.target) || isOpenButton(event.target)) return;
+    sidebar.classList.toggle('open');
+    maincontent.style.width = 'calc(var(--screen-width) - 400px)';
+    maincontent.classList.toggle('open');
+});
+
 });
 
 document.querySelector('#claim-processing')?.addEventListener('submit', (e) => {

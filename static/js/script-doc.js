@@ -161,7 +161,7 @@ function showError(input, message) {
     const errorSpan = formControl.parentElement.querySelector('#is-invalid'); 
     if (errorSpan) {
         errorSpan.innerText = message;
-        formControl.className = 'form-input-modal error'; 
+        formControl.className = 'form-input error'; 
     } 
 }
 
@@ -170,7 +170,7 @@ function clearError(input) {
     const errorSpan = formControl.parentElement.querySelector('#is-invalid'); 
     if (errorSpan) {
         errorSpan.innerText = ''; 
-        formControl.className = 'form-input-modal'; 
+        formControl.className = 'form-input'; 
     }
 }
 
@@ -687,7 +687,7 @@ function toggleCustomForm() {
 }
 
 let inputCount = 0;
-const maxTextareaWidth = 400; 
+const maxTextareaWidth = 300; 
 const compactWidth = 180; 
 const maxTextareaHeight = 100; 
 
@@ -696,7 +696,7 @@ function addInput() {
 
     const newTextarea = document.createElement('textarea');
     newTextarea.name = `custom_text_${inputCount}`;
-    newTextarea.className = 'dynamic-textarea fade-in-text'; 
+    newTextarea.className = 'fade-in-text'; 
     newTextarea.placeholder = 'Введите значение';
 
     newTextarea.rows = 1;
@@ -705,7 +705,7 @@ function addInput() {
     newTextarea.onblur = () => shrinkTextarea(newTextarea);
 
     const container = document.createElement('div');
-    container.className = 'input-container';
+    container.className = 'form-textarea';
     container.appendChild(newTextarea);
 
     document.getElementById('dynamic-input-container').appendChild(container);

@@ -70,10 +70,10 @@ def is_send_allowed(wait_seconds=30):
       
       flash(f"Пожалуйста, подождите {seconds_left} секунд перед повторной отправкой.")
       return False, seconds_left
-
+    
   # Обновляем временную метку, если отправка разрешена
   session['last_sent_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-  return True
+  return True, 0
 
 def check_isk_status(isk):
   """ Функция для проверки статуса пользователя в контексте иска. """
@@ -403,6 +403,10 @@ def index():
       return jsonify(redirect_url=url_for('main.index')), 200
     
   return render_template('index.html', city_hallnews=city_hallnews, leadernews=leadernews, weazelnewsn=weazelnewsn, has_access=has_access, form=form)
+
+@main.route('/create_news', methods=['POST']) 
+def create_news():
+  pass
 
 @main.route('/authentication-guest', methods=['GET'])
 def auth_guest():
@@ -2435,7 +2439,6 @@ def profile_settings():
   from __init__ import db, app
   try:
     action = request.form.get('action')
-    
     if action == 'nickname':
       data = request.get_json()
       new_nickname = data.get('new_nickname')
@@ -2507,6 +2510,9 @@ def profile_settings():
       current_user.url_image = filename
       db.session.commit()
       return jsonify({"success": True, "message": "Аватара была изменена"}), 200
+    
+    else:
+      return jsonify({"success": False, "message": "Данное действие не найденно"}), 400
       
   except Exception as e:
     logging.error(f"Ошибка на стороне сервера: {str(e)}")

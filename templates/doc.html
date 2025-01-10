@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ka-style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/index-style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/animation-bg.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/header-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/doc-style.css') }}">
     <title>Majestic State</title>
 
@@ -39,7 +39,13 @@
                 {% endblock %}
             {% endif %}
         </div>
-
+        
+        {% if message %}
+            {% block errors %}
+                {% include 'api/error.html' %}
+            {% endblock %}
+        {% endif %}
+        
         {% block errorsjson %}
             {% include 'api/error-json.html' %}
         {% endblock %}

@@ -1,22 +1,22 @@
+body
+{
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #0e0e0e; 
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.modal-complaint {
+    display: none;
+}
+
 :root {
     --success-color: #0cb854;
     --error-color: #ee1f09;
-  }
-
-* {
-    user-select: none;
-}
-
-*:focus {
-    outline: none;
-}
-
-body{
-    margin: 0;
-}
-
-body.no-scroll {
-    overflow: hidden; /* Отключает прокрутку */
 }
 
 main{
@@ -25,17 +25,13 @@ main{
     top: 25px !important;
 }
 
-.overlay {
-    position: fixed; 
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%; 
-    background-color: rgb(0 0 0 / 75%);
-    opacity: 0;
-    transition: opacity 0.3s ease, visibility 0.3s ease; /* Плавный переход для opacity и visibility */
-    visibility: hidden; /* Скрыто по умолчанию */
+@media (max-width: 468px) {
+    .navbar {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
 }
+
 
 .overlay-main {
     position: fixed; 
@@ -48,11 +44,7 @@ main{
     transition: opacity 0.3s ease, visibility 0.3s ease;
     visibility: hidden; /
 }
-.overlay.active {
-    opacity: 1; 
-    visibility: visible; 
-    z-index: 5;
-}
+
 
 .checkbox-wrapper {
     display: flex;
@@ -64,6 +56,18 @@ main{
 
 .hidden-checkbox {
     display: none;
+}
+
+.group-claim {
+    width: 100%;
+    max-height: 20vh;
+    overflow-y: auto;
+}
+
+.group-defenda{
+    width: 100%;
+    max-height: 20vh;
+    overflow-y: auto;
 }
 
 .checkbox-label {
@@ -163,7 +167,7 @@ main{
 }
 
 .checkbox-text {
-    font-size: 16px;
+    font-size: 14px;
     color: #f0f8ff;
     font-weight: 700;
     display: flex;
@@ -302,20 +306,6 @@ main{
     font-weight: 600;
 }
 
-.form-input
-{
-    width: 200px;
-    padding: 5px 0px !important;
-    display: block;
-    opacity: 1;
-    align-items: center;
-    display: flex;
-}
-
-.form-input.error input
-{
-    background-color: #632525 !important;  
-}
 
 .form-control-1 {
     text-align: center;
@@ -391,21 +381,6 @@ iframe {
     width: 350px;
     overflow: hidden !important; 
     height: 465px;
-}
-
-.form-input-modal.error {
-    background: #e81c5a8c;
-}
-
-.form-input-modal input {
-    width: 100%;
-    padding: 5px;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: 5px;
-    border: #1f1e1e;
-    background: #1f1e1e;
-    color: #f0f8ff;
 }
 
 .organ
@@ -506,55 +481,6 @@ iframe {
     color: #888 !important;
 }
 
-.modal-close-error {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.modal-close-error:hover,
-.modal-close-error:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
-}
-
-
-#access-message {
-    display: none;
-    opacity: 0;
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-    padding: 15px;
-    margin: 20px;
-    border-radius: 5px;
-    width: 30rem;
-    text-align: center;
-    transition: opacity 0.5s ease, transform 0.5s ease;
-    z-index: 9999;
-}
-
-#access-message.show {
-    position: absolute;
-    display: block;
-    opacity: 1;
-}
-
-#access-message.hidden {
-    position: absolute;
-    opacity: 0;
-}
-.alert-button {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 8px 12px;
-    background-color: #d1d1d1;
-    color: #5d5d5d;
-    text-decoration: none;
-    border-radius: 4px;
-}
 
 .group
 {
@@ -621,18 +547,8 @@ iframe {
     opacity: 1;
 }
 
-.dynamic-textarea {
-    width: 180px;
-    max-width: 400px;
-    max-height: 100px;
-    padding: 5px;
-    box-sizing: border-box;
-    font-size: 14px;
-    transition: width 0.2s ease, height 0.2s ease;
-    overflow-wrap: break-word;
-    opacity: 1;
-    transform: scale(1);
-    transition: all 0.3s ease-in;
+.form-textarea textarea {
+    height: 15px;
 }
 
 .custom-inputs {
@@ -691,25 +607,6 @@ a.add-input-button {
     transition: opacity 0.5s ease;
 }
 
-.back-button {
-    display: none;
-    position: absolute;
-    left: 0;
-    top: 80px;
-}
-
-.fade-in-nav {
-    opacity: 1;
-    transform: translateX(0);
-    transform: scale(1);
-    transition: all 0.3s ease-in-out;
-}
-
-.hidden-nav {
-    opacity: 0;
-    transform: scale(0.3);
-    transition: all 0.3s ease-in-out;
-}
 
 div#judicial-content {
     display: flex;
@@ -881,11 +778,6 @@ a.create-btn:hover {
     color: #f0f8ff
 }
 
-.header-modal {
-    display: flex;
-    justify-content: space-between;
-}
-
 .text-header p {
     font-size: 13px;
     margin-top: 10px;
@@ -909,171 +801,13 @@ span.btn-modal-close:hover {
 .form-container {
     display: flex;
     flex-direction: column;
+    max-height: 80vh;
+    overflow: auto;
 }
 
 .group-contaniner-modal {
     display: flex;
     justify-content: center;
-}
-
-.form-input-modal {
-    width: 250px;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    background: #1d1b1b;
-    border-radius: 10px;
-    border: #0c0c0c solid 2px;
-    box-shadow: inset #0c0c0c 0 0 5px 2px;
-    transition: all .5s ease-in-out;
-}
-
-.personal-info {
-    width: 510px;
-}
-
-.form-input-modal.error {
-    background: #e81c5a8c;
-}
-
-.form-input-modal input {
-    width: 100%;
-    padding: 5px;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: 5px;
-    border: #1f1e1e;
-    background: #1f1e1e;
-    color: #f0f8ff;
-}
-
-.form-control {
-    text-align: center;
-    margin-bottom: 15px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.form-control label {
-    font-size: 14px;
-    font-weight: 700;
-}
-
-.form-control a {
-    font-size: 12px;
-    font-weight: 600;
-    padding: 5px;
-    display: flex;
-    justify-content: end;
-    transition: all 0.5s ease-in-out;
-}
-
-.form-control a:hover {
-    color: grey;
-}
-
-.form-textarea {
-    width: 500px;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    background: #1d1b1b;
-    border-radius: 10px;
-    border: #0c0c0c solid 2px;
-    box-shadow: inset #0c0c0c 0 0 5px 2px;
-    
-}
-
-.form-textarea textarea {
-    border-radius: 5px;
-    width: 100%;
-    height: 100px;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: 5px;
-    border: #1f1e1e;
-    background: #1f1e1e;
-    color: #f0f8ff;
-    resize: none;
-}
-
-.line-modal {
-    width: 100%;
-    height: 3px;
-    background: #2d2c2cab;
-    margin: 10px 0;
-    box-shadow: #48484852 0 0 4px 0.5px;
-}
-
-.submit-btn-contanier {
-    display: flex;
-    justify-content: center;
-    padding: 10px;
-}
-
-.submit-btn {
-    padding: 5px 10px;
-    background: #141414;
-    border: #201f1f solid 2px;
-    border-radius: 10px;
-    box-shadow: #1e1e1e 0 0 8px 3px;
-    transition: all 0.3s ease-in-out;
-}
-
-.submit-btn::before {
-    box-shadow: none;
-}
-
-.submit-btn::after {
-    box-shadow: inset #1e1e1e 0 0 8px 3px;
-}
-
-.submit-btn:hover {
-    box-shadow: inset #0e0e0e 0 0 8px 3px;
-    border: #0e0e0e solid 2px; 
-}
-
-.submit-btn:hover,
-.submit-btn:focus {
-    border-color: #0e0e0e;
-    box-shadow: inset #0e0e0e 0 0 8px 3px; 
-}
-
-.submit-btn:focus {
-    outline: none;
-    box-shadow: inset #0e0e0e 0 0 8px 3px, 0 0 10px 2px rgba(0, 0, 0, 0.5); 
-}
-
-
-.submit-btn-contanier input[type="submit"] {
-    padding: 3px 20px;
-    font-size: 14px;
-    background: #141414;
-    border: none;
-    color: #f0f8ff;
-    font-weight: 600;
-}
-
-.group-defenda {
-    display: grid;
-    min-width: 250px;
-    gap: 10px;
-    grid-template-columns: repeat(auto-fill, 250px);
-}
-
-.group-claim {
-    display: grid;
-    min-width: 250px;
-    gap: 10px;
-    grid-template-columns: repeat(auto-fill, 250px);
-}
-
-.group-claim.active-grid {
-    max-width: 520px;
-}
-
-.group-defenda.active-grid {
-    max-width: 520px;
 }
 
 .btn-group-defenda {
@@ -1091,57 +825,11 @@ span.btn-modal-close:hover {
     display: inline-block;
 }
 
-.dropdown-btn {
-    background: transparent;
-    color: #f0f8ff;
-    border: #141414 solid 2px;
-    padding: 10px 15px;
-    font-size: 14px;
-    cursor: pointer;
-    border-radius: 10px;
-    transition: all 0.3s ease-in-out;
-}
-
-.dropdown-btn:hover, .dropdown-btn.active {
-    border: #e81c591a solid 2px;
-    box-shadow: inset black 0 0 8px 2px;
-}
-.dropdown-menu {
-    display: none;
-    position: absolute;
-    right: 0;
-    background-color: #141414;
-    min-width: 190px;
-    text-align: center;
-    border: 1px solid #323232;
-    border-radius: 5px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-}
-
-.dropdown-menu a {
-    color: #ffffff;
-    padding: 10px 15px;
-    text-decoration: none;
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.dropdown-menu a:hover {
-    background-color: #1e1e1e;
-}
-
-.dropdown.open .dropdown-menu {
-    display: block;
-}
-
-.head {
-    display: flex;
-    gap: 25px;
-}
 
 .modal-document-creater {
+    min-width: 390px;
+    max-width: 600px;
+    width: 100%;
     position: fixed;
     top: 2rem;
     z-index: 100;
@@ -1149,19 +837,14 @@ span.btn-modal-close:hover {
     background: #121212e0;
     padding: 20px;
     border-radius: 10px;
-    width: 75%;
     border: black solid 2px;
     box-shadow: #0d0d0d 0 0 10px 4px;
-    color: #f0f8ff
+    color: #f0f8ff;
 }
 
 .organ {
     font-size: 15px !important;
     font-weight: 700;
-}
-
-.navbar {
-    display: flex !important;
 }
 
 .nikname {
@@ -1189,7 +872,12 @@ span.btn-modal-close:hover {
     justify-content: center;
 }
 
+.submit-btn {
+    display: flex;
+}
+
 .custom {
+    text-align: center;
     padding: 3px 20px;
     font-size: 14px;
     background: #141414;
@@ -1230,3 +918,47 @@ span.btn-modal-close:hover {
     padding: 0px 15px;
 }
 
+@media (max-width: 768px) {
+    .contanier-content {
+        width: 100%;
+    }
+    h4 {
+        font-size: 14px;
+    }
+
+    .group-contaniner-modal-creater {
+        display: block;
+    }
+    .group {
+        display: block;
+    }
+
+    .checkbox-text {
+        font-size: 12px;
+    }
+    .checkbox-wrapper {
+        width: 100%;
+    }
+    .modal-document-creater {
+        width: 100%;
+    }
+    .organ {
+        padding: 6px 8px;
+    }   
+    .nikname {
+        font-size: 12px;
+    }
+
+    .content-bl {
+        display: flex;
+        gap: 15px;
+        flex-wrap: nowrap;
+    }
+    .dropdown-btn {
+        padding: 5px 15px;
+    }
+
+    .header-modal {
+        margin-bottom: 10px;
+    }
+}

@@ -1,5 +1,5 @@
 
-<div class="toast">
+<div class="toast" style='display:none;'> 
     <div class="toast-content">
         <i class="fas fa-solid fa-check check"><img width="35" height="35" src="https://img.icons8.com/ios/50/box-important--v1.png" alt="box-important--v1"/></i>
         <div class="message">
@@ -132,11 +132,16 @@
             toastIcon.style.backgroundColor = '#4070f4';
         }
 
+        toast.style.display = 'flex';
+
         toast.classList.add("active");
         progress.classList.add("active");
 
         timer1 = setTimeout(() => {
             toast.classList.remove("active");
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 310);
         }, 3000);
 
         timer2 = setTimeout(() => {
@@ -149,7 +154,6 @@
 
         setTimeout(() => {
             progress.classList.remove("active");
-            
         }, 310);
 
         clearTimeout(timer1);

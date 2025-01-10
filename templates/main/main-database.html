@@ -126,7 +126,7 @@
                             <tr>
                                 <td>{{ role.name }}</td>
                                 <!-- Зам. лидера -->
-                                <td>
+                                <td style="width: 80px;">
                                     <label class="container" style='background-color: transparent;'>
                                         <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="dep_lider"
                                             {% for permission in roles_permission %}
@@ -138,7 +138,7 @@
                                     </label>
                                 </td>
                                 <!-- Старший состав -->
-                                <td>
+                                <td style="width: 80px;">
                                     <label class="container" style='background-color: transparent;'>
                                         <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="high_staff"
                                             {% for permission in roles_permission %}
@@ -151,7 +151,7 @@
                                 </td>
                                 {% if fraction == 'GOV' %}
                                 <!-- Судья -->
-                                <td>
+                                <td style="width: 80px;">
                                     <label class="container" style='background-color: transparent;'>
                                         <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="judge"
                                             {% for permission in roles_permission %}
@@ -163,7 +163,7 @@
                                     </label>
                                 </td>
                                 <!-- Прокурор -->
-                                <td>
+                                <td style="width: 80px;">
                                     <label class="container"style='background-color: transparent;'>
                                         <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="prosecutor"
                                             {% for permission in roles_permission %}
@@ -175,7 +175,7 @@
                                     </label>
                                 </td>
                                 <!-- Адвокат -->
-                                <td>
+                                <td style="width: 80px;">
                                     <label class="container" style='background-color: transparent;'>
                                         <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="lawyer"
                                             {% for permission in roles_permission %}
@@ -187,7 +187,7 @@
                                     </label>
                                 </td>
                                 <!-- Создание новостей -->
-                                <td>
+                                <td style="width: 80px;">
                                     <label class="container" style='background-color: transparent;'>
                                         <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="news_creation"
                                             {% for permission in roles_permission %}
@@ -199,7 +199,7 @@
                                     </label>
                                 </td>
                                 <!-- Создание документации -->
-                                <td>
+                                <td style="width: 80px;">
                                     <label class="container" style='background-color: transparent;'>
                                         <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="documentation_creation"
                                             {% for permission in roles_permission %}
@@ -212,7 +212,7 @@
                                 </td>
                                 {% elif fraction == 'WN' %}
                                 <!-- Создание новостей -->
-                                <td>
+                                <td style="width: 80px;">
                                     <label class="container" style='background-color: transparent;'>
                                         <input type="checkbox" class="role-checkbox" data-id="{{ role.id }}" data-role="news_creation"
                                             {% for permission in roles_permission %}
@@ -314,7 +314,7 @@
                         {% for rank in rank_list %}
                         {% if not rank.leader %}
                         <li class="rank-item" data-id="{{ rank.id }}" data-leader="false">
-                            <input type="text" class="rank-id" value="{{ rank.id }}" >
+                            <input type="text" class="rank-id" value="{{ rank.id }}" readonly>
                             <input type="text" class="rank-name" value="{{ rank.name }}"/>
                             <button class="delete-rank">Удалить</button>
                         </li>

@@ -49,25 +49,25 @@
             {% endif %}
         </div>
     </div>
-    <div class='modal-settings' id='modal-1' style='display:none;'>
+    <div class='modal' id='modal-1' style='display:none;'>
         <div class='content-modal'>
             <div class="header-modal">
                 <span class="btn-modal-close" id="close-btn-1">&times;</span>
             </div>
             <div class='form-container' id='complaint'>
-                <form method='POST' id='settings-nickname-form'>
+                <form method='POST' id='settings-nickname-form' action='/profile_settings'>
                     <input type="hidden" name="action" id="action-0">
                     <div class='settings-nickname' style='display:none;'>
                         <div class='form-control'>
                             <label for="nickname">Введите новый nickname</label>
-                            <div class='form-input-modal'>
+                            <div class='form-input'>
                                 <input name="new_nickname" placeholder='Введите новый nickname' required>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
                         <div class='form-control'>
                             <label for="reason">Введите причину смену</label>
-                            <div class='form-input-modal'>
+                            <div class='form-input'>
                                 <input name="reason" placeholder='Введите причину' required>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
@@ -84,7 +84,7 @@
                     <div class='settings-password' style='display:none;'> 
                         <div class='form-control'>
                             <label for="phone">Старый пароль</label>
-                            <div class='form-input-modal'>
+                            <div class='form-input'>
                                 <input type='password' name="password-s" placeholder='Введите текущий пароль'>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
@@ -92,7 +92,7 @@
 
                         <div class='form-control'>
                             <label for="phone">Новый пароль</label>
-                            <div class='form-input-modal'>
+                            <div class='form-input'>
                                 <input type='password' name="password-n" placeholder='Введите новый пароль'>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
@@ -109,7 +109,7 @@
                     <div class='settings-discordID' style='display:none; flex-direction: column;'>
                         <div class='form-control'>
                             <label for="phone">Пароль</label>
-                            <div class='form-input-modal'>
+                            <div class='form-input'>
                                 <input type='password' name="password-teds" placeholder='Введите текущий пароль'>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
@@ -117,7 +117,7 @@
 
                         <div class='form-control'>
                             <label for="phone">Введите новый discordID</label>
-                            <div class='form-input-modal'>
+                            <div class='form-input'>
                                 <input name="new_discordid" placeholder='Введите новый discordID'>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>

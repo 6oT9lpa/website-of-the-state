@@ -1,73 +1,46 @@
-<main>
-    {% if has_access %}
-    <a class="crnewbutton" id="createnewsbutton" style="display: none;" onclick="openModalcn()">+</a>
-    {% endif %}
-    <div id="myModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal()">&times;</span>
-            <span class="share-btn" onclick="sharenews()"><img src="static\img\share.png"></span>
-            {% if has_access %}
-            <span class="delete-btn" onclick="deletenews(document.getElementById('modalID').textContent)"><img src="static\img\trash.svg"></span>
-            {% endif %}
-            <p><strong>ID:</strong> <span id="modalID"></span></p>
-            <h2 id="modalName"></h2>
-            <p><img id="modalpicture" onerror="errorimgfix(this)" style="max-width: 100%;"></p>
-            <p> <span id="modalDescription"></span></p>
-        </div>
-    </div>
-    <div id="Modalcn" class="modalcn">
-        <div class="modalcn-content">
-            <span class="close-btn" onclick="closeModalcn()">&times;</span>
-            <h2 id="modalHeader">Создание новости</h2>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                  {% if messages %}
-                    <ul class=flashes>
-                    {% for category, message in messages %}
-                      <li class="{{ category }} errorli">{{ message }}</li>
-                    {% endfor %}
-                    </ul>
-                  {% endif %}
-                {% endwith %}
-            <form id="newscForm" method="POST" action="{{ url_for('main.index') }}">
-            <div id="inputformcn">{{ form.zagolovok.label }} {{ form.zagolovok }}</div><br><br>
-            <div id="inputformcn">{{ form.desc.label }} {{ form.desc(class='dynamic-input', id='dynamic-input') }}</div><br><br>
-            <div id="inputformcn">{{ form.type_news.label }} {{ form.type_news }}</div><br><br>
-            <div id="inputformcn">{{ form.img.label }} {{ form.img }}</div><br><br>
-            {{ form.submit(class="subbtn", id="subbtn") }}
-            </form>
-            <div id="responseMessage"></div>
-        </div>
-    </div>
-    <div class="newscont">
-    <div class="city_hallnews">
-        {% for item in city_hallnews %}
-            <div class="list-item" onclick="openModal('{{ item.id }}', '{{ item.headernews }}', '{{ item.textnews }}', '{{ item.typenews }}', '{{ item.picture }}')">
-                {% if item.picture %}
-                <img src="{{ item.picture }}" style="max-width: 350px; max-height: 240px;"><br>
-                {% endif %}
-                <strong>{{ item.headernews }}</strong>
+<div class='modal' id='modal-1' style='display:flex; opacity:1;'>
+    <form method='POST' id='create-news'>
+        <div class='content-modal'>
+            <div class="header-modal">
+                <span class="btn-modal-close" id="close-btn-1">&times;</span>
+                <div class="dropdown" id='dropdown-1'>
+                    <button class="dropdown-btn" id='dropdown-btn-1'>Действия</button>
+                    <div class="dropdown-menu" id='dropdown-menu-1'>
+                        <a data-action="">Выберите тип новости</a>
+                        <a data-action="admin-news">Новости Администрации</a>
+                        <a data-action="govenor-news">Новости Правительства</a>
+                        <a data-action="weazel-news">Новости Weazel News</a>
+                    </div>
+                </div>
             </div>
-        {% endfor %}
-    </div>
-    <div class="leadernewsy">
-        {% for lditem in leadernews %}
-            <div class="list-item" onclick="openModal('{{ lditem.id }}', '{{ lditem.headernews }}', '{{ lditem.textnews }}', '{{ lditem.typenews }}', '{{ lditem.picture }}')">
-                {% if lditem.picture %}
-                <img src="{{ lditem.picture }}" style="max-width: 350px; max-height: 240px;"><br>
-                {% endif %}
-                <strong> {{ lditem.headernews }} </strong>
+            <input type="hidden" name="action" id="action-1">
+            <div class='group'>
+                <div class='form-control'>
+                    <label for="nickname">Имя Фамилия</label>
+                    <div class='form-input'>
+                        <input id="nickname" name="nickname" placeholder='Введите ник (необязательно)'>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+                <div class='form-control'>
+                    <label for="static">ID-карта</label>
+                    <div class='form-input'>
+                        <input id="static" name="static" placeholder='Введите статик (необязательно)'>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
             </div>
-        {% endfor %}
-    </div>
-    <div class="weazelnewsy">
-        {% for wzitem in weazelnewsn %}
-            <div class="list-item" onclick="openModal('{{ wzitem.id }}', '{{ wzitem.headernews }}', '{{ wzitem.textnews }}', '{{ wzitem.typenews }}', '{{ wzitem.picture }}')">
-                {% if wzitem.picture %}
-                <img src="{{ wzitem.picture }}" style="max-width: 350px;  max-height: 240px;"><br>
-                {% endif %}
-                <strong> {{ wzitem.headernews }} </strong>
+            <div class='form-control'>
+                <label for="findings">Ходатайствую</label>
+                <div class='form-textarea'>
+                    <textarea id="findings" name="findings" rows="8" cols="90" placeholder='Опишите ходатайство'></textarea>
+                </div>
             </div>
-        {% endfor %}
-    </div>
+            <div class='submit-btn-contanier'>
+                <div class='submit-btn'>
+                    <input type="submit" value="Создать новость">   
+                </div>   
+            </div> 
+        </div> 
+    </form>
 </div>
-</main>

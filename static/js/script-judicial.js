@@ -1,6 +1,5 @@
 const judicialOfficeButton = document.getElementById('load-judicial-office');
 const prosecutionOfficeButton = document.getElementById('load-prosecution-office');
-const otherDepartmentsButton = document.getElementById('load-other-office');
 const districtButtons1 = document.getElementById('load-claim-district');
 const districtButtons2 = document.getElementById('load-claim-supreme');
 const backButton = document.createElement('a');
@@ -41,32 +40,32 @@ function restoreState() {
 
 function showJudicialOffice() {
     prosecutionOfficeButton.classList.remove('fade-in-nav');
-    otherDepartmentsButton.classList.remove('fade-in-nav');
     judicialOfficeButton.classList.remove('fade-in-nav');
     
     prosecutionOfficeButton.classList.add('hidden-nav');
-    otherDepartmentsButton.classList.add('hidden-nav');
     judicialOfficeButton.classList.add('hidden-nav');
     
     prosecutionOfficeButton.style.transform = 'translateX(300px)';
-    otherDepartmentsButton.style.transform = 'translateX(-300px)';
+    judicialOfficeButton.style.transform = 'translateX(-300px)';
     setTimeout(() => { 
         prosecutionOfficeButton.style.display = 'none';
-        otherDepartmentsButton.style.display = 'none';
         judicialOfficeButton.style.display = 'none';
     }, 300);
 
     setTimeout(() => {
-        districtButtons1.style.display = 'block';
-        districtButtons2.style.display = 'block';
+        districtButtons1.style.display = 'inline-flex';
+        districtButtons2.style.display = 'inline-flex';
 
         setTimeout(() => {
+            districtButtons1.style.transform = 'translateX(0px)';
+            districtButtons2.style.transform = 'translateX(0px)';
+
             districtButtons1.classList.remove('hidden-nav');
             districtButtons1.classList.add('fade-in-nav'); 
             districtButtons2.classList.remove('hidden-nav');
             districtButtons2.classList.add('fade-in-nav');
             backButton.classList.add('nav-button');
-            backButton.style.display = 'block';
+            backButton.style.display = 'inline-flex';
         }, 300);
     }, 300);
 }
@@ -87,6 +86,8 @@ backButton.addEventListener('click', () => {
     
     attorneyContent.innerHTML = '';
     attorneyContent.classList.remove('fade-in');
+    districtButtons1.style.transform = 'translateX(300px)';
+    districtButtons2.style.transform = 'translateX(-300px)';
 
     districtButtons1.classList.add('hidden-nav');
     districtButtons1.classList.remove('fade-in-nav'); 
@@ -101,20 +102,17 @@ backButton.addEventListener('click', () => {
     }, 300);
 
     setTimeout(() => {
-        prosecutionOfficeButton.style.display = 'block';
-        otherDepartmentsButton.style.display = 'block';
-        judicialOfficeButton.style.display = 'block';
+        prosecutionOfficeButton.style.display = 'inline-flex';
+        judicialOfficeButton.style.display = 'inline-flex';
         setTimeout(() => { 
             prosecutionOfficeButton.classList.add('fade-in-nav');
-            otherDepartmentsButton.classList.add('fade-in-nav');
             judicialOfficeButton.classList.add('fade-in-nav');
             
             prosecutionOfficeButton.classList.remove('hidden-nav');
-            otherDepartmentsButton.classList.remove('hidden-nav');
             judicialOfficeButton.classList.remove('hidden-nav');
 
             prosecutionOfficeButton.style.transform = 'translateX(0px)';
-            otherDepartmentsButton.style.transform = 'translateX(0px)';
+            judicialOfficeButton.style.transform = 'translateX(0px)';
         }, 15);   
     }, 300);
 });
@@ -176,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             newLabel.textContent = "Исковое требование.";
 
             const newFormInputDiv = document.createElement("div");
-            newFormInputDiv.classList.add("form-input-modal");
+            newFormInputDiv.classList.add("form-input");
             newFormInputDiv.id = `claim-input-${claimCounter}`;
 
             const newInput = document.createElement("input");
@@ -310,7 +308,7 @@ function handleAddDefenda(groupId, deleteButtonId) {
     newLabel.textContent = "Ответчик.";
 
     const newFormInputDiv = document.createElement("div");
-    newFormInputDiv.classList.add("form-input-modal");
+    newFormInputDiv.classList.add("form-input");
 
     const newInput = document.createElement("input");
     newInput.type = "text";
@@ -360,8 +358,8 @@ function showModal() {
         overlay.classList.add('active');
 
         setTimeout(() => {
-            modalDistrict.classList.remove('hidden-modal-district');
-            modalDistrict.classList.add('show-modal-district');
+            modalDistrict.classList.remove('hidden-modal');
+            modalDistrict.classList.add('show-modal');
         }, 10);
     }
 }
@@ -371,8 +369,8 @@ function hideModal() {
     const overlay = document.getElementById('overlay');
 
     if (modalDistrict && overlay) {
-        modalDistrict.classList.remove('show-modal-district');
-        modalDistrict.classList.add('hidden-modal-district');
+        modalDistrict.classList.remove('show-modal');
+        modalDistrict.classList.add('hidden-modal');
 
         setTimeout(() => {
             modalDistrict.style.display = 'none';

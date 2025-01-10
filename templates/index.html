@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/index-style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/animation-bg.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/header-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index-style.css') }}">
     <title>Majestic State</title>
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='img/android-chrome-512x512.png') }}">
@@ -17,207 +18,28 @@
     {% block header %}
         {% include 'header/header.html' %}
     {% endblock %}
-    {% block main %}
-        {% include 'main/main.html' %}
-    {% endblock %}
 
     {% block error %}
-        {% include 'api/error.html' %}
+        {% include 'api/error-json.html' %}
     {% endblock %}
 
-    
     <main> 
-        {% with messages = get_flashed_messages() %}
-            {% if messages %} 
-                <div id="access-message" class='access-message'>
-                    <span class="modal-close-error">&times;</span>
-                    <p><strong>Внимание!</strong> {{ messages[0] }}<p>
-                    {% if not current_user.is_authenticated %} 
-                        <br>
-                        <a class='alert-button' href="{{ url_for('main.auth') }}">Войти в аккаунт</a>
-                    {% endif %}
-                </div> <script src="{{ url_for('static', filename='js/script-error.js') }}" ></script>
-            {% endif %}
-        {% endwith %}
+        {% block main %}
+            {% include 'main/main.html' %}
+        {% endblock %}
     </main> 
-
-
 
     <div class="lines">
         {% for i in range(40) %}
         <div class="line"></div>
         {% endfor %}
     </div>
+
     {% block footer %}
         {% include 'footer/footer.html' %}
     {% endblock %}
-    <script>
 
-        document.getElementById("cityhallnewsbutton").addEventListener("click", function(event) {
-    event.preventDefault();
-    toggleNewsSection(this, ".city_hallnews");
-});
-
-document.getElementById("leadernewsbutton").addEventListener("click", function(event) {
-    event.preventDefault();
-    toggleNewsSection(this, ".leadernewsy");
-});
-
-document.getElementById("weazelnewsbutton").addEventListener("click", function(event) {
-    event.preventDefault();
-    toggleNewsSection(this, ".weazelnewsy");
-});
-
-function toggleNewsSection(button, sectionClass) {
-            var buttons = document.querySelectorAll("#cityhallnewsbutton, #leadernewsbutton, #weazelnewsbutton");
-            var sections = document.querySelectorAll(".city_hallnews, .leadernewsy, .weazelnewsy");
-
-            buttons.forEach(btn => btn.classList.remove("active"));
-            sections.forEach(section => section.style.display = "none");
-
-            var newsDiv = document.querySelector(sectionClass);
-            if (newsDiv) {
-                newsDiv.style.display = "grid";
-                button.classList.add("active");
-                newsDiv.classList.add('fadeIn');
-            } else {
-                console.log("Section not found:", sectionClass);
-            }
-        }
-        function openModal(id, name, description, newstype, picture) {
-            document.getElementById("modalID").textContent = id;
-            if (picture) {
-            document.getElementById('modalpicture').src =  picture;
-            }
-            document.getElementById("modalName").textContent = name;
-            document.getElementById("modalDescription").textContent = description;
-            document.getElementById("myModal").style.display = "flex";
-        }
-
-        // Функция для закрытия модального окна
-        function closeModal() {
-            document.getElementById("myModal").style.display = "none";
-        }
-
-        function deletenews(id) {
-            fetch('/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ id: id })
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error(`Ошибка HTTP: ${response.status}`);
-            }
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                return response.json().then(data => ({ status: response.status, body: data }));
-            } else {
-                throw new Error('Ожидался JSON, но получен HTML');
-            }
-        })
-        .then(obj => {
-            if (obj.status != 200) {
-                alert('Не удалось удалить новость!')
-            }
-            else {
-                window.location.href = `${window.location.protocol}//${window.location.host}/`;
-            }
-        })
-        .catch(error => {
-            console.error('Проблема с удалением новости:', error);
-        });
-        }
-
-        const input = document.getElementById('dynamic-input');
-        input.addEventListener('input', function() {
-            const maxheight = window.innerHeight * 0.34;
-
-            if (this.scrollHeight <= maxheight) {
-                this.style.height = 'auto'; 
-                this.style.height = this.scrollHeight + 'px';
-            }
-    
-            this.style.width = 'auto';
-            this.style.width = this.scrollWidth + 'px';
-        });
-
-        // Закрытие окна при клике вне модального контента
-        window.onclick = function(event) {
-            if (event.target === document.getElementById("myModal")) {
-                closeModal();
-            }
-        }
-        function openModalcn() {
-            document.getElementById("Modalcn").style.display = "flex";
-        }
-        function closeModalcn() {
-            document.getElementById("Modalcn").style.display = "none";
-        }
-        document.getElementById('newscForm').addEventListener('submit', function(event) {
-        event.preventDefault();  // Предотвращаем стандартное поведение формы
-        const responseMessage = document.getElementById('responseMessage');
-        document.getElementById('subbtn').disabled = true;
-        responseMessage.textContent = 'Обработка';
-        responseMessage.style.color = 'yellow';
-
-        console.log('Submitting form...');  // Выводим сообщение в консоль для отладки
-
-        fetch(this.action, {
-            method: 'POST',
-            body: new FormData(this)
-        }).then(response => {
-        return response.json().then(data => ({ status: response.status, body: data }));
-        }).then(obj => {
-            if (obj.status === 200) {
-                responseMessage.textContent = 'Новость опубликована!';
-                responseMessage.style.color = 'green';
-            } else {
-                responseMessage.textContent = obj.body.message;
-                responseMessage.style.color = 'red';
-                console.error("Ошибка при публикации новости:" + obj.body.message)
-            }
-            document.getElementById('subbtn').disabled = false;
-        })
-        })
-        function showNewsByHash() {
-        const hash = window.location.hash.substring(1); // Убираем символ #
-        if (hash.startsWith('news')) {
-          const newsId = hash.replace('news', '');
-          fetch(`/get_news/${newsId}`)
-            .then(response => response.json())
-            .then(data => {
-              openModal(data.id, data.headernews, data.textnews, data.typenews, data.picture);
-            })
-            .catch(error => {
-              console.error('Проблема с новостью:', error);
-            });
-        }
-      }
-      function sharenews() {
-        const id = document.getElementById('modalID').textContent;
-        const url = `${window.location.origin}#news${id}`;
-        const tempInput = document.createElement('textarea');
-        tempInput.value = url;
-        document.body.appendChild(tempInput);
-        
-        // Выделяем и копируем текст
-        tempInput.select();
-        document.execCommand('copy');
-        
-        // Удаляем временный элемент
-        document.body.removeChild(tempInput);
-        
-        alert('Link copied to clipboard!');
-      }
-
-      window.addEventListener('hashchange', showNewsByHash);
-      window.addEventListener('load', showNewsByHash);
-      function errorimgfix(image) {
-            image.classList.add('error');
-        }
-    </script>
+    <script scr="{{ url_for('static', filename='js/script-index.js')}}"></script>
 </body>
 </html>
 </html>
