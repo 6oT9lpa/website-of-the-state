@@ -2,7 +2,7 @@
     <div class="container-profile">
         <div class='side-profile'>
             <div class="avatar-container">
-                <img src="{{ url_for('static', filename='uploads/images/' + current_user.url_image) }}" alt="Аватар персонажа" class="avatar-image">
+                <img src="{{ url_for('static', filename='uploads/images/' + (current_user.url_image if current_user.url_image else 'ava.png')) }}" alt="Аватар персонажа" class="avatar-image">
             </div>
         </div>
         <div class='content-profile'>
