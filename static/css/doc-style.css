@@ -917,6 +917,12 @@ span.btn-modal-close:hover {
     padding: 0px 15px;
 }
 
+.head {
+    display: flex;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
 @media (max-width: 768px) {
     .contanier-content {
         width: 100%;
@@ -959,5 +965,17 @@ span.btn-modal-close:hover {
 
     .header-modal {
         margin-bottom: 10px;
+    }
+
+    
+}
+
+.content-modal {
+    width: 500px;
+}
+
+@media (max-width: 468px) {
+    .content-modal {
+        width: 390px;
     }
 }

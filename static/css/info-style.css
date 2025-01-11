@@ -192,3 +192,9 @@ body
 .content-modal {
     top: 45vh;
 }
+
+.contanier-content {
+    padding: 10px;
+    background: #141414;
+    color: white;
+}

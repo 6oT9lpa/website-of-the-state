@@ -72,7 +72,11 @@
     <script>
         var isAuthenticated = {{ is_authenticated | tojson }};
         var isPermission = {{ is_permission  | tojson }};
-        var isProsecutor =  {{ current_user.permissions[0].prosecutor | tojson }}
+        {% if current_user.is_authenticated %}
+            var isProsecutor = {{ current_user.permissions[0].prosecutor | tojson }};
+        {% else %}
+            var isProsecutor = false;
+        {% endif %}
     </script>
 
     <script src="{{ url_for('static', filename='js/script-doc.js') }}"></script>
