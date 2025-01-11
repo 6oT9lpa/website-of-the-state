@@ -929,7 +929,7 @@ def claim_state():
     {
         'id-court': order.id,
         'current_uid': order.current_uid,
-        'author_id': order.author_id,
+        'id_judge': order.author_id,
         'findings': order.findings,
         'consideration': order.consideration,
         'ruling': order.ruling,
