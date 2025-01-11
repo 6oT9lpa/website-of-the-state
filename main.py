@@ -581,10 +581,6 @@ def get_claim_supreme_content():
 @main.route('/create-claim-state', methods=['POST'])
 def create_claim():
   from __init__ import iskdis, isksup, db, claimsStatement, Users, guestUsers
-  
-  isSend, seconds_left = is_send_allowed()
-  if not isSend:
-    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
 
   if not current_user.is_authenticated:
     return jsonify({'success': False, 'message': 'Вы не вошли в акаунт!'}), 401
@@ -743,10 +739,6 @@ def create_claim():
 @main.route('/judge_settings', methods=['POST'])
 def judge_settings():
   from __init__ import repltoisks, Users, claimsStatement, db
-  
-  isSend, seconds_left = is_send_allowed()
-  if not isSend:
-    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
 
   uid = request.form.get('uid')
   if not uid:
@@ -981,10 +973,6 @@ def claim_state():
 def addlink():
   from __init__ import iskdis, isksup, db
   
-  isSend, seconds_left = is_send_allowed()
-  if not isSend:
-    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
-  
   data = request.get_json()
   uid = data.get('uid')
   if not uid:
@@ -1039,10 +1027,6 @@ def addlink():
 @main.route('/create_petition', methods=['POST'])
 def createPettion():
   from __init__ import repltoisks, db
-  
-  isSend, seconds_left = is_send_allowed()
-  if not isSend:
-    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
   
   data = request.get_json()
   uid = data.get('uid')
@@ -1129,11 +1113,7 @@ def createPettion():
 @main.route('/create_prosecutor', methods=['POST'])
 def createProsecutor():
   from __init__ import repltoisks, db, iskdis, isksup
-  
-  isSend, seconds_left = is_send_allowed()
-  if not isSend:
-    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
-  
+
   data = request.get_json()
   uid = data.get('uid')
   if not uid:
@@ -1209,19 +1189,11 @@ def createProsecutor():
 @main.route('/create_court_pettion', methods=['POST'])
 def courtPettion():
   from __init__ import db, repltoisks, iskdis, courtOrder
-  
-  isSend, seconds_left = is_send_allowed()
-  if not isSend:
-    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
 
   data = request.get_json()
   uid = data.get('uid')
   if not uid:
     return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 400
-  
-  isSend, seconds_left = is_send_allowed()
-  if not isSend:
-    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
   
   action = data.get('action')
   pettion = data.get('petition')
@@ -1366,18 +1338,10 @@ def courtPettion():
 def courtOrder():
     from __init__ import courtOrder, db, iskdis, isksup, claimsStatement
     
-    isSend, seconds_left = is_send_allowed()
-    if not isSend:
-      return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
-    
     data = request.get_json()
     uid = data.get('uid')
     if not uid:
       return jsonify({"success": False, "message": "Данный иск не найден, проверьте его существование!"}), 400
-
-    isSend, seconds_left = is_send_allowed()
-    if not isSend:
-      return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
 
     if current_user.user_type != 'user' and current_user.permissions[0].judge:
       return jsonify({"success": False, "message": "Вы не можете составлять опредение под иско!"}), 403
@@ -2023,10 +1987,6 @@ def audit():
     return jsonify({"success": False, "message": "Доступ запрещен, отсутствуют права.", "redirect_url": request.referrer}), 403
 
   if request.method == 'POST':
-    isSend, seconds_left = is_send_allowed()
-    if not isSend:
-      return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
-    
     data = request.get_json()
     static = data.get('static')
     nickname = data.get('nickname')
