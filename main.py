@@ -581,6 +581,10 @@ def get_claim_supreme_content():
 @main.route('/create-claim-state', methods=['POST'])
 def create_claim():
   from __init__ import iskdis, isksup, db, claimsStatement, Users, guestUsers
+  
+  isSend, seconds_left = is_send_allowed()
+  if not isSend:
+    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
 
   if not current_user.is_authenticated:
     return jsonify({'success': False, 'message': 'Вы не вошли в акаунт!'}), 401
@@ -739,6 +743,10 @@ def create_claim():
 @main.route('/judge_settings', methods=['POST'])
 def judge_settings():
   from __init__ import repltoisks, Users, claimsStatement, db
+  
+  isSend, seconds_left = is_send_allowed()
+  if not isSend:
+    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
 
   uid = request.form.get('uid')
   if not uid:
@@ -973,6 +981,10 @@ def claim_state():
 def addlink():
   from __init__ import iskdis, isksup, db
   
+  isSend, seconds_left = is_send_allowed()
+  if not isSend:
+    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
+  
   data = request.get_json()
   uid = data.get('uid')
   if not uid:
@@ -1027,6 +1039,10 @@ def addlink():
 @main.route('/create_petition', methods=['POST'])
 def createPettion():
   from __init__ import repltoisks, db
+  
+  isSend, seconds_left = is_send_allowed()
+  if not isSend:
+    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
   
   data = request.get_json()
   uid = data.get('uid')
@@ -1114,6 +1130,10 @@ def createPettion():
 def createProsecutor():
   from __init__ import repltoisks, db, iskdis, isksup
   
+  isSend, seconds_left = is_send_allowed()
+  if not isSend:
+    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
+  
   data = request.get_json()
   uid = data.get('uid')
   if not uid:
@@ -1189,6 +1209,10 @@ def createProsecutor():
 @main.route('/create_court_pettion', methods=['POST'])
 def courtPettion():
   from __init__ import db, repltoisks, iskdis, courtOrder
+  
+  isSend, seconds_left = is_send_allowed()
+  if not isSend:
+    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
 
   data = request.get_json()
   uid = data.get('uid')
@@ -1341,6 +1365,10 @@ def courtPettion():
 @main.route('/create_court_order', methods=['POST'])
 def courtOrder():
     from __init__ import courtOrder, db, iskdis, isksup, claimsStatement
+    
+    isSend, seconds_left = is_send_allowed()
+    if not isSend:
+      return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
     
     data = request.get_json()
     uid = data.get('uid')
@@ -1989,12 +2017,16 @@ def get_player_data():
 @login_required
 def audit():
   from __init__ import db, Users
-
+  
   permission = current_user.permissions[0]
   if not (permission.high_staff or permission.lider or permission.dep_lider or permission.admin or permission.tech):
     return jsonify({"success": False, "message": "Доступ запрещен, отсутствуют права.", "redirect_url": request.referrer}), 403
 
   if request.method == 'POST':
+    isSend, seconds_left = is_send_allowed()
+    if not isSend:
+      return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
+    
     data = request.get_json()
     static = data.get('static')
     nickname = data.get('nickname')
@@ -2218,6 +2250,10 @@ def write_data(data):
 def save_roles():
   from __init__ import permissionRoles, db
   
+  isSend, seconds_left = is_send_allowed()
+  if not isSend:
+    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
+  
   if not (current_user.permissions[0].lider or current_user.permissions[0].admin or current_user.permissions[0].tech):
     return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия."}), 403
   
@@ -2269,6 +2305,10 @@ def save_roles():
 @main.route('/save_ranks', methods=['POST'])
 def save_ranks():
   from __init__ import db, Users
+    
+  isSend, seconds_left = is_send_allowed()
+  if not isSend:
+    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
   
   if not (current_user.permissions[0].lider or current_user.permissions[0].admin or current_user.permissions[0].tech):
       return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия."}), 403
@@ -2358,6 +2398,10 @@ def database_change():
   from __init__ import Users, db
   perm_level = check_perm_changedata()
   
+  isSend, seconds_left = is_send_allowed()
+  if not isSend:
+    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
+  
   if perm_level == 0:
     return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия!"}), 403
   
@@ -2438,6 +2482,10 @@ def send_to_bot_change_nickname(new_nickname, old_nickname, static, reason, disc
 def profile_settings():
   from __init__ import db, app
   try:
+    isSend, seconds_left = is_send_allowed()
+    if not isSend:
+      return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
+    
     action = request.form.get('action')
     if action == 'nickname':
       data = request.get_json()

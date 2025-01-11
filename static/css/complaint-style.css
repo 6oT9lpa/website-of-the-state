@@ -600,6 +600,10 @@ button.add-evidence-btn {
     cursor: pointer;
 }
 
+.content-modal {
+    width: 500px;
+}
+
 @media (max-width: 768px) {
     .container-complaint {
         display: flex;
@@ -639,5 +643,11 @@ button.add-evidence-btn {
     .form-control label {
         font-size: 13px;
         font-weight: 600;
+    }
+}
+
+@media (max-width: 468px) {
+    .content-modal {
+        width: 390px;
     }
 }
