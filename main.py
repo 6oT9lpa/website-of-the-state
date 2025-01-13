@@ -329,6 +329,7 @@ def check_user_action(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@limiter.limit("10 per minute")
 @main.route('/', methods=['GET'])
 def index():
   from __init__ import News, Users
@@ -406,6 +407,7 @@ def create_news():
   return jsonify({'success': True, 'message': f'Успешно. { "Новость от Администрации" if action == "admin-news" else ("Новость от Правительства" if action == "govenor-news" else "Новость от Weazel News") } была создана. '}), 200
 
 @main.route('/authentication-guest', methods=['GET'])
+@limiter.limit("10 per minute")
 def auth_guest():
   from form import GuestForm
   next_url = request.args.get('/')
@@ -548,6 +550,7 @@ def format_date(create_at):
     return create_date.strftime('%Y-%m-%d %H:%M')
 
 @main.route('/get-claim-district-content', methods=['GET'])
+@limiter.limit("10 per minute")
 def get_claim_district_content():
   from __init__ import iskdis, Users, guestUsers, db, claimsStatement
   count = claimsStatement.query.filter_by(is_archived=True).count()
@@ -563,6 +566,7 @@ def get_claim_district_content():
                          timedelta=timedelta, district=district_data, Users=Users, guestUsers=guestUsers, count=count, now=now)
 
 @main.route('/get-claim-supreme-content', methods=['GET'])
+@limiter.limit("10 per minute")
 def get_claim_supreme_content():
   from __init__ import isksup, Users, guestUsers, db, claimsStatement
   count = claimsStatement.query.filter_by(is_archived=True).count()
@@ -836,6 +840,7 @@ def judge_settings():
   return redirect(url_for('main.claim_state', uid=uid))
       
 @main.route('/complaint', methods=['GET'])
+@limiter.limit("10 per minute")
 def claim_state():
   from __init__ import iskdis, isksup, repltoisks, Users, guestUsers, claimsStatement, courtOrder
   
@@ -1481,19 +1486,6 @@ def courtOrder():
 
     return jsonify({"success": True, "message": "Определение было успешно создано!"}), 200
 
-
-@main.route('/get_news/<int:news_id>', methods=['GET'])
-def get_news(news_id):
-    from __init__ import News
-    news_item = News.query.get_or_404(news_id)
-    return jsonify({
-        'id': news_item.id,
-        'headernews': news_item.headernews,
-        'textnews': news_item.textnews,
-        'typenews': news_item.typenews,
-        'picture': news_item.picture
-    })
-
 @main.route('/auth', methods=['POST', 'GET'])
 @limiter.limit("3 per minute")
 def auth():
@@ -1968,8 +1960,9 @@ def process_dismissal(user, reason, fraction):
     db.session.rollback()
     logging.error(f"Ошибка базы данных: {str(e)}")
     return jsonify({"success": False, "message": "Ошибка базы данных, попробуйте позже."}), 500
-
+  
 @main.route('/getPlayerData', methods=['GET'])
+@limiter.limit("10 per minute")
 @check_user_action
 @login_required
 def get_player_data():
@@ -1984,7 +1977,7 @@ def get_player_data():
     return jsonify({'success': False})
 
 @main.route('/audit', methods=['POST', 'GET'])
-@limiter.limit("3 per minute")
+@limiter.limit("20 per minute")
 @check_user_action
 @login_required
 def audit():
@@ -2084,7 +2077,7 @@ def logout():
       }), 200
 
 @main.route('/switch_account/<int:user_id>', methods=['GET', 'POST'])
-@limiter.limit("3 per minute")
+@limiter.limit("5 per minute")
 @login_required
 def switch_account(user_id):
     from __init__ import Users
@@ -2110,6 +2103,7 @@ def switch_account(user_id):
       }), 400
 
 @main.route('/profile', methods=['GET'])
+@limiter.limit("15 per minute")
 @check_user_action
 @login_required
 def profile():
@@ -2147,6 +2141,7 @@ def check_perm_changedata():
   return 0
 
 @main.route('/getSearchUser', methods=['GET'])
+@limiter.limit("15 per minute")
 @check_user_action
 @login_required
 def get_search_data():
@@ -2178,6 +2173,7 @@ def get_search_data():
     return jsonify({"success": True, "results": filtered_data})
 
 @main.route('/check_permissions', methods=['POST'])
+@limiter.limit("10 per minute")
 @login_required
 def check_permissions():
     permission = current_user.permissions[0]
@@ -2186,6 +2182,7 @@ def check_permissions():
     return jsonify({"success": True, "message": "Доступ разрешен."}), 200
 
 @main.route('/database', methods=['GET'])
+@limiter.limit("15 per minute")
 @check_user_action
 @login_required
 def database():
@@ -2220,10 +2217,6 @@ def write_data(data):
 @limiter.limit("3 per minute")
 def save_roles():
   from __init__ import permissionRoles, db
-  
-  isSend, seconds_left = is_send_allowed()
-  if not isSend:
-    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
   
   if not (current_user.permissions[0].lider or current_user.permissions[0].admin or current_user.permissions[0].tech):
     return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия."}), 403
@@ -2277,10 +2270,6 @@ def save_roles():
 @limiter.limit("3 per minute")
 def save_ranks():
   from __init__ import db, Users
-    
-  isSend, seconds_left = is_send_allowed()
-  if not isSend:
-    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
   
   if not (current_user.permissions[0].lider or current_user.permissions[0].admin or current_user.permissions[0].tech):
       return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия."}), 403
@@ -2429,6 +2418,7 @@ def database_change():
 
 
 @main.route('/database_getdata', methods=['GET'])
+@limiter.limit("10 per minute")
 def database_getdata():
   from __init__ import Users, ActionUsers
   perm_change = check_perm_changedata()
@@ -2532,6 +2522,7 @@ def profile_settings():
     return jsonify({"success": False, "message": "Произошла ошибка, попробуйте позже."}), 500
 
 @main.route('/delete-document')
+@limiter.limit("1 per minute")
 def delete_document():
   from __init__  import PDFDocument, ResolutionTheUser, CustomResolutionTheUser, OrderTheUser, db
   uid = request.args.get('uid')
@@ -2571,6 +2562,7 @@ def delete_document():
     return jsonify({"success": False, "message": "Произошла ошибка, попробуйте позже."}), 500
 
 @main.route('/doc')
+@limiter.limit("15 per minute")
 def doc():
   if not current_user.is_authenticated:
     message = 'Вам необходимо залогироваться на сайте, дабы воспользоваться данной функцией!', 404
@@ -2594,7 +2586,7 @@ def doc():
   return render_template('doc.html', is_permission=True, is_authenticated=True, form=form, formResolution=formResolution, formOrder=formOrder, nickname=nickname, organ=organ, color=color)
   
 @main.route('/create_doc',  methods=['POST', 'GET'])
-@limiter.limit("3 per minute")
+@limiter.limit("2 per minute")
 def create_doc():
   from __init__ import Users, PDFDocument, ResolutionTheUser, OrderTheUser, db, get_next_num_resolution, get_next_num_order
   from form import FormCreateDoc, FormCreateResolution, FormCreateOrder
@@ -3166,6 +3158,7 @@ def create_doc():
   return redirect(url_for('main.doc'))
 
 @main.route('/resolution', methods=['POST', 'GET'])
+@limiter.limit("10 per minute")
 def resolution():
     from __init__ import PDFDocument, ResolutionTheUser, OrderTheUser, Users, CustomResolutionTheUser, db
     from form import FormModerationResolution
@@ -3293,6 +3286,7 @@ def user_is_moder(f):
     return decorated_function
 
 @main.route('/edit_doc')
+@limiter.limit("15 per minute")
 @user_is_moder
 def edit_doc():
   from __init__ import PDFDocument
@@ -3312,7 +3306,7 @@ def edit_doc():
 
 
 @main.route('/edit_resolution', methods=['GET', 'POST'])
-@limiter.limit("3 per minute")
+@limiter.limit("2 per minute")
 def edit_resolution():
   from __init__ import ResolutionTheUser, Users, db, PDFDocument
   from form import FormEditResolution
@@ -3442,6 +3436,7 @@ def edit_resolution():
     return redirect(url_for('main.index'))
 
 @main.route('/get_prosecution_office_content')
+@limiter.limit("15 per minute")
 def get_prosecution_office_content():
   from __init__ import ResolutionTheUser, Users, OrderTheUser, CustomResolutionTheUser
   is_visibily_attoney = True
@@ -3483,6 +3478,7 @@ def get_prosecution_office_content():
 
 
 @main.route('/district_court/information=<info_type>')
+@limiter.limit("15 per minute")
 def district_court_info(info_type):
     from __init__ import iskdis, Users, guestUsers, claimsStatement, courtPrecedents
     now = datetime.now()

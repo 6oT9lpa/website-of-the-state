@@ -381,23 +381,29 @@ a.toggle-ka-history-btn {
 	display: inline-block;
 }
 .input-file span {
-	position: relative;
-	display: inline-block;
-	cursor: pointer;
-	outline: none;
-	text-decoration: none;
-	font-size: 14px;
-	vertical-align: middle;
-	color: rgb(255 255 255);
-	text-align: center;
-	border-radius: 4px;
-	background-color: #e81c5a;
-	padding: 10px 20px;
-	box-sizing: border-box;
-	border: none;
-	margin: 0;
-	transition: background-color 0.2s;
+  max-width: 200px;
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  outline: none;
+  text-decoration: none;
+  font-size: 14px;
+  vertical-align: middle;
+  color: rgb(255 255 255);
+  text-align: center;
+  border-radius: 4px;
+  background-color: #e81c5a;
+  padding: 10px 20px;
+  box-sizing: border-box;
+  border: none;
+  margin: 0;
+  transition: background-color 0.2s;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 .input-file input[type=file] {
 	position: absolute;
 	z-index: -1;
@@ -420,6 +426,27 @@ a.toggle-ka-history-btn {
 
 .input-file input[type=file]:disabled + span {
 	background-color: #eee;
+}
+
+.ka-history span#close-btn-2 {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+.ka-history .header-modal {
+  position: sticky;
+  top: 0px;
+  background: #1a1a1a;
+  padding: 15px 10px;
+  z-index: 150;
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+  box-shadow: #e81c5a 0 0 9px -1px;
+}
+
+.ka-history {
+  padding: 0 20px 20px;
 }
 
 @media (max-width: 768px) {
