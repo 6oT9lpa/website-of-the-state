@@ -2025,11 +2025,12 @@ def audit():
 
     if current_user.curr_rank > int(rank_data) and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
       return jsonify({"success": False, "message": "Ваш текущий ранг выше выбранного. Вы не можете выбрать этот ранг."}), 400
-         
+    
+    """  
     nickname_regex = r'^[A-Za-z]+(?:\s[A-Za-z]+)*$'
     if not re.match(nickname_regex, nickname):
       return jsonify({"success": False, "message": "Ник должен быть в формате 'Nick Name'"}), 400
-    
+    """   
     discord_id_regex = r'^\d{17,19}$'
     if not re.match(discord_id_regex, discord_id):
       return jsonify({"success": False, "message": "Discord ID должен быть числовым значением длиной от 17 до 19 символов."}), 400

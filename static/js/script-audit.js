@@ -139,13 +139,14 @@ document.getElementById('form-audit').addEventListener('submit', function(event)
             return;
         }
     }
-
+    /* 
     const nickname = dataObject.nickname;
     const nicknameRegex = /^[A-Za-z]+(?:\s[A-Za-z]+)*$/;
     if (!nicknameRegex.test(nickname)) {
         showNotification("Ник должен быть в формате 'Nick Name'", true);
         return;
     }
+        */
 
     const discordId = String(dataObject.discord);
     const discordIdRegex = /^\d{17,19}$/;
