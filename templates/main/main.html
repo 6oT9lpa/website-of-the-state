@@ -1,12 +1,11 @@
-<div class='modal' id='modal-1' style='display:none; opacity:0;'>
-    <form method='POST' id='create-news'>
+<div class='modal' id='modal-1' style='display:none;'>
+    <form method='POST' id='create-news' action='/create_news' enctype="multipart/form-data">
         <div class='content-modal'>
             <div class="header-modal">
                 <span class="btn-modal-close" id="close-btn-1">&times;</span>
                 <div class="dropdown" id='dropdown-1'>
-                    <button class="dropdown-btn" id='dropdown-btn-1'>Действия</button>
+                    <button class="dropdown-btn" id='dropdown-btn-1'>Выберите тип новости</button>
                     <div class="dropdown-menu" id='dropdown-menu-1'>
-                        <a data-action="">Выберите тип новости</a>
                         <a data-action="admin-news">Новости Администрации</a>
                         <a data-action="govenor-news">Новости Правительства</a>
                         <a data-action="weazel-news">Новости Weazel News</a>
@@ -14,28 +13,32 @@
                 </div>
             </div>
             <input type="hidden" name="action" id="action-1">
-            <div class='group'>
-                <div class='form-control'>
-                    <label for="nickname">Имя Фамилия</label>
-                    <div class='form-input'>
-                        <input id="nickname" name="nickname" placeholder='Введите ник (необязательно)'>
-                    </div>
-                    <span class="text-danger" id="is-invalid"></span>
+            <div class='form-control'>
+                <label for="heading">Заголовок</label>
+                <div class='form-input'>
+                    <input id="heading" name="heading" placeholder='Введите заголовок'>
                 </div>
-                <div class='form-control'>
-                    <label for="static">ID-карта</label>
-                    <div class='form-input'>
-                        <input id="static" name="static" placeholder='Введите статик (необязательно)'>
-                    </div>
-                    <span class="text-danger" id="is-invalid"></span>
+                <span class="text-danger" id="is-invalid"></span>
+            </div>
+            <div class='form-control'>
+                <label for="brief-content">Краткое содержание</label>
+                <div class='form-textarea'>
+                    <textarea id="brief-content" name="brief-content" rows="8" cols="90" placeholder='Введите краткое содеражание новости'></textarea>
                 </div>
             </div>
             <div class='form-control'>
-                <label for="findings">Ходатайствую</label>
+                <label for="full-content">Полное содержание</label>
                 <div class='form-textarea'>
-                    <textarea id="findings" name="findings" rows="8" cols="90" placeholder='Опишите ходатайство'></textarea>
+                    <textarea id="full-content" name="full-content" rows="8" cols="90" placeholder='Введите полное содеражание новости'></textarea>
                 </div>
             </div>
+            <div class='form-control'>
+                <div class="upload-btn">
+                    <label for="file-upload">Выберите файл</label>
+                    <input type="file" id="file-upload" name="file" style="display: none;" onchange="updateFileName()">
+                </div>
+                <span id="file-name">Файл не выбран</span>
+            </div>            
             <div class='submit-btn-contanier'>
                 <div class='submit-btn'>
                     <input type="submit" value="Создать новость">   
@@ -44,3 +47,91 @@
         </div> 
     </form>
 </div>
+
+{% if current_user.is_authenticated %} 
+<div class='create-news-btn'>
+    <div class='container-btn' id='open-modal-1'>
+        <a class='create-btn'>Создать Новость</a>
+    </div>
+</div>
+{% endif %}
+
+<div class="contanier-news hidden" id='admin' style='display:none;'>
+    {% for item in news %}
+        {% if item.type_news == 'admin-news' %}
+        <div class='content' > 
+            <div class='header'>
+                <img src="{{ url_for('static', filename='uploads/images/' + (item.file_path if item.file_path else 'maxresdefault.jpg')) }}">
+                <h4> {{ item.heading }} </h4>
+                <p id="datetime">{{ item.timespan }}</p>
+            </div>
+            <div class='brief_content'>
+                <p> {{ item.brief_content }} </p>
+            </div>
+            <div class='more-btn'>
+                <a href="#" class="read-more" data-news-id="{{ item.id }}">Читать далее...</a>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+<div class="contanier-news hidden" id='gov' style='display:none;'>
+    {% for item in news %}
+        {% if item.type_news == 'govenor-news' %}
+        <div class='content' > 
+            <div class='header'>
+                <img src="{{ url_for('static', filename='uploads/images/' + (item.file_path if item.file_path else 'maxresdefault.jpg')) }}">
+                <h4> {{ item.heading }} </h4>
+                <p id="datetime">{{ item.timespan }}</p>
+            </div>
+            <div class='brief_content'>
+                <p> {{ item.brief_content }} </p>
+            </div>
+            <div class='more-btn'>
+                <a href="#" class="read-more" data-news-id="{{ item.id }}">Читать далее...</a>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<div class="contanier-news hidden" id='weazel' style='display:none;'>
+    {% for item in news %}
+        {% if item.type_news == 'weeazel-news' %}
+        <div class='content' > 
+            <div class='header'>
+                <img src="{{ url_for('static', filename='uploads/images/' + (item.file_path if item.file_path else 'maxresdefault.jpg')) }}">
+                <h4> {{ item.heading }} </h4>
+                <p id="datetime">{{ item.timespan }}</p>
+            </div>
+            <div class='brief_content'>
+                <p> {{ item.brief_content }} </p>
+            </div>
+            <div class='more-btn'>
+                <a href="#" class="read-more" data-news-id="{{ item.id }}">Читать далее...</a>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+{% for item in news %}
+<div class='modal hidden-modal' id='modal-2' style='display:none; top: 20vh;' data-news-content-id="{{ item.id }}">
+    <div class='content-modal'>
+        <div class='header-full-content'>
+            <div class='group-header'>
+                <div class='group-text'>
+                    <p> Создатель: {{ Users.query.get(item.author_id).nikname }} </p>
+                    <p id="datetime">Дата и время: {{ item.timespan }}</p>
+                </div>
+                <span class="btn-modal-close btn-close">&times;</span>
+            </div>
+            <img src="{{ url_for('static', filename='uploads/images/' + (item.file_path if item.file_path else 'maxresdefault.jpg')) }}">
+        </div>
+        <div class='full-content'>
+            <h4>{{ item.heading }}</h4>
+            <p>{{ item.full_content }}</p>
+        </div>
+    </div> 
+</div>
+{% endfor %}

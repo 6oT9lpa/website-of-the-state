@@ -1,27 +1,23 @@
-from flask import render_template, redirect, url_for, request, flash, Blueprint, session, send_file, make_response, jsonify, abort
+from flask import render_template, redirect, url_for, request, flash, Blueprint, session, jsonify, abort
 from functools import wraps
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 from form import FormAuthPush
 from flask_login import login_user, login_required, logout_user, current_user
 from datetime import datetime, timedelta
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4, letter
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 from textwrap import wrap
-from PyPDF2 import PdfReader, PdfWriter
-from pdf2image import convert_from_path
-from cryptography.fernet import Fernet
-import random, string, redis, json, os, re, shutil, logging, json, pickle
-from logging import handlers
-import sqlalchemy
-from sqlalchemy import func
-from sqlalchemy.types import JSON
-import base64, random, uuid, asyncio, time
-from pickle import loads
+from PyPDF2 import PdfReader, PdfWriter # type: ignore
+import random, string, redis, json, os, re, shutil, logging, json
+import base64, random, uuid
+
+from limiter import limiter
 
 """
 def setup_logging():
@@ -333,80 +329,81 @@ def check_user_action(f):
         return f(*args, **kwargs)
     return decorated_function
 
-CLIENT_ID = '63202ab8a29f3f1'
-def upload_image_to_imgur(image):
-    import requests
-    headers = {
-        'Authorization': f'Client-ID {CLIENT_ID}'
-    }
-    api_url = 'https://api.imgur.com/3/upload'
-    
-    response = requests.post(api_url, headers=headers, files={'image': image})
-    
-    if response.status_code == 200:
-        data = response.json()
-        return data['data']['link']
-    else:
-      return None
-    
-@main.route('/', methods=['POST', 'GET'])
+@main.route('/', methods=['GET'])
 def index():
-  from __init__ import PermissionUsers, Users, db, News
-  from form import Formnews
-  import time
-  form = Formnews()
-  city_hallnews = News.query.filter_by(typenews="cityhall").all()
-  leadernews = News.query.filter_by(typenews="leaders").all()
-  weazelnewsn = News.query.filter_by(typenews="weazel").all()
-  has_access = False
-  if current_user.is_authenticated:
-    cancrnews = current_user.permissions[0]
-    if cancrnews:
-      has_access = cancrnews is not None
-  if 'zagolovok' in request.form:
-    last_request_time = session.get('last_request_time', 0)
-    current_time = time.time()
-    if current_time - last_request_time < 60:
-      return jsonify(message=f'Подождите некоторое время до отправки следующей новости!'), 400
-    session['last_request_time'] = current_time
-    name = form.zagolovok.data
-    desc = form.desc.data
-    news_type = form.type_news.data
-    userperm = current_user.permissions[0]
-    user = Users.query.filter_by(static=current_user.static).first()
-    if not userperm.create_news:
-      return jsonify(message='Отказано в доступе!'), 403
-    if news_type == "leaders" and not userperm.admin:
-      return jsonify(message='Вы не администратор!'), 400
-        
-    if news_type == "weazel" and user.organ != "WN":
-      return jsonify(message='Вы не сотрудник WN!'), 400
-    file = form.img.data
-    if file:
-      imgur_link = upload_image_to_imgur(file)
-      new_new = News(typenews=news_type, created_by=user.nikname, headernews=name, textnews=desc, picture=imgur_link)
-    else:
-      new_new = News(typenews=news_type, created_by=user.nikname, headernews=name, textnews=desc)
-    db.session.add(new_new)
-    db.session.commit()
-    return jsonify(message='Успешно!'), 200
-  if request.method == 'POST':
-    data = request.get_json()
-    news_id = data.get('id')
-    if news_id:
-      if not current_user.permissions[0].create_news:
-        return jsonify(message='Отказано в доступе!'), 403
-      news_item = db.session.query(News).filter_by(id=news_id).first()
-      db.session.delete(news_item)
-      db.session.commit()
-      send_to_bot_log_dump(f'Новость {news_item.typenews} с ID {news_id} удалена', f"Заголовок {news_item.headernews}\nНовость {news_item.textnews}\nКартинка {news_item.picture}\nСоздано {news_item.created_by}\nУдалил {current_user.static}")
-      return jsonify(redirect_url=url_for('main.index')), 200
-    
-  return render_template('index.html', city_hallnews=city_hallnews, leadernews=leadernews, weazelnewsn=weazelnewsn, has_access=has_access, form=form)
+  from __init__ import News, Users
+  
+  news = News.query.all()
+  return render_template('index.html', news=news, Users=Users)
 
 @main.route('/create_news', methods=['POST']) 
+@limiter.limit("3 per minute")
 def create_news():
-  pass
+  from __init__ import News, db, app
+
+  if current_user.is_authenticated and current_user.user_type != 'user':
+    return jsonify({'success': False, 'message': 'Отказано в доступе.'}), 403
+  
+  data = request.form
+  action = data.get('action')
+  if not action:
+    return jsonify({'success': False, 'message': 'Тип новости не указан.'}), 400
+
+  if action not in ['admin-news', 'govenor-news', 'weazel-news']:
+    return jsonify({'success': False, 'message': 'Неизвестный тип новости.'}), 404
+  
+  if action == 'admin-news':
+    if not current_user.permissions[0].admin and not current_user.permissions[0].tech:
+      return jsonify({'success': False, 'message': 'Отказано в доступе. Вы не являетесь администратором проекта.'}), 403
+  
+  if action == 'governor-news':
+    if current_user.organ != 'GOV' and current_user.permissions[0].create_news:
+      return jsonify({'success': False, 'message': 'Отказано в доступе. Вы не находитесь в гос. стуркрутре Government или у вас отсутсвуют права на создание новостей'}), 403
+  
+  if action == 'weazel-news':
+    if current_user.organ != 'WN' and current_user.permissions[0].create_news:
+      return jsonify({'success': False, 'message': 'Отказано в доступе. Вы не находитесь в гос. стуркрутре Weazel News или у вас отсутсвуют права на создание новостей'}), 403
+
+  heading = data.get('heading')
+  briefContent = data.get('brief-content')
+  fullContent = data.get('full-content')
+  file = request.files['file']
+
+  if not all([briefContent, heading, fullContent]):
+    return jsonify({'success': False, 'message': 'Все поля обязательны для заполнения.'}), 400
+  
+  if file:
+    if not allowed_file(file.filename):
+      return jsonify({'success': False, 'message': 'Недопустимый формат файла'}), 400
+    
+    file_uid = str(uuid.uuid4()).replace("-", "")[:16]
+    file_extension = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"{file_uid}.{file_extension}"
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    
+    file.save(file_path)
+    news = News (
+      author_id = current_user.id,
+      type_news = action,
+      heading=heading, 
+      brief_content=briefContent, 
+      full_content=fullContent, 
+      file_path=filename
+    )
+    db.session.add(news)
+    
+  else:
+    news = News (
+      author_id = current_user.id,
+      type_news = action,
+      heading=heading, 
+      brief_content=briefContent, 
+      full_content=fullContent
+    )
+    db.session.add(news)
+  db.session.commit()
+  
+  return jsonify({'success': True, 'message': f'Успешно. { "Новость от Администрации" if action == "admin-news" else ("Новость от Правительства" if action == "govenor-news" else "Новость от Weazel News") } была создана. '}), 200
 
 @main.route('/authentication-guest', methods=['GET'])
 def auth_guest():
@@ -424,6 +421,7 @@ def auth_guest():
   return render_template('auth_guest.html', form=form)
 
 @main.route('/create-guest', methods=['POST', 'GET'])
+@limiter.limit("3 per minute")
 def create_guest():
   from __init__ import db, guestUsers, Users, cipher
   from form import GuestForm
@@ -485,6 +483,7 @@ def create_guest():
   return redirect(url_for('main.auth_guest'))
 
 @main.route('/validate-verificate-code', methods=['POST', 'GET'])
+@limiter.limit("3 per minute")
 def validate_code():
   from __init__ import cipher, guestUsers, db, PermissionUsers, get_next_id_user
 
@@ -579,6 +578,7 @@ def get_claim_supreme_content():
                          timedelta=timedelta, district=district_data, Users=Users, guestUsers=guestUsers, count=count, now=now)
 
 @main.route('/create-claim-state', methods=['POST'])
+@limiter.limit("3 per minute")
 def create_claim():
   from __init__ import iskdis, isksup, db, claimsStatement, Users, guestUsers
 
@@ -737,6 +737,7 @@ def create_claim():
   return jsonify({'success': True, 'message': 'Заявление успешно подано!'}), 200
     
 @main.route('/judge_settings', methods=['POST'])
+@limiter.limit("3 per minute")
 def judge_settings():
   from __init__ import repltoisks, Users, claimsStatement, db
 
@@ -970,6 +971,7 @@ def claim_state():
     return redirect(url_for('main.doc'))
   
 @main.route('/add_link_court', methods=['POST'])
+@limiter.limit("3 per minute")
 def addlink():
   from __init__ import iskdis, isksup, db
   
@@ -1025,6 +1027,7 @@ def addlink():
 
 
 @main.route('/create_petition', methods=['POST'])
+@limiter.limit("3 per minute")
 def createPettion():
   from __init__ import repltoisks, db
   
@@ -1111,6 +1114,7 @@ def createPettion():
   
 
 @main.route('/create_prosecutor', methods=['POST'])
+@limiter.limit("3 per minute")
 def createProsecutor():
   from __init__ import repltoisks, db, iskdis, isksup
 
@@ -1187,6 +1191,7 @@ def createProsecutor():
     return jsonify({"success": False, "message": "Проблема создания документа, попробуйте позже!"}), 404
 
 @main.route('/create_court_pettion', methods=['POST'])
+@limiter.limit("3 per minute")
 def courtPettion():
   from __init__ import db, repltoisks, iskdis, courtOrder
 
@@ -1335,6 +1340,7 @@ def courtPettion():
   return jsonify({"success": True, "message": "Вы успешно отправили определение!"}), 200
 
 @main.route('/create_court_order', methods=['POST'])
+@limiter.limit("3 per minute")
 def courtOrder():
     from __init__ import courtOrder, db, iskdis, isksup, claimsStatement
     
@@ -1489,6 +1495,7 @@ def get_news(news_id):
     })
 
 @main.route('/auth', methods=['POST', 'GET'])
+@limiter.limit("3 per minute")
 def auth():
   from __init__ import db, Users, guestUsers
   form = FormAuthPush()
@@ -1977,6 +1984,7 @@ def get_player_data():
     return jsonify({'success': False})
 
 @main.route('/audit', methods=['POST', 'GET'])
+@limiter.limit("3 per minute")
 @check_user_action
 @login_required
 def audit():
@@ -2026,7 +2034,7 @@ def audit():
     if not re.match(discord_id_regex, discord_id):
       return jsonify({"success": False, "message": "Discord ID должен быть числовым значением длиной от 17 до 19 символов."}), 400
     
-    valid_fractions = ['LSPD', 'LSCSD', 'EMS', 'SANG', 'GOV', 'FIB']
+    valid_fractions = ['LSPD', 'LSCSD', 'EMS', 'SANG', 'GOV', 'FIB', 'WN']
     if fraction not in valid_fractions:
       return jsonify({ 'success': False, 'message': "Не неверное название фракции." }), 400
 
@@ -2075,6 +2083,7 @@ def logout():
       }), 200
 
 @main.route('/switch_account/<int:user_id>', methods=['GET', 'POST'])
+@limiter.limit("3 per minute")
 @login_required
 def switch_account(user_id):
     from __init__ import Users
@@ -2207,6 +2216,7 @@ def write_data(data):
         
 
 @main.route('/save_roles', methods=['POST'])
+@limiter.limit("3 per minute")
 def save_roles():
   from __init__ import permissionRoles, db
   
@@ -2263,6 +2273,7 @@ def save_roles():
     
     
 @main.route('/save_ranks', methods=['POST'])
+@limiter.limit("3 per minute")
 def save_ranks():
   from __init__ import db, Users
     
@@ -2353,6 +2364,7 @@ def save_ranks():
 
 
 @main.route('/database_change', methods=['POST'])
+@limiter.limit("3 per minute")
 @login_required
 def database_change():
   from __init__ import Users, db
@@ -2438,17 +2450,14 @@ def send_to_bot_change_nickname(new_nickname, old_nickname, static, reason, disc
   redis_client.publish('change_nickname', json.dumps(message))
 
 @main.route('/profile_settings', methods=['POST'])
+@limiter.limit("3 per minute")
 @login_required
 def profile_settings():
   from __init__ import db, app
   try:
-    isSend, seconds_left = is_send_allowed()
-    if not isSend:
-      return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
-    
-    action = request.form.get('action')
+    data = request.form
+    action = data.get('action')
     if action == 'nickname':
-      data = request.get_json()
       new_nickname = data.get('new_nickname')
       reason = data.get('reason')
       nickname_regex = r'^[A-Za-z]+(?:\s[A-Za-z]+)*$'
@@ -2459,7 +2468,6 @@ def profile_settings():
       return jsonify({"success": True, "message": "Nickname был отправлен на одобрение!"}), 200
         
     elif action == 'discord':
-      data = request.get_json()
       discord = data.get('new_discordid')
       password = data.get('password-teds')
             
@@ -2477,7 +2485,6 @@ def profile_settings():
       return jsonify({"success": False, "message": "Вы ввели неверный пароль, проверьте его правильность!"}), 404
     
     elif action == 'password':
-      data = request.get_json()
       password_old = data.get('password-s')
       password_new = data.get('password-n')
       
@@ -2493,9 +2500,6 @@ def profile_settings():
       return jsonify({"success": False, "message": "Вы ввели неверный пароль, проверьте его правильность!"}), 404
     
     elif action == 'avatar':
-      if 'avatar' not in request.files:
-        return jsonify({'success': False, 'message': 'Аватарка не была загружена'}), 400
-            
       avatar = request.files['avatar']
       if avatar.filename == '':
           return jsonify({'success': False, 'message': 'Файл не выбран'}), 400
@@ -2589,6 +2593,7 @@ def doc():
   return render_template('doc.html', is_permission=True, is_authenticated=True, form=form, formResolution=formResolution, formOrder=formOrder, nickname=nickname, organ=organ, color=color)
   
 @main.route('/create_doc',  methods=['POST', 'GET'])
+@limiter.limit("3 per minute")
 def create_doc():
   from __init__ import Users, PDFDocument, ResolutionTheUser, OrderTheUser, db, get_next_num_resolution, get_next_num_order
   from form import FormCreateDoc, FormCreateResolution, FormCreateOrder
@@ -3306,6 +3311,7 @@ def edit_doc():
 
 
 @main.route('/edit_resolution', methods=['GET', 'POST'])
+@limiter.limit("3 per minute")
 def edit_resolution():
   from __init__ import ResolutionTheUser, Users, db, PDFDocument
   from form import FormEditResolution
@@ -3520,6 +3526,7 @@ def district_court_info(info_type):
       )
 
 @main.route('/create-precedents', methods=['POST'])
+@limiter.limit("3 per minute")
 def create_precedents():
   from __init__ import courtPrecedents, db
   

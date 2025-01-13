@@ -1,40 +1,15 @@
 from flask import Flask
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime, func, Enum
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, LoginManager
 from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
 import logging, uuid, os
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet  # type: ignore
 from datetime import timedelta
 import pytz
 
-from flask import render_template, redirect, url_for, request, flash, Blueprint, session, send_file, make_response, jsonify, abort
-from functools import wraps
-from sqlalchemy.exc import SQLAlchemyError
-from werkzeug.security import check_password_hash, generate_password_hash
-from form import FormAuthPush
-from flask_login import login_user, login_required, logout_user, current_user
-from datetime import datetime, timedelta
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4, letter
-from reportlab.lib.units import mm
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from io import BytesIO
-from textwrap import wrap
-from PyPDF2 import PdfReader, PdfWriter
-from pdf2image import convert_from_path
-from cryptography.fernet import Fernet
-import random, string, redis, json, os, re, shutil, logging, json, pickle
-from logging import handlers
-import sqlalchemy
-from sqlalchemy import func
-from sqlalchemy.types import JSON
-import base64, random, uuid
-from pickle import loads
-
-
+from limiter import limiter
 from main import main
 
 app = Flask(__name__)
@@ -53,6 +28,7 @@ app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 cipher = Fernet(app.config['FERNET_KEY'])
+limiter.init_app(app)
 app.register_blueprint(main)
 
 db = SQLAlchemy(app)
@@ -133,6 +109,8 @@ class Users(db.Model, UserMixin):
     create_document = db.relationship('PDFDocument', back_populates='user')
     action_log = db.relationship('ActionUsers', back_populates='user')
     order = db.relationship('OrderTheUser', back_populates='user')
+    news = db.relationship('News', back_populates='user')
+
 
 class guestUsers(db.Model, UserMixin):
     __tablename__ = 'guest_users'
@@ -281,12 +259,17 @@ class News(db.Model):
     __tablename__ = 'news'
     
     id = db.Column(db.Integer, primary_key=True)
-    typenews = db.Column(db.String(10), nullable=False)
-    created_by = db.Column(db.String(45), nullable=False)
-    headernews = db.Column(db.String(100), nullable=False)
-    textnews = db.Column(db.Text, nullable=False)
-    picture = db.Column(db.String(200), nullable=True)
-
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    type_news = db.Column(Enum('admin-news', 'govenor-news', 'weazel-news', name='news_type'), nullable=False)
+    
+    heading = db.Column(db.String(100), nullable=False)
+    brief_content = db.Column(db.Text, nullable=False)
+    full_content = db.Column(db.Text, nullable=False)
+    file_path = db.Column(db.String(255))
+    timespan = db.Column(db.DateTime, default=lambda: datetime.now(moscow_tz))
+    
+    user = db.relationship('Users', back_populates='news')
+    
 class claimsStatement(db.Model):
     __tablename__ = 'court_claims'
 

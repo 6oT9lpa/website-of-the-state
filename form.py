@@ -63,20 +63,6 @@ class FormEditResolution(FlaskForm):
     param5 = StringField(render_kw={"placeholder": "Убрать пункт"})
     submit = SubmitField("Сохранить")
 
-class Formnews(FlaskForm):
-    zagolovok = StringField("Заголовок", validators=[DataRequired(), length(min=5, max=50)], render_kw={"placeholder": "Введите заголовок"})
-    desc = TextAreaField("Новость", render_kw={"placeholder": "Введите новость"})
-    type_news = SelectField('Тип новости', choices=[
-        ('cityhall', 'Правительство'),
-        ('weazel', 'Weazel News'),
-        ('leaders', 'Лидер'),
-    ], validators=[DataRequired()]
-    )
-    img = FileField('Изображение', validators=[
-        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only!')
-    ])
-    submit = SubmitField(label='отправить', validators=[DataRequired()], render_kw={'id': 'FormBtn'})
-
 class GuestForm(FlaskForm):
     nickname = StringField('Никнейм', validators=[DataRequired()], render_kw={"placeholder": "Введите ник"})
     static = StringField('Статик', validators=[DataRequired()], render_kw={"placeholder": "Введите статик"})

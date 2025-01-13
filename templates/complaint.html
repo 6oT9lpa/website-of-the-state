@@ -468,7 +468,7 @@
                 <div class='main-content-complaint'>
                     <div class='header-content'>
                         <div class='header-statement'>
-                            <div class='img-header'>{% if court == 'district' %}<img src='{{ url_for("static", filename="img/DistrictCourt.pngg")}}'/>{% else %}<img src='{{ url_for("static", filename="img/supreme_court.png")}}'/>{% endif %}</div>     
+                            <div class='img-header'>{% if court == 'district' %}<img src='{{ url_for("static", filename="img/DistrictCourt.png")}}'/>{% else %}<img src='{{ url_for("static", filename="img/supreme_court.png")}}'/>{% endif %}</div>     
                             <div class='text-header'>
                                 <h4>District Court of the State of San Andreas</h4>
                                 <p>От: <b>{{ user.nikname if user else (guest.nikname if guest else 'Не найден') }}</b></p>

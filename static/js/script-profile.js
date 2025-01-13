@@ -96,13 +96,11 @@ document.getElementById('settings-nickname-form').addEventListener('submit', fun
     event.preventDefault(); 
 
     const formData = new FormData(event.target);
-
+    const actionValue = document.getElementById('action-0').value;
+    formData.append('action', actionValue);
     fetch('/profile_settings', {
         method: 'POST',
-        headers: {
-        'Content-Type': 'application/json'
-    },
-        body: JSON.stringify(Object.fromEntries(formData.entries()))
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
@@ -127,13 +125,11 @@ document.getElementById('settings-password-form').addEventListener('submit', fun
     event.preventDefault(); 
 
     const formData = new FormData(event.target);
-
+    const actionValue = document.getElementById('action-0').value;
+    formData.append('action', actionValue);
     fetch('/profile_settings', {
         method: 'POST',
-        headers: {
-        'Content-Type': 'application/json'
-    },
-        body: JSON.stringify(Object.fromEntries(formData.entries()))
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
@@ -158,12 +154,11 @@ document.getElementById('settings-discordID-form').addEventListener('submit', fu
     event.preventDefault(); 
 
     const formData = new FormData(event.target);
+    const actionValue = document.getElementById('action-0').value;
+    formData.append('action', actionValue);
     fetch('/profile_settings', {
         method: 'POST',
-        headers: {
-        'Content-Type': 'application/json'
-    },
-        body: JSON.stringify(Object.fromEntries(formData.entries()))
+        body: formData
     })
     .then(response => response.json())
     .then(data => {

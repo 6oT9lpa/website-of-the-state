@@ -133,7 +133,7 @@ document.getElementById('form-audit').addEventListener('submit', function(event)
     if (fractionSelector) {
         const fractionValue = dataObject.fraction;
         console.log(dataObject.fraction)
-        const validFractions = ['LSPD', 'LSCSD', 'EMS', 'SANG', 'GOV', 'FIB'];
+        const validFractions = ['LSPD', 'LSCSD', 'EMS', 'SANG', 'GOV', 'FIB', 'WN'];
         if (!validFractions.includes(fractionValue)) {
             showNotification("Нии...даа.... так делать!", true);
             return;

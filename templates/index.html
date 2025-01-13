@@ -23,12 +23,10 @@
         {% include 'api/error-json.html' %}
     {% endblock %}
 
-    <main> 
-        {% block main %}
-            {% include 'main/main.html' %}
-        {% endblock %}
-    </main> 
-
+    {% block main %}
+        {% include 'main/main.html' %}
+    {% endblock %} 
+    
     <div class="lines">
         {% for i in range(40) %}
         <div class="line"></div>
@@ -38,8 +36,8 @@
     {% block footer %}
         {% include 'footer/footer.html' %}
     {% endblock %}
-
-    <script scr="{{ url_for('static', filename='js/script-index.js')}}"></script>
+    <div class="overlay" id='overlay'></div>
+    <script src="{{ url_for('static', filename='js/script-index.js') }}"></script>
 </body>
 </html>
 </html>

@@ -44,6 +44,7 @@
     align-items: center;
     text-align: center;
     margin-bottom: 15px;
+    gap: 5px;
 }
 
 .form-control label {
@@ -182,7 +183,7 @@ span.btn-modal-close {
     transition: all 0.5s ease-in-out;
     align-items: center;
     display: flex;
-
+    cursor: pointer;
 }
 
 span.btn-modal-close:hover {
@@ -303,4 +304,50 @@ option {
 }
 option:disabled {
     color: gray;
+}
+
+/* Стили input file */
+
+.upload-btn {
+    padding: 5px 20px;
+    background: #141414;
+    border: #201f1f solid 2px;
+    border-radius: 10px;
+    box-shadow: #1e1e1e 0 0 8px 3px;
+    transition: all 0.3s ease-in-out;
+}
+
+.upload-btn::before {
+    box-shadow: none;
+}
+.upload-btn::after {
+    box-shadow: inset #1e1e1e 0 0 8px 3px;
+}
+.upload-btn:hover {
+    box-shadow: inset #0e0e0e 0 0 8px 3px;
+    border: #0e0e0e solid 2px; 
+}
+.upload-btn:hover,
+.upload-btn:focus {
+    border-color: #0e0e0e;
+    box-shadow: inset #0e0e0e 0 0 8px 3px; 
+}
+.upload-btn:focus {
+    outline: none;
+    box-shadow: inset #0e0e0e 0 0 8px 3px, 0 0 10px 2px rgba(0, 0, 0, 0.5); 
+}
+
+.upload-btn label {
+    display: inline-block;
+    color: #f0f8ff;
+    padding: 5px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.upload-btn input[type="file"] {
+    display: none; 
 }
