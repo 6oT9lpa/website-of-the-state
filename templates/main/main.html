@@ -56,82 +56,52 @@
 </div>
 {% endif %}
 
-<div class="contanier-news hidden" id='admin' style='display:none;'>
-    {% for item in news %}
-        {% if item.type_news == 'admin-news' %}
-        <div class='content' > 
-            <div class='header'>
-                <img src="{{ url_for('static', filename='uploads/images/' + (item.file_path if item.file_path else 'maxresdefault.jpg')) }}">
-                <h4> {{ item.heading }} </h4>
-                <p id="datetime">{{ item.timespan }}</p>
-            </div>
-            <div class='brief_content'>
-                <p> {{ item.brief_content }} </p>
-            </div>
-            <div class='more-btn'>
-                <a href="#" class="read-more" data-news-id="{{ item.id }}">Читать далее...</a>
-            </div>
+{% macro render_news(news, type, idnews) %}
+<div class="contanier-news hidden" id="{{ idnews }}" style="display:none;">
+    {% for item in news if item.type_news == type %}
+    <div class='content'> 
+        <div class='header'>
+            <img src="{{ url_for('static', filename='uploads/images/' + (item.file_path if item.file_path else 'maxresdefault.jpg')) }}">
+            <h4>{{ item.heading }}</h4>
+            <p id="datetime">{{ item.timespan }}</p>
         </div>
-        {% endif %}
+        <div class='brief_content'>
+            <p>{{ item.brief_content }}</p>
+        </div>
+        <div class='more-btn'>
+            <a href="#" class="read-more" data-news-id="{{ item.id }}"
+            data-author="{{ Users.query.get(item.author_id).nikname }}"
+            data-heading="{{ item.heading }}"
+            data-full-content="{{ item.full_content | e }}" 
+            data-datetime="{{ item.timespan }}"
+            data-file-path="{{ item.file_path }}">
+            Читать далее...
+            </a>
+        </div>
+    </div>
     {% endfor %}
 </div>
-<div class="contanier-news hidden" id='gov' style='display:none;'>
-    {% for item in news %}
-        {% if item.type_news == 'govenor-news' %}
-        <div class='content' > 
-            <div class='header'>
-                <img src="{{ url_for('static', filename='uploads/images/' + (item.file_path if item.file_path else 'maxresdefault.jpg')) }}">
-                <h4> {{ item.heading }} </h4>
-                <p id="datetime">{{ item.timespan }}</p>
-            </div>
-            <div class='brief_content'>
-                <p> {{ item.brief_content }} </p>
-            </div>
-            <div class='more-btn'>
-                <a href="#" class="read-more" data-news-id="{{ item.id }}">Читать далее...</a>
-            </div>
-        </div>
-        {% endif %}
-    {% endfor %}
-</div>
+{% endmacro %}
 
-<div class="contanier-news hidden" id='weazel' style='display:none;'>
-    {% for item in news %}
-        {% if item.type_news == 'weeazel-news' %}
-        <div class='content' > 
-            <div class='header'>
-                <img src="{{ url_for('static', filename='uploads/images/' + (item.file_path if item.file_path else 'maxresdefault.jpg')) }}">
-                <h4> {{ item.heading }} </h4>
-                <p id="datetime">{{ item.timespan }}</p>
-            </div>
-            <div class='brief_content'>
-                <p> {{ item.brief_content }} </p>
-            </div>
-            <div class='more-btn'>
-                <a href="#" class="read-more" data-news-id="{{ item.id }}">Читать далее...</a>
-            </div>
-        </div>
-        {% endif %}
-    {% endfor %}
-</div>
+{{ render_news(news, 'admin-news', 'admin') }}
+{{ render_news(news, 'govenor-news', 'gov') }}
+{{ render_news(news, 'weazel-news', 'weazel') }}
 
-{% for item in news %}
-<div class='modal hidden-modal' id='modal-2' style='display:none; top: 20vh;' data-news-content-id="{{ item.id }}">
-    <div class='content-modal'>
-        <div class='header-full-content'>
-            <div class='group-header'>
-                <div class='group-text'>
-                    <p> Создатель: {{ Users.query.get(item.author_id).nikname }} </p>
-                    <p id="datetime">Дата и время: {{ item.timespan }}</p>
+<div class="modal hidden-modal" id="modal-2" style="display:none; top: 20vh;">
+    <div class="content-modal">
+        <div class="header-full-content">
+            <div class="group-header">
+                <div class="group-text">
+                    <p id="modal-creator">Создатель: </p>
+                    <p id="modal-datetime">Дата и время: </p>
                 </div>
                 <span class="btn-modal-close btn-close">&times;</span>
             </div>
-            <img src="{{ url_for('static', filename='uploads/images/' + (item.file_path if item.file_path else 'maxresdefault.jpg')) }}">
+            <img id="modal-image" src="">
         </div>
-        <div class='full-content'>
-            <h4>{{ item.heading }}</h4>
-            <p>{{ item.full_content }}</p>
+        <div class="full-content">
+            <h4 id="modal-heading"></h4>
+            <p id="modal-full-content"></p>
         </div>
-    </div> 
+    </div>
 </div>
-{% endfor %}

@@ -175,8 +175,17 @@ document.addEventListener('DOMContentLoaded', function(e){
             event.preventDefault();
 
             const newsId = button.getAttribute('data-news-id');
-            const newsContent = document.querySelector(`[data-news-content-id="${newsId}"]`).innerHTML;
-            modalContent.innerHTML = newsContent;
+            const author = button.getAttribute('data-author');
+            const heading = button.getAttribute('data-heading');
+            const fullContent = button.getAttribute('data-full-content');
+            const datetime = button.getAttribute('data-datetime');
+            const filePath = button.getAttribute('data-file-path');
+
+            document.getElementById('modal-heading').textContent = heading;
+            document.getElementById('modal-full-content').textContent = fullContent;
+            document.getElementById('modal-creator').textContent = 'Создатель: ' + author;
+            document.getElementById('modal-datetime').textContent = 'Дата и время: ' + datetime;
+            document.getElementById('modal-image').src = filePath ? '/static/uploads/images/' + filePath : '/static/uploads/images/maxresdefault.jpg';
 
             modal.style.display = 'flex';
             setTimeout(() => {
@@ -198,7 +207,6 @@ document.addEventListener('DOMContentLoaded', function(e){
         }
     });
     
-
     modal.addEventListener('click', event => {
         if (event.target === modal) {
             modal.classList.add('hidden-modal');
