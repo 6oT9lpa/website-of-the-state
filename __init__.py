@@ -393,6 +393,26 @@ class permissionRoles(db.Model):
     position_rank = db.Column(db.Integer, nullable=False)
     roles = db.Column(db.PickleType, nullable=False)
     
+class petitionProsecutor(db.Model):
+    __tablename__ = 'petition_prosecutor'
+    id = db.Column(db.Integer, primary_key=True)
+    author = db.Column(db.Integer, nullable=False)
+    uid = db.Column(db.String(16), default=generate_uid(), unique=True)
+    discription = db.Column(db.Text, nullable=True)
+    defendant = db.Column(db.PickleType)
+    prosecutor = db.Column(db.Integer)
+    status = db.Column(db.String(15), default='Waitting')
+    evidence = db.Column(db.PickleType, nullable=True)
+    timespan = db.Column(db.DateTime, default=lambda: datetime.now(moscow_tz))
+    is_archived = db.Column(db.Boolean, default=False)
+
+class replottoPetitionProsecutor(db.Model):
+    __tablename__ = 'replotto_prosecutor'
+    id = db.Column(db.Integer, primary_key=True)
+    author = db.Column(db.Integer, nullable=False)
+    uid = db.Column(db.String(16), db.ForeignKey('petition_prosecutor.uid'))
+    replik = db.Column(db.PickleType)
+
 # Создание таблиц базы данных
 with app.app_context():
     db.create_all()

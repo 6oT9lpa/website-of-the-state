@@ -1,0 +1,56 @@
+<div class="contanier-content">
+    <div class='create-container-button'>
+        <a class='create-btn' id='modal-open-btn'
+        {% if not current_user.is_authenticated %} 
+        onclick="notification()" 
+        {% endif %}
+        >Создать Жалобу</a>
+    </div>
+    <div class='header-container'>
+        <a class='precedents-btn btn-court' href="" disabled>
+            <div class='rules-submited-form court-container'>
+                <div class='breaker-entey'>
+                    <div class='ico-header-jud'>
+                        <img width="25" height="25" src="https://img.icons8.com/external-flatart-icons-solid-flatarticons/64/FA5252/external-equality-womens-day-flatart-icons-solid-flatarticons.png" alt="external-equality-womens-day-flatart-icons-solid-flatarticons"/>
+                    </div>
+                    <h4> Justice | Система жалоб в Прокуратуру штата Сан-Андреас</h4>
+                </div>
+            </div>
+        </a>
+        <a class='precedents-btn btn-court' href="" disabled>
+            <div class='considered-claims court-container'>
+                <div class='breaker-entey'>
+                    <div class='ico-header-jud'>
+                        <img width="25" height="25" src="https://img.icons8.com/pastel-glyph/64/FA5252/scales--v3.png" alt="scales--v3"/>
+                    </div>
+                    <h4> Justice | Рассмотренные жалобы в Прокуратуру штата Сан-Андреас</h4>
+                </div>
+                <div class='info-considered-claims'>
+                    <p>Кол-во Обращений: {{ count }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class='main-contanier'>
+        {% for element in prosecutor|reverse %}
+            <a class='btn-complaint' href="/application-prosecutor?uid={{ element.uid }}">
+                <div class="list-claim">
+                    <h4>Исковое заявление № {{ "%03d" | format(element.id) }}</h4>
+                    {% set user = Users.query.filter_by(id=element.author).first() %}
+                    {% set guest = guestUsers.query.filter_by(id=element.author).first() %}
+    
+                    <p>Истец: {{ user.nikname if user else (guest.nickname if guest else 'Не найден') }}</p>
+    
+                    {% if element.timespan.date() == now.date() %}
+                        <p>Дата: Сегодня {{ element.timespan.strftime('%H:%M') }}</p>
+                    {% elif element.timespan.date() == (now - timedelta(days=1)).date() %}
+                        <p>Дата: Вчера {{ element.timespan.strftime('%H:%M') }}</p>
+                    {% else %}
+                        <p>Дата: {{ element.timespan.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% endif %}
+                </div>
+            </a>
+        {% endfor %}
+    </div> 
+</div>
+

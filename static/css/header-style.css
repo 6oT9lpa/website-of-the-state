@@ -1,3 +1,20 @@
+::-webkit-scrollbar {
+    width: 12px; 
+    height: 12px; 
+}
+
+::-webkit-scrollbar-track {
+    background: #f0f0f0; 
+    border-radius: 10px; 
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1); 
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #e81c59, #6d6d6d40);
+    border-radius: 10px; 
+    border: 2px solid #f0f0f0; 
+}
+
 header {
     background: transparent; 
     color: #f0f8ff;

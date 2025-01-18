@@ -1,4 +1,257 @@
-let bg = document.querySelector('.background');
+const judicialOfficeButton = document.getElementById('load-judicial-office');
+const prosecutionOfficeButton = document.getElementById('load-prosecution-office');
+const backButton = document.createElement('a');
+backButton.textContent = 'Назад';
+backButton.classList.add('nav-button', 'back-button');
+backButton.style.display = 'none';
+const supremeButton = document.getElementById('load-claim-supreme');
+const districtButton = document.getElementById('load-claim-district');
+const judicialContent = document.getElementById('judicial-content');
+const attorneyContent = document.getElementById('attorney-content');
+
+document.addEventListener('DOMContentLoaded', () => {
+    const savedButtonId = sessionStorage.getItem('selectedButton');
+    const savedUrl = sessionStorage.getItem('selectedUrl');
+
+    if (savedButtonId && savedUrl) {
+        toggleContent(savedButtonId, savedUrl);
+    }
+    restoreState();
+});
+document.querySelector('.navbar').prepend(backButton);
+
+function saveState(state) {
+    localStorage.setItem('officeState', state);
+}
+
+function restoreState() {
+    const state = localStorage.getItem('officeState');
+    if (state === 'showjudicialOffice') {
+        showJudicialOffice();
+    } else if (state === 'showProsecutionOffice') {
+        showProsecutionOffice();
+    } else {
+        attorneyContent.innerHTML = '';
+        attorneyContent.classList.remove('fade-in');
+        [supremeButton, districtButton, documentsProsecutorButton, applicationsProsecutorButton].forEach(button => {
+            button.classList.remove('active-button');
+        });
+    }
+}
+
+const documentsProsecutorButton = document.getElementById('load-documents-prosecutor');
+const applicationsProsecutorButton = document.getElementById('load-applications-prosecutor');
+
+function showProsecutionOffice() {
+    prosecutionOfficeButton.classList.remove('fade-in-nav');
+    judicialOfficeButton.classList.remove('fade-in-nav');
+
+    prosecutionOfficeButton.classList.add('hidden-nav');
+    judicialOfficeButton.classList.add('hidden-nav');
+
+    prosecutionOfficeButton.style.transform = 'translateX(300px)';
+    judicialOfficeButton.style.transform = 'translateX(-300px)';
+    setTimeout(() => { 
+        prosecutionOfficeButton.style.display = 'none';
+        judicialOfficeButton.style.display = 'none';
+    }, 300);
+
+    setTimeout(() => {
+        documentsProsecutorButton.style.display = 'inline-flex';
+        applicationsProsecutorButton.style.display = 'inline-flex';
+
+        setTimeout(() => {
+            documentsProsecutorButton.style.transform = 'translateX(0px)';
+            applicationsProsecutorButton.style.transform = 'translateX(0px)';
+
+            documentsProsecutorButton.classList.remove('hidden-nav');
+            documentsProsecutorButton.classList.add('fade-in-nav'); 
+            applicationsProsecutorButton.classList.remove('hidden-nav');
+            applicationsProsecutorButton.classList.add('fade-in-nav');
+            backButton.classList.add('nav-button');
+            backButton.style.display = 'inline-flex';
+        }, 300);
+    }, 300);
+}
+
+backButton.addEventListener('click', () => {
+    localStorage.removeItem('officeState');
+    sessionStorage.removeItem('selectedButton');
+    sessionStorage.removeItem('selectedUrl');
+
+    [supremeButton, districtButton].forEach(button => {
+        button.classList.remove('active-button');
+    });
+    
+    attorneyContent.innerHTML = '';
+    attorneyContent.classList.remove('fade-in');
+    districtButton.style.transform = 'translateX(300px)';
+    supremeButton.style.transform = 'translateX(-300px)';
+
+    districtButton.classList.add('hidden-nav');
+    districtButton.classList.remove('fade-in-nav'); 
+    supremeButton.classList.add('hidden-nav');
+    supremeButton.classList.remove('fade-in-nav');
+    backButton.classList.remove('nav-button');
+    backButton.style.display = 'none';
+
+    setTimeout(() => {
+        districtButton.style.display = 'none';
+        supremeButton.style.display = 'none';
+    }, 300);
+
+    setTimeout(() => {
+        prosecutionOfficeButton.style.display = 'inline-flex';
+        judicialOfficeButton.style.display = 'inline-flex';
+        setTimeout(() => { 
+            prosecutionOfficeButton.classList.add('fade-in-nav');
+            judicialOfficeButton.classList.add('fade-in-nav');
+            
+            prosecutionOfficeButton.classList.remove('hidden-nav');
+            judicialOfficeButton.classList.remove('hidden-nav');
+
+            prosecutionOfficeButton.style.transform = 'translateX(0px)';
+            judicialOfficeButton.style.transform = 'translateX(0px)';
+        }, 30);   
+    }, 300);
+});
+
+prosecutionOfficeButton.addEventListener('click', () => {
+    saveState('showProsecutionOffice');
+    showProsecutionOffice();
+});
+
+documentsProsecutorButton.addEventListener('click', function (event) {
+    event.preventDefault();
+    toggleContent('load-documents-prosecutor', '/get-documet-prosecutor-content');
+});
+
+applicationsProsecutorButton.addEventListener('click', function (event) {
+    event.preventDefault();
+    toggleContent('load-applications-prosecutor', '/get-application-prosecutor-content');
+});
+
+function showJudicialOffice() {
+    prosecutionOfficeButton.classList.remove('fade-in-nav');
+    judicialOfficeButton.classList.remove('fade-in-nav');
+    
+    prosecutionOfficeButton.classList.add('hidden-nav');
+    judicialOfficeButton.classList.add('hidden-nav');
+    
+    prosecutionOfficeButton.style.transform = 'translateX(300px)';
+    judicialOfficeButton.style.transform = 'translateX(-300px)';
+    setTimeout(() => { 
+        prosecutionOfficeButton.style.display = 'none';
+        judicialOfficeButton.style.display = 'none';
+    }, 300);
+
+    setTimeout(() => {
+        districtButton.style.display = 'inline-flex';
+        supremeButton.style.display = 'inline-flex';
+
+        setTimeout(() => {
+            districtButton.style.transform = 'translateX(0px)';
+            supremeButton.style.transform = 'translateX(0px)';
+
+            districtButton.classList.remove('hidden-nav');
+            districtButton.classList.add('fade-in-nav'); 
+            supremeButton.classList.remove('hidden-nav');
+            supremeButton.classList.add('fade-in-nav');
+            backButton.classList.add('nav-button');
+            backButton.style.display = 'inline-flex';
+        }, 300);
+    }, 300);
+}
+
+judicialOfficeButton.addEventListener('click', () => {
+    saveState('showjudicialOffice');
+    showJudicialOffice();
+});
+
+backButton.addEventListener('click', () => {
+    localStorage.removeItem('officeState');
+    sessionStorage.removeItem('selectedButton');
+    sessionStorage.removeItem('selectedUrl');
+
+    [supremeButton, districtButton, documentsProsecutorButton, applicationsProsecutorButton].forEach(button => {
+        button.classList.remove('active-button');
+    });
+
+    attorneyContent.innerHTML = '';
+    attorneyContent.classList.remove('fade-in');
+
+    documentsProsecutorButton.style.transform = 'translateX(300px)';
+    applicationsProsecutorButton.style.transform = 'translateX(-300px)';
+
+    documentsProsecutorButton.classList.add('hidden-nav');
+    documentsProsecutorButton.classList.remove('fade-in-nav');
+    applicationsProsecutorButton.classList.add('hidden-nav');
+    applicationsProsecutorButton.classList.remove('fade-in-nav');
+
+    backButton.classList.remove('nav-button');
+    backButton.style.display = 'none';
+
+    setTimeout(() => {
+        documentsProsecutorButton.style.display = 'none';
+        applicationsProsecutorButton.style.display = 'none';
+    }, 300);
+
+    setTimeout(() => {
+        prosecutionOfficeButton.style.display = 'inline-flex';
+        judicialOfficeButton.style.display = 'inline-flex';
+
+        setTimeout(() => {
+            prosecutionOfficeButton.classList.add('fade-in-nav');
+            judicialOfficeButton.classList.add('fade-in-nav');
+
+            prosecutionOfficeButton.classList.remove('hidden-nav');
+            judicialOfficeButton.classList.remove('hidden-nav');
+
+            prosecutionOfficeButton.style.transform = 'translateX(0px)';
+            judicialOfficeButton.style.transform = 'translateX(0px)';
+        }, 15);
+    }, 300);
+});
+
+
+function toggleContent(buttonId, url) {
+    sessionStorage.setItem('selectedButton', buttonId);
+    sessionStorage.setItem('selectedUrl', url);
+
+    [supremeButton, districtButton, documentsProsecutorButton, applicationsProsecutorButton].forEach(button => {
+        button.classList.remove('active-button');
+    });
+
+    [attorneyContent, judicialContent].forEach(content => {
+        content.innerHTML = '';
+        content.classList.remove('fade-in');
+    })
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Ошибка сети');
+            }
+            return response.text();
+        })
+        .then(data => {
+            attorneyContent.innerHTML = data;
+            attorneyContent.classList.add('fade-in');
+            document.getElementById(buttonId).classList.add('active-button');
+        })
+        .catch(error => console.error('Ошибка загрузки контента:', error));
+}
+
+supremeButton.addEventListener('click', function(event) {
+    event.preventDefault();
+    toggleContent('load-claim-supreme', '/get-claim-supreme-content');
+});
+
+districtButton.addEventListener('click', function(event) {
+    event.preventDefault();
+    toggleContent('load-claim-district', '/get-claim-district-content');
+});
+
 
 const showElement = (element) => {
     element.style.display = 'block';
@@ -433,9 +686,6 @@ function ValidFormTypeOrder(input) {
             case 'ML':
             case 'Martial Law':
                 clearError(input);
-
-
-
                 return true;
 
             case 'AR':

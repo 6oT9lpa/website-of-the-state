@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animation-bg.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/header-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/petitionProsecutor-style.css') }}">
+    <title>Исковое заявление</title>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='img/android-chrome-512x512.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='img/android-chrome-192x192.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='img/site.webmanifest') }}">
+</head>
+<body>
+    {% block header %}
+        {% include 'header/header-doc.html' %}
+    {% endblock %}
+    {% block error %}
+        {% include 'api/error-json.html' %}
+    {% endblock %}
+
+    {% set user = Users.query.filter_by(id=application.author).first() %}
+    {% set guest = guestUsers.query.filter_by(id=application.author).first() %}
+
+    <div class='container-complaint'>
+        <div class='main-content-complaint'>
+            <div class='header-content'>
+                <div class='header-statement'>
+                    <div class='img-header'></div>  
+                    <div class='text-header'>
+                        <h4></h4>
+                        <p>Applicant: <b>{{ user.nikname if user else (guest.nickname if guest else 'Не найден') }}</b></p>
+                        <p style="width: 90%;font-size: 16px;font-weight: 700;"> v. </p>
+                        <div class='content-defendant'>
+                            <p>Defendant:
+                                {% for item in application.defendant %}
+                                <p><b> {{ item }}, </b></p>
+                                {% endfor %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class='description-content'>
+                <h3>Жалоба в Прокуратуру № {{ "%03d" | format(application.id) }}</h3>
+                <p style='text-align: center;'>Я, гражданин Соединенных штатов Америки, пользуясь своими правами подаю жалобу в Прокуратуру штата Сан-Андреас на государственного сотрудника,
+                объясняя всю ситуацию, а также прилагая все необходимые прокуратуре доказательства.</p>
+                
+                <p>{{ application.discription }}</p>
+            </div>
+            <div class='footer-content'>
+                <p id='datetime'>Дата: {{ application.timespan }}</p>
+                <p style='margin-top: -5px;'>Подпись: <b style='font-family:Updock;font-size: 30px;'>
+                    {{
+                        (user.nikname.split()[1][0] + '. ' + user.nikname.split()[0] 
+                        if user and user.nikname and user.nikname.split()|length > 1 
+                        else user.nikname if user and user.nikname 
+                        else guest.nickname.split()[1][0] + '. ' + guest.nickname.split()[0] 
+                        if guest and guest.nickname and guest.nickname.split()|length > 1 
+                        else guest.nickname)
+                    }}
+                </b></p>
+            </div>
+        </div>
+        {% if application.status != 'CompletedWork' and application.status != 'Rejected' and application.status != 'CallbackPetition' %}
+        <div class="sidebar-container">
+            <div class='content-sidebar'>
+                <div class='header-sidebar'>
+                    <h4>Статуc: </h4>
+                    <p>
+                        {{
+                            {
+                                'Waitting': 'В ожидании',
+                                'Accepted': 'В работе у Прокуратуры',
+                                'Rejected': 'Отказано',
+                                'CompletedWork': 'Расследование оконченно',
+                                'CallbackPetition': 'Жалоба отозвана'
+                            }.get(application.status, 'Неизвестный статус')
+                        }}
+                    </p>
+                </div>
+                <div class='block-btn'>
+                    {% if current_user.permissions[0].prosecutor and application.status == 'Waitting' %}
+                    <form id="processing-prosecutor" method="POST">
+                        <input type="hidden" name="uid" id="uidcompliant">
+                        <div class='complaint-btn-container'>
+                            <div class='complaint-btn'>
+                                <input type="submit" name="action_accept"  id='btn_1' value="Принять жалобу">   
+                            </div>   
+                        </div> 
+                        <div class='complaint-btn-container'>
+                            <div class='complaint-btn'>
+                                <input type="submit" name="action_reject" id='btn_2' value="Отказать жалобу">   
+                            </div>   
+                        </div> 
+                    </form>
+                    {% endif %}
+
+                    {% if status == 'prosecutor' and application.status == 'Accepted' %}
+                    <form id="completed-prosecutor" method="POST"> 
+                        <input type="hidden" name="uid" id="uidcompliant">
+                        <div class="complaint-btn-container">
+                            <div class="complaint-btn">
+                                <input type="submit" name="no_violations" id="btn_3" value="Нарушений Нет">   
+                            </div>   
+                        </div> 
+                        <div class="complaint-btn-container">
+                            <div class="complaint-btn">
+                                <input type="submit" name="violations_order" id="btn_4" value="Нарушения Есть, ордер">   
+                            </div>   
+                        </div> 
+                        <div class="complaint-btn-container">
+                            <div class="complaint-btn">
+                                <input type="submit" name="violations_district_court" id="btn_5" value="Нарушения Есть, Окр. суд">   
+                            </div>   
+                        </div> 
+                        <div class="complaint-btn-container">
+                            <div class="complaint-btn">
+                                <input type="submit" name="violations_supreme_court" id="btn_5" value="Нарушения Есть, Верх. суд">   
+                            </div>   
+                        </div> 
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="container">
+        {% for item in replo_data %}
+            {% if item.replik['action'] == 'processing_complaint' %}
+                <div class='processing-prosecutor'>
+                    {% set prosecutor = Users.query.filter_by(id=application.prosecutor).first() %}
+                    <div class='header-prosecutor'>
+                        <div class='img-header'><img src="https://th.bing.com/th/id/R.5a07adc8d4870297301dac3af6712d18?rik=PEhbYj8GDFbuLQ&riu=http%3a%2f%2fcaliforniaconsulting.org%2fwp-content%2fuploads%2f2018%2f04%2fDepartment-of-Justice-office-of-justice-programs.png&ehk=TZu5ncQ7%2b4c%2bnsUa4ejZVKSNork9j01Es1Ivcp%2bHHI0%3d&risl=&pid=ImgRaw&r=0"/></div>     
+                        <h4> Office of the General's Prosecutor </h4>
+                        <h5> state of San-Andreas </h5>
+                        
+                        <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
+                        
+                        <p> Заявитель в Прокуратуру: {{ user.nikname }} </p>
+                        <p> Уведомление: No-OGP-{{ "%03d" | format(application.id) }}
+                            {% if item.replik['next']  %} <h5> ОБ ОТКАЗЕ ЗАЯВЛЕНИЯ К ПРОИЗВОДСТВУ ПРОКУРАТУРЫ <h5> {% else %} <h5> О ПРИНЯТИИ ЗАЯВЛЕНИЯ К ПРОИЗВОДСТВУ ПРОКУРАТУРЫ <h5> {% endif %}
+
+                        <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
+                    </div>
+                    <div class='content-prosecutor'>
+                        <p> Прокуратура Штата Сан-Андреас в лице Прокурора Штата Сан-Андреас {{ application.nikname }}, руководствуясь конституцией, а также законодательством штата Сан-Андреас, </p>
+                        <h4> УВЕДОМЛЯЕТ: </h4>
+                        <p> 1. {{ item.replik['text'] }} </p>
+                        {% if item.replik['next']  %} <p> 2. {{ item.replik['next'] }} </p> {% endif %}
+                    </div>
+                    <div class='content-footer'>
+                        <p> Подпись: 
+                            <b style="font-family:Updock;font-size: 30px;">
+                            {{
+                                prosecutor.nikname.split()[1][0] + '. ' + prosecutor.nikname.split()[0] if prosecutor.nikname.split()|length > 1 else prosecutor.nikname
+                            }}
+                            </b>
+                        </p>
+                    </div>
+                </div>
+            {% elif item.replik['action'] == 'completed_complaint' %}
+                <div class='processing-prosecutor'>
+                    {% set prosecutor = Users.query.filter_by(id=application.prosecutor).first() %}
+                    <div class='header-prosecutor'>
+                        <div class='img-header'><img src="https://th.bing.com/th/id/R.5a07adc8d4870297301dac3af6712d18?rik=PEhbYj8GDFbuLQ&riu=http%3a%2f%2fcaliforniaconsulting.org%2fwp-content%2fuploads%2f2018%2f04%2fDepartment-of-Justice-office-of-justice-programs.png&ehk=TZu5ncQ7%2b4c%2bnsUa4ejZVKSNork9j01Es1Ivcp%2bHHI0%3d&risl=&pid=ImgRaw&r=0"/></div>     
+                        <h4> Office of the General's Prosecutor </h4>
+                        <h5> state of San-Andreas </h5>
+                        
+                        <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
+                        
+                        <p> Заявитель в Прокуратуру: {{ user.nikname }} </p>
+                        <p> Уведомление: No-OGP-{{ "%03d" | format(application.id) }}
+                            <h5> О ЗАКРЫТИЕ ЗАЯВЛЕНИЯ В ПРОКУРАТУРУ <h5>
+
+                        <div class='img-header-order-2'><img src='{{ url_for("static", filename="img/text_separator.png")}}'/></div>
+                    </div>
+                    <div class='content-prosecutor'>
+                        <p> Прокуратура Штата Сан-Андреас в лице Прокурора Штата Сан-Андреас {{ application.nikname }}, руководствуясь конституцией, а также законодательством штата Сан-Андреас, </p>
+                        <h4> УВЕДОМЛЯЕТ: </h4>
+                        <p> 1. {{ item.replik['text'] }} </p>
+                        {% if item.replik['next']  %} <p> 2. {{ item.replik['next'] }} </p> {% endif %}
+                    </div>
+                    <div class='content-footer'>
+                        <p> Подпись: 
+                            <b style="font-family:Updock;font-size: 30px;">
+                            {{
+                                prosecutor.nikname.split()[1][0] + '. ' + prosecutor.nikname.split()[0] if prosecutor.nikname.split()|length > 1 else prosecutor.nikname
+                            }}
+                            </b>
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div id="custom-confirm" class="notification hidden" style='display:none;'>
+        <div class="confirm-box">
+            <p>Вы уверены, что хотите выполнить это действие?</p>
+            <div class="confirm-actions">
+                <button id="confirm-yes">Да</button>
+                <button id="confirm-no">Нет</button>
+            </div>
+        </div>
+    </div>
+
+    {% if status == 'prosecutor' and application.status == 'Accepted' %}
+    <div class='modal' id='modal-1' style='display:none;'>
+        <form method='POST' id='completed-petition'>
+            <input type="hidden" name="uid" id="uidcompliant">
+            <div class='content-modal'>
+                <div class="header-modal">
+                    <span class="btn-modal-close" id="close-btn-1">&times;</span>
+                </div>
+                <div class='form-control'>
+                    <label for="numworked">Номер дела</label>
+                    <div class='form-input'>
+                        <input id="numworked" name="numworked" placeholder='Введите номер дела'>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+                <div class='form-control'>
+                    <label for="link">Ссылка на дело</label>
+                    <div class='form-input'>
+                        <input id="link" name="link" placeholder='Введите ссылку на делопроизводство'>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+                <div class='form-control'>
+                    <label for="articles">Статьи обвинения</label>
+                    <div class='form-input'>
+                        <input id="articles" name="articles" placeholder='Введите статьи обвнинения'>
+                    </div>
+                    <span class="text-danger" id="is-invalid"></span>
+                </div>
+                <div class='submit-btn-contanier'>
+                    <div class='submit-btn'>
+                        <input type="submit" value="Оставить ответ">   
+                    </div>   
+                </div> 
+            </div> 
+        </form>
+    </div>
+    {% endif %}
+
+    {% block footer %}
+        {% include 'footer/footer.html' %}
+    {% endblock %}
+    <div class="overlay" id='overlay'></div>
+    <div class="lines">
+        {% for i in range(40) %}
+            <div class="line"></div>
+        {% endfor %}
+    </div>
+
+    <script>
+        var status = {{ status | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='js/script-application.js')}}"></script>
+</body>
+</html>

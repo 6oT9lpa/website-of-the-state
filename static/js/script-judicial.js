@@ -1,159 +1,3 @@
-const judicialOfficeButton = document.getElementById('load-judicial-office');
-const prosecutionOfficeButton = document.getElementById('load-prosecution-office');
-const districtButtons1 = document.getElementById('load-claim-district');
-const districtButtons2 = document.getElementById('load-claim-supreme');
-const backButton = document.createElement('a');
-backButton.textContent = 'Назад';
-backButton.classList.add('nav-button', 'back-button');
-backButton.style.display = 'none';
-const supremeButton = document.getElementById('load-claim-supreme');
-const districtButton = document.getElementById('load-claim-district');
-const attorneyContent = document.getElementById('judicial-content');
-
-document.addEventListener('DOMContentLoaded', () => {
-    const savedButtonId = sessionStorage.getItem('selectedButton');
-    const savedUrl = sessionStorage.getItem('selectedUrl');
-
-    if (savedButtonId && savedUrl) {
-        toggleContent(savedButtonId, savedUrl);
-    }
-    restoreState();
-});
-document.querySelector('.navbar').prepend(backButton);
-
-function saveState(state) {
-    localStorage.setItem('officeState', state);
-}
-
-function restoreState() {
-    const state = localStorage.getItem('officeState');
-    if (state === 'showjudicialOffice') {
-        showJudicialOffice();
-    } else {
-        attorneyContent.innerHTML = '';
-        attorneyContent.classList.remove('fade-in');
-        [supremeButton, districtButton].forEach(button => {
-            button.classList.remove('active-button');
-        });
-    }
-}
-
-function showJudicialOffice() {
-    prosecutionOfficeButton.classList.remove('fade-in-nav');
-    judicialOfficeButton.classList.remove('fade-in-nav');
-    
-    prosecutionOfficeButton.classList.add('hidden-nav');
-    judicialOfficeButton.classList.add('hidden-nav');
-    
-    prosecutionOfficeButton.style.transform = 'translateX(300px)';
-    judicialOfficeButton.style.transform = 'translateX(-300px)';
-    setTimeout(() => { 
-        prosecutionOfficeButton.style.display = 'none';
-        judicialOfficeButton.style.display = 'none';
-    }, 300);
-
-    setTimeout(() => {
-        districtButtons1.style.display = 'inline-flex';
-        districtButtons2.style.display = 'inline-flex';
-
-        setTimeout(() => {
-            districtButtons1.style.transform = 'translateX(0px)';
-            districtButtons2.style.transform = 'translateX(0px)';
-
-            districtButtons1.classList.remove('hidden-nav');
-            districtButtons1.classList.add('fade-in-nav'); 
-            districtButtons2.classList.remove('hidden-nav');
-            districtButtons2.classList.add('fade-in-nav');
-            backButton.classList.add('nav-button');
-            backButton.style.display = 'inline-flex';
-        }, 300);
-    }, 300);
-}
-
-judicialOfficeButton.addEventListener('click', () => {
-    saveState('showjudicialOffice');
-    showJudicialOffice();
-});
-
-backButton.addEventListener('click', () => {
-    localStorage.removeItem('officeState');
-    sessionStorage.removeItem('selectedButton');
-    sessionStorage.removeItem('selectedUrl');
-
-    [supremeButton, districtButton].forEach(button => {
-        button.classList.remove('active-button');
-    });
-    
-    attorneyContent.innerHTML = '';
-    attorneyContent.classList.remove('fade-in');
-    districtButtons1.style.transform = 'translateX(300px)';
-    districtButtons2.style.transform = 'translateX(-300px)';
-
-    districtButtons1.classList.add('hidden-nav');
-    districtButtons1.classList.remove('fade-in-nav'); 
-    districtButtons2.classList.add('hidden-nav');
-    districtButtons2.classList.remove('fade-in-nav');
-    backButton.classList.remove('nav-button');
-    backButton.style.display = 'none';
-
-    setTimeout(() => {
-        districtButtons1.style.display = 'none';
-        districtButtons2.style.display = 'none';
-    }, 300);
-
-    setTimeout(() => {
-        prosecutionOfficeButton.style.display = 'inline-flex';
-        judicialOfficeButton.style.display = 'inline-flex';
-        setTimeout(() => { 
-            prosecutionOfficeButton.classList.add('fade-in-nav');
-            judicialOfficeButton.classList.add('fade-in-nav');
-            
-            prosecutionOfficeButton.classList.remove('hidden-nav');
-            judicialOfficeButton.classList.remove('hidden-nav');
-
-            prosecutionOfficeButton.style.transform = 'translateX(0px)';
-            judicialOfficeButton.style.transform = 'translateX(0px)';
-        }, 15);   
-    }, 300);
-});
-
-function toggleContent(buttonId, url) {
-    sessionStorage.setItem('selectedButton', buttonId);
-    sessionStorage.setItem('selectedUrl', url);
-
-    [supremeButton, districtButton].forEach(button => {
-        button.classList.remove('active-button');
-    });
-
-    attorneyContent.innerHTML = '';
-    attorneyContent.classList.remove('fade-in');
-
-    fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Ошибка сети');
-            }
-            return response.text();
-        })
-        .then(data => {
-            attorneyContent.innerHTML = data;
-            attorneyContent.classList.add('fade-in');
-            document.getElementById(buttonId).classList.add('active-button');
-        })
-        .catch(error => console.error('Ошибка загрузки контента:', error));
-}
-
-supremeButton.addEventListener('click', function(event) {
-    event.preventDefault();
-    toggleContent('load-claim-supreme', '/get-claim-supreme-content');
-});
-
-districtButton.addEventListener('click', function(event) {
-    event.preventDefault();
-    toggleContent('load-claim-district', '/get-claim-district-content');
-});
-
-
 document.addEventListener('DOMContentLoaded', () => {    
     let claimCounter = 1;
 
@@ -180,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newInput = document.createElement("input");
             newInput.type = "text";
             newInput.id = `claim`;
-            newInput.name = "claims[]";
+            newInput.name = "claims";
             newInput.placeholder = "Введите требование";
 
             newFormInputDiv.appendChild(newInput);
@@ -249,12 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Модальное окно
         if (e.target.id === 'create-btn-district') {
             e.preventDefault();
-            showModal();
+            showModal('modal-court');
         }
 
         if (e.target.id === 'btn-modal-close') {
             e.preventDefault();
-            hideModal();
+            hideModal('modal-court');
         }
 
         // Добавление и удаление ответчиков
@@ -300,27 +144,24 @@ function handleAddDefenda(groupId, deleteButtonId) {
     const groupDefendaDiv = document.getElementById(groupId);
     if (!groupDefendaDiv) return;
     
-    groupDefendaDiv.classList.add('active-grid');
     const newContentDiv = document.createElement("div");
     newContentDiv.classList.add("content-defenda");
-
-    const newLabel = document.createElement("label");
-    newLabel.textContent = "Ответчик.";
 
     const newFormInputDiv = document.createElement("div");
     newFormInputDiv.classList.add("form-input");
 
     const newInput = document.createElement("input");
     newInput.type = "text";
-    newInput.name = "defenda[]";
+    newInput.name = "defenda";
+    newInput.id = 'defendant';
     newInput.placeholder = "Введите ник и статик";
 
     newFormInputDiv.appendChild(newInput);
 
     const newSpan = document.createElement("span");
     newSpan.classList.add("text-danger");
+    newSpan.id = `is-invalid`;
 
-    newContentDiv.appendChild(newLabel);
     newContentDiv.appendChild(newFormInputDiv);
     newContentDiv.appendChild(newSpan);
 
@@ -341,16 +182,15 @@ function handleRemoveDefenda(groupId, deleteButtonId) {
         lastDefendaDiv.remove();
     }
 
-    if (groupDefendaDiv.querySelectorAll(".content-defenda").length <= 1) {
+    if (groupDefendaDiv.querySelectorAll(".content-defenda").length < 2) {
         const deleteButton = document.getElementById(deleteButtonId);
         if (deleteButton) {
             deleteButton.style.display = "none";
-            groupDefendaDiv.classList.remove('active-grid');
         }
     }
 }
-function showModal() {
-    const modalDistrict = document.getElementById('modal-district-content');
+function showModal(modal) {
+    const modalDistrict = document.getElementById(modal);
     const overlay = document.getElementById('overlay');
 
     if (modalDistrict && overlay) {
@@ -364,8 +204,8 @@ function showModal() {
     }
 }
 
-function hideModal() {
-    const modalDistrict = document.getElementById('modal-district-content');
+function hideModal(modal) {
+    const modalDistrict = document.getElementById(modal);
     const overlay = document.getElementById('overlay');
 
     if (modalDistrict && overlay) {
@@ -448,7 +288,7 @@ function FetchClick(e) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)  // Сериализация данных в JSON строку
+        body: JSON.stringify(payload)
     })
     .then(response => response.json())
     .then(data => {

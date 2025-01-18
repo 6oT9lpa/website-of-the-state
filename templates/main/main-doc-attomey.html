@@ -12,7 +12,6 @@
                 <p>{{ doc.type }} № {{ doc.number }}</p>
                 <p>Дата: {{ doc.date_created.strftime('%Y-%m-%d %H:%M') }}</p>
             </div>
-
             <div class="buttons-container">
                 <a href="/resolution?uid={{ doc.item.current_uid }}" class="open-link">Открыть</a>
                 <a href="{{ doc.item.current_document.content }}" download="{{ doc.type }}_{{ doc.number }}.pdf" class="save-link">Скачать PDF</a>

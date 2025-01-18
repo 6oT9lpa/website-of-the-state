@@ -20,26 +20,13 @@
         {% include 'header/header-doc.html' %}
     {% endblock %}
 
-    <main>
-        <div id="attorney-content">
-            {% if is_visibily_attoney %}
-                {% block attorney %}
-                    {% include 'main/main-doc-attomey.html' %}
-                {% endblock %}
-            {% endif %}
-        </div>
+    <div id="attorney-content">
+    </div>
 
-        <div id="judicial-content">
-            {% if is_visibily_judicial %}
-                {% block judicial %}
-                    {% include 'main/main-doc-judicial.html' %}
-                {% endblock %}
-                {% block modal_judicial %}
-                    {% include 'main/main-doc-modal.html' %}
-                {% endblock %}
-            {% endif %}
-        </div>
-        
+    <div id="judicial-content">
+    </div>
+    
+    <main>
         {% if message %}
             {% block errors %}
                 {% include 'api/error.html' %}
@@ -57,6 +44,60 @@
             {% endblock %}
         {% endif %}
     </main>
+
+    {% if current_user.is_authenticated %}
+    <div class='modal hidden-modal' id='modal-prosecutor' style='display: none;'>
+        <div class='content-modal' style='top: 45vh;'>
+            <div class="header-modal">
+                <div class='head'>
+                    <div class='text-header'>
+                        <h4>Подача жалобы в Прокуратуру</h4>
+                        <p> на государственного служащего </p>
+                    </div>
+                </div> 
+                <span class="btn-modal-close" id='close-modal-btn'>&times;</span>
+            </div>
+            <div class='line-modal'></div>
+            <form method="POST" id='create-petition-prosecutor'>
+                <div class='form-container'>
+                    <div class='form-control' style='margin-bottom: 0;'>
+                        <label for="defenda">Ответчики</label>
+                        <div class='group-defenda' id="complaint-group-defenda">
+                            <div class='content-defenda'>
+                                <div class='form-input' id='defendant-input'>
+                                    <input id="defendant" name="defenda" placeholder='Введите ник (или фракцию) и статик'>
+                                </div>
+                                <span class="text-danger" id="is-invalid"></span>
+                            </div>
+                        </div>
+                        <div class='btn-group-defenda' style='position: relative;top: -15px;'>
+                            <a class='btn-add-defenda' id='btn-add-defenda-complaint' style='display:none;'>Удалить</a>
+                            <a class='btn-add-defenda' id='addDefenda-complaint'>Добавить Ответчика</a>
+                        </div>
+                    </div>
+                    <div class='form-control'>
+                        <label for="evidence">Доказательства</label>
+                        <div class='form-input'>
+                            <input name="evidence" id='evidence' placeholder='Введите сслыку через пробел'>
+                        </div>
+                        <span class="text-danger" id="is-invalid"></span>
+                    </div>
+                    <div class='form-control'>
+                        <label for="findings">Описание ситуации</label>
+                        <div class='form-textarea'>
+                            <textarea id="description" name="description" style='height:100px;' rows="8" cols="90" placeholder='Опишите ситуацию (подробно)'></textarea>
+                        </div>
+                    </div>
+                </div>        
+                <div class='submit-btn-contanier'>
+                    <div class='submit-btn'>
+                        <input type="submit" value="Оставить ответ">   
+                    </div>   
+                </div> 
+            </form>
+        </div>
+    </div>
+    {% endif %}
 
     {% block footer %}
         {% include 'footer/footer.html' %}

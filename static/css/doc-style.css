@@ -352,20 +352,16 @@ main{
 }
 
 .card-container {
-    width: 100%;
+    position: relative;
+    transform: translate(0%, 50%);
+    width: 90%;
     display: grid;
-    margin-top: 15px;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
     gap: 20px;
-    max-height: 520px;
-    overflow-y: auto;
-    padding: 10px;
-    background: transparent;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    transform: translateY(20px);
+    margin-top: 15px;
     animation: fadeIn 0.8s ease-out forwards;
+    justify-items: center;
+    align-items: center;  
 }
 
 iframe {
@@ -374,10 +370,10 @@ iframe {
 }
 
 .card {
-    position: relative;
+    position: sticky;
+    top: 0;
     background-color: #333333c6;
     border-radius: 10px;
-    box-shadow: 3px 5px 10px 5px rgba(0, 0, 0, 0.5);
     transition: all 0.3s ease;
     width: 350px;
     overflow: hidden !important; 
@@ -921,6 +917,11 @@ span.btn-modal-close:hover {
     display: flex;
     margin-bottom: 10px;
     gap: 10px;
+}
+
+
+.content-defenda {
+    margin-bottom: 13px;
 }
 
 @media (max-width: 768px) {

@@ -58,7 +58,7 @@ body
     background: linear-gradient(145deg, #181818, #212121);
     border: 2px solid #e81c5a;
     border-radius: 5px;
-    padding: 20px;
+    padding: 20px 20px 60px;
     color: #f0f8ff;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     position: relative;
@@ -106,18 +106,18 @@ body
 }
 
 .btn-view {
-    display: inline-block;
-    margin-top: 12px;
+    position: absolute;
+    bottom: 0;
+    width: 94%;
+    margin-bottom: 10px;
     padding: 12px 25px;
     background: #e81c5a;
+    text-align: center;
     color: #f0f8ff;
     text-decoration: none;
-    border-radius: 2px;
+    border-radius: 5px;
     font-weight: bold;
     transition: background 0.3s ease, transform 0.2s ease;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 .btn-view:hover {

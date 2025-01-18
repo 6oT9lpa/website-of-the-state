@@ -16,6 +16,7 @@ from textwrap import wrap
 from PyPDF2 import PdfReader, PdfWriter # type: ignore
 import random, string, redis, json, os, re, shutil, logging, json
 import base64, random, uuid
+import requests
 
 from limiter import limiter
 
@@ -559,9 +560,6 @@ def get_claim_district_content():
   considered_claims = claimsStatement.query.filter_by(is_archived=False).all()
   district_data = iskdis.query.filter(iskdis.current_uid.in_([claim.uid for claim in considered_claims])).all()
 
-  if not current_user.is_authenticated:
-    flash('Вам нужно авторизоваться, прежде чем составлять обращение')
-
   return render_template('main/main-state-district.html', 
                          timedelta=timedelta, district=district_data, Users=Users, guestUsers=guestUsers, count=count, now=now)
 
@@ -574,9 +572,6 @@ def get_claim_supreme_content():
   
   considered_claims = claimsStatement.query.filter_by(is_archived=False).all()
   district_data = isksup.query.filter(isksup.current_uid.in_([claim.uid for claim in considered_claims])).all()
-
-  if not current_user.is_authenticated:
-    flash('Вам нужно авторизоваться, прежде чем составлять обращение')
   
   return render_template('main/main-state-supreme.html', 
                          timedelta=timedelta, district=district_data, Users=Users, guestUsers=guestUsers, count=count, now=now)
@@ -626,7 +621,14 @@ def create_claim():
     if not all([phone_plaintiff, card_plaintiff, description]):
       return jsonify({'success': False, 'message': 'Неверный формат. Поля должны быть заполнены'}), 400
     
-    if not defendants or not claims:
+    defendants=[item for item in defendants if item]
+    name_static_pattern = r'^[A-Z][a-z]+ [A-Z][a-z]+ \d{1,7}$'
+    faction_static_pattern = r'^(LSPD|LSCSD|FIB|SANG|EMS|WN|GOV) \d{1,7}$'
+    for defendant in defendants:
+      if not re.match(name_static_pattern, defendant) and not re.match(faction_static_pattern, defendant) and defendant != '':
+        return jsonify({"success": False, "message": "Некорректая имя отвечика. Пример: 'Имя Фамилия Статик' или 'Фракция Статик'."}), 400
+    
+    if not claims:
       return jsonify({'success': False, 'message': 'Неверный формат. Поля должны быть заполнены'}), 400
     
     defendants=[item for item in defendants if item]
@@ -689,11 +691,11 @@ def create_claim():
       return jsonify({"success": False, "message": "Некорректаня дата. Пример:'ДД.ММ.ГГГГ'."}), 400
 
     defendants=[item for item in defendants if item]
-    pattern_nick = r'^[A-Z][a-z]+ [A-Z][a-z]+ \d{1,7}$'
+    name_static_pattern = r'^[A-Z][a-z]+ [A-Z][a-z]+ \d{1,7}$'
+    faction_static_pattern = r'^(LSPD|LSCSD|FIB|SANG|EMS|WN|GOV) \d{1,7}$'
     for defendant in defendants:
-      print(defendant)
-      if not re.match(pattern_nick, defendant) and defendant != '':
-        return jsonify({"success": False, "message": "Некорректая имя отвечика. Пример: 'Имя Фамилия Статик'."}), 400
+      if not re.match(name_static_pattern, defendant) and not re.match(faction_static_pattern, defendant) and defendant != '':
+        return jsonify({"success": False, "message": "Некорректая имя отвечика. Пример: 'Имя Фамилия Статик' или 'Фракция Статик'."}), 400
     
     if not all([link_case, date_case]):
       return jsonify({'success': False, 'message': 'Неверный формат. Поля должны быть заполнены'}), 400
@@ -2018,12 +2020,7 @@ def audit():
 
     if current_user.curr_rank > int(rank_data) and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
       return jsonify({"success": False, "message": "Ваш текущий ранг выше выбранного. Вы не можете выбрать этот ранг."}), 400
-    
-    """  
-    nickname_regex = r'^[A-Za-z]+(?:\s[A-Za-z]+)*$'
-    if not re.match(nickname_regex, nickname):
-      return jsonify({"success": False, "message": "Ник должен быть в формате 'Nick Name'"}), 400
-    """   
+  
     discord_id_regex = r'^\d{17,19}$'
     if not re.match(discord_id_regex, discord_id):
       return jsonify({"success": False, "message": "Discord ID должен быть числовым значением длиной от 17 до 19 символов."}), 400
@@ -2036,6 +2033,12 @@ def audit():
       return jsonify({"success": False, "message": "Вы не можете производить действия над собой."}), 400
     
     user = Users.query.filter_by(static=static).first()
+    
+    nickname_regex = r'^[A-Za-z]+(?:\s[A-Za-z]+)*$'
+    if user and not (user.permissions[0].admin or user.permissions[0].tech):
+      if not re.match(nickname_regex, nickname):
+        return jsonify({"success": False, "message": "Ник должен быть в формате 'Nick Name'"}), 400
+    
     if not user:
       process_new_invite(static, rank_data, nickname, discord_id, reason, fraction)
       return jsonify({"success": True, "message": f"Вы успешно приняли игрока."}), 200
@@ -2272,11 +2275,11 @@ def save_ranks():
   from __init__ import db, Users
   
   if not (current_user.permissions[0].lider or current_user.permissions[0].admin or current_user.permissions[0].tech):
-      return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия."}), 403
+    return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия."}), 403
   
   data = request.get_json()
   if current_user.permissions[0].lider and current_user.organ != data['fraction'] and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
-      return jsonify({"success": False, "message": "Вы не можете изменять данные другой организации!"}), 403
+    return jsonify({"success": False, "message": "Вы не можете изменять данные другой организации!"}), 403
   
   fraction = data.get('fraction')
   added = data.get('added', [])
@@ -2359,10 +2362,6 @@ def save_ranks():
 def database_change():
   from __init__ import Users, db
   perm_level = check_perm_changedata()
-  
-  isSend, seconds_left = is_send_allowed()
-  if not isSend:
-    return jsonify({"success": False, "message": f"Попробуйте через {seconds_left}."}), 400
   
   if perm_level == 0:
     return jsonify({"success": False, "message": "У вас недостаточно прав для выполнения этого действия!"}), 403
@@ -2594,10 +2593,6 @@ def create_doc():
   formResolution = FormCreateResolution()
   formOrder = FormCreateOrder()
 
-  isSend, seconds_left = is_send_allowed()
-  if not isSend:
-    return redirect(url_for('main.doc'))
-
   if not current_user.is_authenticated:
     flash('Для создания постановления требуется войти в аккаунт!')
     return redirect(url_for('main.doc'))
@@ -2614,7 +2609,6 @@ def create_doc():
     
   if request.method == 'POST':
     custom_button_pressed = formResolution.custom_button_pressed.data
-    print(custom_button_pressed)
     typeDoc = form.type_doc.data
     nickname = form.nickname.data
     static = form.static.data
@@ -3064,8 +3058,6 @@ def create_doc():
 
     elif typeDoc == 'Resolution' and custom_button_pressed:
       custom_text_fields = [request.form[key] for key in request.form if key.startswith('custom_text_')]
-      print(custom_text_fields)
-
       def add_order_details(pdf, details, y, max_width=95, line_spacing=12):
         pdf.setFont("TimesNewRoman", 12)  
         last_page = 1
@@ -3083,7 +3075,6 @@ def create_doc():
           y -= line_spacing + 4 
             
         return y, last_page
-
 
       if not any(custom_text_fields):
         flash('Должно быть заполнено хотя бы одно кастомное поле.')
@@ -3435,48 +3426,6 @@ def edit_resolution():
     
     return redirect(url_for('main.index'))
 
-@main.route('/get_prosecution_office_content')
-@limiter.limit("15 per minute")
-def get_prosecution_office_content():
-  from __init__ import ResolutionTheUser, Users, OrderTheUser, CustomResolutionTheUser
-  is_visibily_attoney = True
-
-  resolutions = ResolutionTheUser.query.filter_by(is_modertation=True).all()
-  orders = OrderTheUser.query.filter_by(is_modertation=True).all()
-  custom_resolutions = CustomResolutionTheUser.query.filter_by(is_modertation=True).all()
-  
-  all_documents = []
-  for res in resolutions:
-      all_documents.append({
-          'type': 'Постановление',
-          'item': res,
-          'date_created': res.date_created,
-          'number': res.current_number
-      })
-
-  for ord in orders:
-      all_documents.append({
-          'type': 'Ордер',
-          'item': ord,
-          'date_created': ord.date_created,
-          'number': ord.current_number
-      })
-
-  for cust_res in custom_resolutions:
-      all_documents.append({
-          'type': 'Постановление',
-          'item': cust_res,
-          'date_created': cust_res.date_created,
-          'number': cust_res.current_number
-      })
-      
-  sorted_documents = sorted(all_documents, key=lambda x: x['date_created'], reverse=True)
-  
-  return render_template(
-    'main/main-doc-attomey.html', 
-    is_visibily_attoney=is_visibily_attoney, sorted_documents=sorted_documents)
-
-
 @main.route('/district_court/information=<info_type>')
 @limiter.limit("15 per minute")
 def district_court_info(info_type):
@@ -3558,3 +3507,405 @@ def create_precedents():
     db.session.rollback()
     print(str(e))
     return jsonify({"success": False, "message": "Ошибка при создании прецедента"}), 500
+  
+@main.route('/get-application-prosecutor-content', methods=['GET'])
+@limiter.limit("10 per minute")
+def get_application_prosecutor_content():
+  from __init__ import petitionProsecutor, Users, guestUsers
+  
+  now = datetime.now()
+  prosecutor = petitionProsecutor.query.filter_by(is_archived=False).all()
+  count = petitionProsecutor.query.filter_by(is_archived=True).count()
+  
+  return render_template('main/main-application-prosecutor.html', count=count, prosecutor=prosecutor, Users=Users, guestUsers=guestUsers, timedelta=timedelta, now=now)
+
+@main.route('/create_petition_prosecutor', methods=['POST'])
+@limiter.limit("3 per minute")
+def petition_prosecutor():
+  from __init__ import petitionProsecutor, db
+  
+  if not current_user.is_authenticated:
+    return jsonify({"success": False, "message": "Вы не авторизованы"}), 401
+  
+  data = request.get_json()
+  defendants = data.get('defendants')
+  evidences = data.get('evidence')
+  description = data.get('description')
+  
+  defendants=[item for item in defendants if item]
+  name_static_pattern = r'^[A-Z][a-z]+ [A-Z][a-z]+ \d{1,7}$'
+  faction_static_pattern = r'^(LSPD|LSCSD|FIB|SANG|EMS|WN|GOV) \d{1,7}$'
+  for defendant in defendants:
+    if not re.match(name_static_pattern, defendant) and not re.match(faction_static_pattern, defendant) and defendant != '':
+      return jsonify({"success": False, "message": "Некорректая имя отвечика. Пример: 'Имя Фамилия Статик' или 'Фракция Статик'."}), 400
+    
+  youtube_regex = r'^(https?:\/\/)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)\/(watch\?v=[\w-]+|.+)$'
+  rutube_regex = r'^(https?:\/\/)?(www\.)?rutube\.ru\/video\/[a-zA-Z0-9]+\/?$'
+  yapix_regex = r'^(https?:\/\/)?(www\.)?yapix\.ru\/video\/[a-zA-Z0-9]+\/?$'
+  imgur_regex = r'^(https?:\/\/)?(www\.)?imgur\.com\/[a-zA-Z0-9]+\/?$'
+
+  links = evidences.strip().split()
+  
+  if not all([evidences, description]):
+    return jsonify({"success": False, "message": "Все поля должны быть заполнены"}), 404
+  
+  invalid_links = [link for link in links if not re.match(youtube_regex, link) and 
+                                            not re.match(rutube_regex, link) and 
+                                            not re.match(yapix_regex, link) and 
+                                            not re.match(imgur_regex, link)]
+  
+  if invalid_links:
+    return jsonify({"success": False, "message": "Ссылки не валиды!"}), 404
+  
+  try:
+    new_petition = petitionProsecutor(
+      author = current_user.id,
+      discription = description,
+      defendant = defendants,
+      evidence = evidences
+    )
+    
+    db.session.add(new_petition)
+    db.session.commit()
+    
+  except SQLAlchemyError and Exception as e:
+    print(f'Возникла проблема {str(e)}')
+    db.session.rollback()
+    return jsonify({"success": False, "message": "Возникла проблема при создание жалобы в Прокуратуру"}), 500
+
+  return jsonify({"success": True, "message": "Жалоба была успешна создана"}), 201
+
+@main.route('/application-prosecutor', methods=['GET'])
+@limiter.limit("15 per minute")
+def application_prosecutor():
+  from __init__ import petitionProsecutor, Users, guestUsers, replottoPetitionProsecutor
+  
+  uid = request.args.get('uid')
+  if not uid:
+    return "No UID provided", 400
+  
+  application=petitionProsecutor.query.filter_by(uid=uid).first()
+  if not application:
+    return jsonify({"success": False, "message": "Жалоба не найдена"}), 404 
+  
+  status = None
+  if current_user.id != application.author:
+    status = 'author'
+  elif current_user.id == application.prosecutor:
+    status = 'prosecutor'
+  
+  replo_data = replottoPetitionProsecutor.query.filter_by(uid=uid).all()
+  
+  return render_template('petitions-prosecutor.html', replo_data=replo_data, Users=Users, guestUsers=guestUsers, application=application, status=status)
+
+@main.route('/process-complaint-prosecutor', methods=['POST'])
+@limiter.limit("2 per minute")
+def process_complaint_prosecutor():
+  from __init__ import petitionProsecutor, db, replottoPetitionProsecutor, Users, guestUsers
+  
+  if not current_user.is_authenticated:
+    return jsonify({"success": False, "message": "Вы не авторизованы."}), 401
+  
+  if not current_user.permissions[0].prosecutor:
+    return jsonify({"success": False, "message": "У вас нет прав для обработки жалоб в Прокуратуру."}), 403
+  
+  data = request.get_json()
+  uid = data.get('uid')
+  
+  if not uid:
+    return jsonify({"success": False, "message": "UID не был передан, обратитесь в тех. поддержку."}), 400
+  
+  petition = petitionProsecutor.query.filter_by(uid=uid).first()
+  if not petition:
+    return jsonify({"success": False, "message": "Жалоба не найдена."}), 404
+  
+  if petition.prosecutor != None:
+    return jsonify({"success": False, "message": "Вы не можете обрабатывать жалобу в Прокурутуру, которую уже была взята в работу."}), 403
+  
+  action = data.get('action')
+  if not action:
+    return jsonify({"success": False, "message": "Действие не было передано, обратитесь в тех. поддержку."}), 400
+  
+  if action == 'accept':
+    petition.status = 'Accepted'
+    petition.prosecutor = current_user.id
+    replik = {
+      'action': 'processing_complaint',
+      'text': f"""Уважаемый(ая) { Users.query.get(petition.author).nikname if Users.query.get(petition.author) else guestUsers.query.get(petition.author) }, согласно законодательству штата СА, по факту вашего обращения будет проведена 
+      прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции 
+      и действующих на территории Сан-Андреас нормативно-правовых актов, на установление причин и условий, способствующих 
+      выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений."""
+    }
+    new_writer = replottoPetitionProsecutor(
+      author=current_user.id,
+      uid=uid,
+      replik=replik
+    )
+    db.session.add(new_writer)
+    
+  elif action == 'reject':
+    petition.status = 'Rejected'
+    petition.prosecutor = current_user.id
+    petition.is_archived = True
+    replik = {
+      'action': 'processing_complaint',
+      'text': f"Уважаемый { Users.query.get(petition.author).nikname if Users.query.get(petition.author) else guestUsers.query.get(petition.author) }, согласно правилам подачи заявления в Прокуратуру штата, в удовлетворении заявления отказано.",
+      'next': f"Для получения дополнительной информации и причины отказа, пожалуйста, обратитесь к Прокурору {current_user.nikname} через его Discord: {current_user.discordname}."
+    }
+    
+    new_writer = replottoPetitionProsecutor(
+      author=current_user.id,
+      uid=uid,
+      replik=replik
+    )
+    db.session.add(new_writer)
+    
+  db.session.commit()
+  
+  return jsonify({"success": True, "message": "Жалоба была успешно обработана"}), 200
+
+def send_bot_order_notification(uid, link, numworked, articles, defendants):
+  message = {
+      'uid': uid,
+      'link': link, 
+      'numworked': numworked, 
+      'articles': articles,
+      'defendants': defendants
+      
+  }
+  redis_client.publish('new_resolution', json.dumps(message))
+
+@main.route('/violations-prosecutor', methods=['POST'])
+@limiter.limit('2 per minute')
+def violations_prosecutor():
+  from __init__ import petitionProsecutor, db, replottoPetitionProsecutor, Users, guestUsers, claimsStatement, iskdis, isksup
+  
+  if not current_user.is_authenticated:
+    return jsonify({"success": False, "message": "Вы не авторизованы."}), 401
+  
+  if not current_user.permissions[0].prosecutor:
+    return jsonify({"success": False, "message": "У вас нет прав для обработки жалоб в Прокуратуру."}), 403
+  
+  data = request.get_json()
+  uid = data.get('uid')
+  
+  if not uid:
+    return jsonify({"success": False, "message": "UID не был передан, обратитесь в тех. поддержку."}), 400
+  
+  petition = petitionProsecutor.query.filter_by(uid=uid).first()
+  if not petition:
+    return jsonify({"success": False, "message": "Жалоба не найдена."}), 404
+  
+  if current_user.id != petition.prosecutor:
+    return jsonify({"success": False, "message": "Вы не можете обрабатывать жалобу в Прокурутуру, которую уже была взята в работу."}), 403
+  
+  action = data.get('action')
+  if not action:
+    return jsonify({"success": False, "message": "Действие не было передано, обратитесь в тех. поддержку."}), 400
+  
+  if action == 'no_violations':
+    petition.status = 'CompletedWork'
+    petition.is_archived = True
+    replik = {
+      'action': 'completed_complaint',
+      'text': f"""Уважаемый(ая) { Users.query.get(petition.author).nikname if Users.query.get(petition.author) else guestUsers.query.get(petition.author) }, согласно законодательству штата СА, по факту вашего обращения была проведена 
+      прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и 
+      действующих на территории Сан-Андреас нормативно-правовых актов, на установление причин и условий, способствующих 
+      выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений.""",
+      'next': f'По результатам проверки не было выявлено никаких нарушений действующего законодательства Штата СА со стороны {", ".join(str(defendant) for defendant in petition.defendant)}, вследствие чего Прокуратура Штата СА закрывает заявление в прокуратуру по причине отсутствия состава преступления.'
+    }
+    new_writer = replottoPetitionProsecutor(
+      author=current_user.id,
+      uid=uid,
+      replik=replik
+    )
+    db.session.add(new_writer)
+  
+  elif action == 'violations_order':
+    link = data.get('link')
+    numworked = data.get('numworked')
+    articles = data.get('articles')
+    
+    pattern_link = r"^https:\/\/docs\.google\.com\/document\/.*"
+    if not re.match(pattern_link, link):
+      return jsonify({"success": False, "message": "Некорректная ссылка. Ссылка должна начинаться с https://docs.google.com/"}), 400
+    
+    petition.status = 'CompletedWork'
+    petition.is_archived = True
+    replik = {
+      'action': 'completed_complaint',
+      'text': f"""Уважаемый(ая) { Users.query.get(petition.author).nikname if Users.query.get(petition.author) else guestUsers.query.get(petition.author) }, согласно законодательству штата СА, по факту вашего обращения была проведена 
+      прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и 
+      действующих на территории Сан-Андреас нормативно-правовых актов, на установление причин и условий, способствующих 
+      выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений.""",
+      'next': f'По результатам проверки было выявлено нарушения действующего законодательства Штата СА со стороны {", ".join(str(defendant) for defendant in petition.defendant)}, вследствие чего будет выписан ордер типа AS.'
+    }
+    new_writer = replottoPetitionProsecutor(
+      author=current_user.id,
+      uid=uid,
+      replik=replik
+    )
+    db.session.add(new_writer)
+    
+    payload = {
+      "type_doc": "Order",
+      "static": 77857,
+      "nickname": "Naum Miami",
+      "type_order": "AS",
+      "adreas_suspect": "",
+      "param1": f"{articles}",
+      "param2": "12 лет",
+      "car_brand": "",
+      "param3": "до исполения",
+      "param4": f"Прокуратура № {numworked}",
+      "custom_button_pressed": False
+    }
+    try:
+      response = requests.post(
+        f'{request.host_url}create_doc'
+      )
+      if response.status_code != 200:
+        return jsonify({"success": False, "message": "Ошибка при создании документа."}), 500
+      
+    except Exception as e:
+      return jsonify({"success": False, "message": f"Ошибка соединения с сервером: {str(e)}"}), 500
+    
+  elif action == 'violations_district_court':
+    link = data.get('link')
+    numworked = data.get('numworked')
+    articles = data.get('articles')
+    
+    pattern_link = r"^https:\/\/docs\.google\.com\/document\/.*"
+    if not re.match(pattern_link, link):
+      return jsonify({"success": False, "message": "Некорректная ссылка. Ссылка должна начинаться с https://docs.google.com/"}), 400
+    
+    petition.status = 'CompletedWork'
+    petition.is_archived = True
+    replik = {
+      'action': 'completed_complaint',
+      'text': f"""Уважаемый(ая) { Users.query.get(petition.author).nikname if Users.query.get(petition.author) else guestUsers.query.get(petition.author) }, согласно законодательству штата СА, по факту вашего обращения была проведена 
+      прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и 
+      действующих на территории Сан-Андреас нормативно-правовых актов, на установление причин и условий, способствующих 
+      выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений.""",
+      'next': f'По результатам проверки было выявлено нарушения действующего законодательства Штата СА со стороны {", ".join(str(defendant) for defendant in petition.defendant)}, вследствие чего дело передается в Окружной Суд Штата Сан-Андреас'
+    }
+    try:
+      new_writer = replottoPetitionProsecutor(
+        author=current_user.id,
+        uid=uid,
+        replik=replik
+      )
+      db.session.add(new_writer)
+      
+      claim = claimsStatement()
+      db.session.add(claim)
+      db.session.flush()  
+
+      district_claim = iskdis(
+        current_uid=claim.uid,
+        created=current_user.static,
+        prosecutor=current_user.id,
+        defendant=petition.defendant,
+        type_criminal=True,
+        link_case=link,
+        date_case=petition.timespan,
+        status='CompleteWork'
+      )
+      db.session.add(district_claim)
+      db.session.commit()
+    
+    except Exception as e:
+      print(f'Ошибка {str(e)}')
+      return jsonify({"success": False, "message": "Ошибка создание ответа, попробуйте позже"}), 500
+    
+  elif action == 'violations_supreme_court':
+    link = data.get('link')
+    numworked = data.get('numworked')
+    articles = data.get('articles')
+    
+    pattern_link = r"^https:\/\/docs\.google\.com\/document\/.*"
+    if not re.match(pattern_link, link):
+      return jsonify({"success": False, "message": "Некорректная ссылка. Ссылка должна начинаться с https://docs.google.com/"}), 400
+    
+    petition.status = 'CompletedWork'
+    petition.is_archived = True
+    replik = {
+      'action': 'completed_complaint',
+      'text': f"""Уважаемый(ая) { Users.query.get(petition.author).nikname if Users.query.get(petition.author) else guestUsers.query.get(petition.author) }, согласно законодательству штата СА, по факту вашего обращения была проведена 
+      прокурорская проверка, направленная на выявление в действиях (бездействиях) проверяемого субъекта нарушений Конституции и 
+      действующих на территории Сан-Андреас нормативно-правовых актов, на установление причин и условий, способствующих 
+      выявленным нарушениям законности, а также лиц, виновных в совершении выявленных правонарушений.""",
+      'next': f'По результатам проверки было выявлено нарушения действующего законодательства Штата СА со стороны {", ".join(str(defendant) for defendant in petition.defendant)}, вследствие чего дело передается в Верховный Суд Штата Сан-Андреас'
+    }
+    try:
+      new_writer = replottoPetitionProsecutor(
+        author=current_user.id,
+        uid=uid,
+        replik=replik
+      )
+      db.session.add(new_writer)
+      
+      claim = claimsStatement()
+      db.session.add(claim)
+      db.session.flush()  
+
+      supreme_claim = isksup(
+        current_uid=claim.uid,
+        created=current_user.static,
+        prosecutor=current_user.id,
+        defendant=petition.defendant,
+        type_criminal=True,
+        link_case=link,
+        date_case=petition.timespan,
+        status='CompleteWork'
+      )
+
+      db.session.add(supreme_claim)
+      db.session.commit()
+    
+    except Exception as e:
+      print(f'Ошибка {str(e)}')
+      return jsonify({"success": False, "message": "Ошибка создание ответа, попробуйте позже"}), 500
+    
+  return jsonify({"success": True, "message": "Решение по жалобе было успешно создано"}), 201
+
+@main.route('/get-documet-prosecutor-content', methods=['GET'])
+@limiter.limit("15 per minute")
+def get_prosecution_office_content():
+  from __init__ import ResolutionTheUser, OrderTheUser, CustomResolutionTheUser
+  is_visibily_attoney = True
+
+  resolutions = ResolutionTheUser.query.filter_by(is_modertation=True).all()
+  orders = OrderTheUser.query.filter_by(is_modertation=True).all()
+  custom_resolutions = CustomResolutionTheUser.query.filter_by(is_modertation=True).all()
+  
+  all_documents = []
+  for res in resolutions:
+      all_documents.append({
+          'type': 'Постановление',
+          'item': res,
+          'date_created': res.date_created,
+          'number': res.current_number
+      })
+
+  for ord in orders:
+      all_documents.append({
+          'type': 'Ордер',
+          'item': ord,
+          'date_created': ord.date_created,
+          'number': ord.current_number
+      })
+
+  for cust_res in custom_resolutions:
+      all_documents.append({
+          'type': 'Постановление',
+          'item': cust_res,
+          'date_created': cust_res.date_created,
+          'number': cust_res.current_number
+      })
+      
+  sorted_documents = sorted(all_documents, key=lambda x: x['date_created'], reverse=True)
+  
+  return render_template(
+    'main/main-doc-attomey.html', 
+    is_visibily_attoney=is_visibily_attoney, sorted_documents=sorted_documents)

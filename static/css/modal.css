@@ -351,3 +351,12 @@ option:disabled {
 .upload-btn input[type="file"] {
     display: none; 
 }
+
+/* Стилизация разделяющей линии */
+.line-modal {
+    padding: 2px;
+    background: #252424;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    box-shadow: #e81c59 0 0 5px 0.5px;
+}
