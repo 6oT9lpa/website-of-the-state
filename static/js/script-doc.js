@@ -898,7 +898,8 @@ formBtn?.addEventListener('click', function(event) {
 
 document.getElementById('create-documentation')?.addEventListener('submit', function(event) {
     event.preventDefault();
-    document.getElementById('btn').disabled = true;
+    document.querySelector('#overlay').style.zIndex = '199';
+    document.querySelector('#loader').style.display = 'block';
 
     const formData = new FormData(event.target);
     fetch('/create_doc', {

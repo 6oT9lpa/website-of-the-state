@@ -1493,10 +1493,10 @@ def courtOrder():
 def auth():
   from __init__ import db, Users, guestUsers
   form = FormAuthPush()
-  next_url = request.args.get('next')
 
   if current_user.is_authenticated:
-    return redirect(next_url or url_for('main.profile'))
+    next_url = request.args.get('next') or url_for('main.profile')
+    return redirect(next_url)
 
   if form.validate_on_submit():  
     user = Users.query.filter_by(static=form.static.data).first()
@@ -2589,17 +2589,18 @@ def doc():
 def create_doc():
   from __init__ import Users, PDFDocument, ResolutionTheUser, OrderTheUser, db, get_next_num_resolution, get_next_num_order
 
-  if not current_user.is_authenticated:
-    return jsonify({"success": False, "message": "Для создания документации требуется войти в аккаунт."}), 401
+  if request.headers.get('X-Auth') != 'True':
+    if not current_user.is_authenticated:
+      return jsonify({"success": False, "message": "Для создания документации требуется войти в аккаунт."}), 401
 
-  if not current_user.permissions[0].creation_doc and not current_user.permissions[0].lider and not current_user.permissions[0].tech and not current_user.permissions[0].admin:
-    return jsonify({"success": False, "message": "У вас не прав для создания документации."}), 403
+    if not current_user.permissions[0].creation_doc and not current_user.permissions[0].lider and not current_user.permissions[0].tech and not current_user.permissions[0].admin:
+      return jsonify({"success": False, "message": "У вас не прав для создания документации."}), 403
   
   data = request.get_json()
   
   custom_button_pressed = data.get('custom_button_pressed')
   typeDoc = data.get('type_doc')
-  nickname = data.get('type_doc')
+  nickname = data.get('nickname')
   static = data.get('static')
   
   if typeDoc == 'Order':
@@ -2853,6 +2854,7 @@ def create_doc():
       y = add_order_details(pdf, details, y * mm)
 
     else:
+      print("Ошибка. Такого ордера не существуует обратитесь в тех. поддержку")
       return jsonify({"success": False, "message": "Ошибка. Такого ордера не существуует обратитесь в тех. поддержку"}), 404
 
     # Сохранение и запись PDF
@@ -2865,8 +2867,10 @@ def create_doc():
     with open(file_path, 'wb') as f:
       f.write(buffer.getvalue())
 
+    curr_user = Users.query.get(int(request.headers.get('X-User-ID')))
+      
     pdf_document = PDFDocument(
-      author_id=current_user.id,
+      author_id= curr_user.id if curr_user else current_user.id,
       uid=uid,
       content=file_path
     )
@@ -2875,9 +2879,9 @@ def create_doc():
 
     send_to_bot_new_resolution(
         uid=uid, 
-        nickname=current_user.nikname, 
-        static=current_user.static, 
-        discordid=current_user.discordid, 
+        nickname=curr_user.nikname if curr_user else current_user.nikname, 
+        static=curr_user.static if curr_user else current_user.static, 
+        discordid=curr_user.discordid if curr_user else current_user.discordid, 
         status='moder', 
         number_resolution=new_resolution_number
     )
@@ -2885,7 +2889,7 @@ def create_doc():
     user = Users.query.filter_by(static=static).first()
     new_order = OrderTheUser(
         current_uid=uid,  
-        author_id=current_user.id,
+        author_id=curr_user.id if curr_user else current_user.id,
         nickname_accused=nickname,
         static_accused=static if static != '' else None,
         discord_accused=user.discordid if user else None,
@@ -3124,6 +3128,7 @@ def create_doc():
     send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status=status, number_resolution=new_resolution_number)
     return jsonify({"success": True, "message": "Кастомное постановление было успешно создано."}), 201
   else:
+    print("Ошибка. Такого типа документации не существует.")
     return jsonify({"success": False, "message": "Ошибка. Такого типа документации не существует."}), 404
 
 @main.route('/resolution', methods=['POST', 'GET'])
@@ -3725,28 +3730,35 @@ def violations_prosecutor():
     )
     db.session.add(new_writer)
     
-    payload = {
-      "type_doc": "Order",
-      "static": 77857,
-      "nickname": "Naum Miami",
-      "type_order": "AS",
-      "adreas_suspect": "",
-      "param1": f"{articles}",
-      "param2": "12 лет",
-      "car_brand": "",
-      "param3": "до исполения",
-      "param4": f"Прокуратура № {numworked}",
-      "custom_button_pressed": False
+    headers = {
+    "X-User-ID": str(current_user.id),
+    "X-Auth": "True"
     }
-    try:
-      response = requests.post(
-        f'{request.host_url}create_doc'
-      )
-      if response.status_code != 200:
-        return jsonify({"success": False, "message": "Ошибка при создании документа."}), 500
-      
-    except Exception as e:
-      return jsonify({"success": False, "message": f"Ошибка соединения с сервером: {str(e)}"}), 500
+    
+    for item in petition.defendant:
+      parts = item.split()
+      payload = {
+        "type_doc": "Order",
+        "static": parts[-1],
+        "nickname": " ".join(parts[:-1]),
+        "typeOrder": "AS",
+        "adreas_suspect": "",
+        "param1": f"{articles}",
+        "param2": "6 лет",
+        "car_brand": "",
+        "param3": "до исполения",
+        "param4": f"Прокуратура № {numworked}",
+        "custom_button_pressed": False
+      }
+      try:
+        response = requests.post(
+            f'{request.host_url}create_doc', json=payload, headers=headers
+        )
+        if response.status_code != 201:
+          return jsonify({"success": False, "message": "Ошибка при создании документа."}), 500
+        
+      except Exception as e:
+        return jsonify({"success": False, "message": f"Ошибка соединения с сервером: {str(e)}"}), 500
     
   elif action == 'violations_district_court':
     link = data.get('link')
