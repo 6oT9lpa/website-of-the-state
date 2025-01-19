@@ -21,20 +21,19 @@
     </div>
     <div class='line-modal'></div>
     <div class='main-content-modal'>
-        <form method="post" action="/create_doc" id='resolutionForm'>
-            {{ form.hidden_tag() }}
+        <form method="post" id='create-documentation'>
             <input type='hidden' name="type_doc" id='action-1'>
             <div class='form-control'>
                 <label for="static">Статик Обвиняемого</label>
                 <div class='form-input'>
-                    {{ form.static(placeholder='Введите статик (если требуется)', id='static') }}
+                    <input type='text' id='static' placeholder='Введите статик (если требуется)' maxlength="7" name='static' />
                 </div>
                 <span class="text-danger" id="is-invalid"></span>
             </div>
             <div class='form-control'>
                 <label for="nickname">Ник Обвиняемого</label>
                 <div class='form-input'>
-                    {{ form.nickname(placeholder='Введите ник (если требуется)') }}
+                    <input type='text' id='nickname' placeholder='Введите ник (если требуется)' name='nickname' />
                 </div>
                 <span class="text-danger" id="is-invalid"></span>
             </div>
@@ -51,90 +50,97 @@
                     </div>
                 </div>
                 <div class="wrapper-selector" id="resolution-wrapper">
+                    <!-- Чекбокс для Возбуждение уголовного дела -->
                     <div class="checkbox-wrapper">
                         <div class="checkbox">
-                            <input type="checkbox" id="param1_checkbox" class="hidden-checkbox" name="param1"> 
+                            <input type="checkbox" id="param1_checkbox" class="hidden-checkbox" name="initCase"> 
                             <label for="param1_checkbox" class="checkbox-label">
                                 <div id="tick_mark"></div>
                             </label>
-                            <span class="checkbox-text">{{ formResolution.param1.label }}</span>
+                            <span class="checkbox-text">Возбуждение уголовного дела</span>
                         </div>
                         <div class='form-control-1' id='input_checkbox1' style='display: none;'>
                             <div class='form-input'>
-                                {{ formResolution.case(class="input-field", id="caseInput", placeholder='Введите номер кейса')}}
+                                <!-- Номер кейса -->
+                                <input type='text' class="input-field" id='caseInput' placeholder='Введите номер кейса' name='numCase'/>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
-                    </div>                    
+                    </div>      
+                    <!-- Чекбокс для Запроса видеофиксации -->              
                     <div class="checkbox-wrapper">
                         <div class="checkbox">
-                            <input type="checkbox" id="param2_checkbox" class="hidden-checkbox" name="param2">
+                            <input type="checkbox" id="param2_checkbox" class="hidden-checkbox" name="videoRequest">
                             <label for="param2_checkbox" class="checkbox-label">
                                 <div id="tick_mark"></div>
                             </label>
-                            <span class="checkbox-text">{{ formResolution.param2.label }}</span>
+                            <span class="checkbox-text">Запрос видеофиксации задержания</span>
                         </div>
-
                         <div class='form-control-1' id='input_checkbox2' style='display: none;'>
+                            <!-- Input время ареста -->
                             <div class='form-input'>
-                                {{ formResolution.arrest_time(class="input-field", id="arrest_time", placeholder='Введите время ареста')}}
+                                <input type='text' class="input-field" id='arrest_time' placeholder='Введите время ареста' name='arrestTime' />
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
                         <div class='form-control-1' id='input_checkbox2' style='display: none;'>
+                            <!-- Input ник пострадавшего -->
                             <div class='form-input'>
-                                {{ formResolution.param2_nickname(class="input-field", id="param2_nickname", placeholder='Введите ник потерпевшего')}}
+                                <input type='text' class="input-field" id='param2_nickname' placeholder='Введите ник потерпевшего' name='victimNickname'/>
                             </div>
                             <span class="text-danger" id="is-invalid"></span>
                         </div>
                     </div>
+                    <!-- Чекбокс для Запроса персональных данных сотрудника -->  
                     <div class="checkbox-wrapper">
                         <div class="checkbox">
-                            <input type="checkbox" id="param3_checkbox" class="hidden-checkbox" name="param3">
+                            <input type="checkbox" id="param3_checkbox" class="hidden-checkbox" name="personalRequest">
                             <label for="param3_checkbox" class="checkbox-label">
                                 <div id="tick_mark"></div>
                             </label>
-                            <span class="checkbox-text">{{ formResolution.param3.label }}</span>
+                            <span class="checkbox-text">Запрос персональных данных</span>
                         </div>
                     </div>
-                
+                    <!-- Чекбокс для Запрет на смену персональных данных -->  
                     <div class="checkbox-wrapper">
                         <div class="checkbox">
-                            <input type="checkbox" id="param4_checkbox" class="hidden-checkbox" name="param4">
+                            <input type="checkbox" id="param4_checkbox" class="hidden-checkbox" name="changePersonal">
                             <label for="param4_checkbox" class="checkbox-label">
                                 <div id="tick_mark"></div>
                             </label>
-                            <span class="checkbox-text">{{ formResolution.param4.label }}</span>
+                            <span class="checkbox-text">Запрет на смену персональных данных</span>
                         </div>
                     </div>
-                
+                    <!-- Чекбокс для Запрет на увольнение, перевод в другую фракцию -->  
                     <div class="checkbox-wrapper">
                         <div class="checkbox">
-                            <input type="checkbox" id="param5_checkbox" class="hidden-checkbox" name="param5">
+                            <input type="checkbox" id="param5_checkbox" class="hidden-checkbox" name="banDismissalandTransfer">
                             <label for="param5_checkbox" class="checkbox-label">
                                 <div id="tick_mark"></div>
                             </label>
-                            <span class="checkbox-text">{{ formResolution.param5.label }}</span>
+                            <span class="checkbox-text">Запрет на увольнение, перевод в другую фракцию</span>
                         </div> 
                     </div>
-                
+                    <!-- Чекбокс для Запрет на ведение службы на время расследования -->  
                     <div class="checkbox-wrapper">
                         <div class="checkbox">
-                            <input type="checkbox" id="param6_checkbox" class="hidden-checkbox" name="param6">
+                            <input type="checkbox" id="param6_checkbox" class="hidden-checkbox" name="workBan">
                             <label for="param6_checkbox" class="checkbox-label">
                                 <div id="tick_mark"></div>
                             </label>
-                            <span class="checkbox-text">{{ formResolution.param6.label }}</span>
+                            <span class="checkbox-text">Запрет на ведение службы на время расследования</span>
                         </div>
                     </div>  
                 </div>
             </div>
+            <!-- Структура для ордера и орешника -->
                 <div class="contanier-wrapper" id="contanier-wrapper_order">
                     <div class="wrapper-selector" id="order-wrapper">
                         <div class="group">
                             <div class='form-control-1'>
+                                <label for="param">Тип ордера</label>
                                 <div class='form-input'>
-                                    {{ formOrder.type_order(placeholder='Введите тип ордера') }}
+                                    <input type='text' id='typeOrder' placeholder='Введите тип ордера' name='typeOrder' />
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
@@ -143,21 +149,21 @@
                             <div class="form-control-1 hidden-input" style='display: none;' id="adreasSuspect">
                                 <label for="param">Адрес проживания</label>
                                 <div class='form-input'>
-                                    {{ formOrder.adreas_suspect(placeholder='Введите адрес') }}
+                                    <input type='text' id='adreasSuspect' placeholder='Введите адрес' name='adreasSuspect' />
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
                             <div class="form-control-1 hidden-input" style='display: none;' id="articlesAccusation">
                                 <label for="param">Статьи Обвинения</label>
                                 <div class='form-input'>
-                                    {{ formOrder.param1(placeholder='Введите статьи обвинения') }}
+                                    <input type='text' id='param1' placeholder='Введите статьи обвинения' name='param1' />
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
                             <div class="form-control-1 hidden-input" style='display: none;' id="nameOrganForOrder">
                                 <label for="param">Название организации</label>
                                 <div class='form-input'>
-                                    {{ formOrder.name_organ_for_order(placeholder='Введите название орги') }}
+                                    <input type='text' id='nameCrimeOrgan' placeholder='Введите название орги' name='nameCrimeOrgan' />
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
@@ -165,21 +171,21 @@
                             <div class="form-control-1 hidden-input" style='display: none;' id='termImprisonment'>
                                 <label for="param">Срок заключения</label>
                                 <div class='form-input'>
-                                    {{ formOrder.param2(placeholder='Введите срок') }}
+                                    <input type='text' id='param2' placeholder='Введите срок' name='param2' />
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
                             <div class="form-control-1 hidden-input" style='display: none;' id='degree_ri'>
                                 <label for="param">Снятия неприкоса</label>
                                 <div class='form-input'>
-                                    {{ formOrder.degree_ri(placeholder='Введите степень') }}
+                                    <input type='text' id='degreeRI' placeholder='Введите степень'  name='degreeRI' />
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
                             <div class="form-control-1 hidden-input" style='display: none;' id='adreasOrganForOrder'>
                                 <label for="param">Адрес организации</label>
                                 <div class='form-input'>
-                                    {{ formOrder.adreas_organ_for_order(placeholder='Введите адрес орги') }}
+                                    <input type='text' id='adreasCrimeOrgan' placeholder='Введите адрес орги' name='adreasCrimeOrgan' />
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
@@ -188,14 +194,14 @@
                             <div class="form-control-1 hidden-input" style='display: none;' id="carBrand">
                                 <label for="param">Марка т\с</label>
                                 <div class='form-input'>
-                                    {{ formOrder.car_brand(placeholder='Введите полную марку') }}
+                                    <input type='text' id='carBrand' placeholder='Введите полную марку' name='carBrand' />
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
                             <div class="form-control-1 hidden-input" style='display: none;' id='time'>
                                 <label for="param">Срок исполения</label>
                                 <div class='form-input'>
-                                    {{ formOrder.param3(placeholder='Введите срок') }}
+                                    <input type='text' id='param3' placeholder='Введите срок' name='param3' />
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
@@ -203,7 +209,7 @@
                             <div class="form-control-1 hidden-input" style='display: none;' id='number_offWork'>
                                 <label for="param">Номер дела</label>
                                 <div class='form-input'>
-                                    {{ formOrder.param4(placeholder='Введите номер дела') }}
+                                    <input type='text' id='param4' placeholder='Введите номер дела' name='param4' />
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
@@ -211,7 +217,7 @@
                             <div class="form-control-1 hidden-input" style='display: none;' id='application_num'>
                                 <label for="param">Номер заявления</label>
                                 <div class='form-input'>
-                                    {{ formOrder.application_num(placeholder='Введите номер заявы') }}
+                                    <input type='text' id='applicationNum' placeholder='Введите номер заявы' name='applicationNum' />
                                 </div>
                                 <span class="text-danger" id="is-invalid"></span>
                             </div>
@@ -222,12 +228,12 @@
                 <div class="form-button-container">
                     <div class='submit-btn-contanier'>
                         <div class='submit-btn'>
-                            {{ form.submit(id="btn") }} 
+                            <input type='submit'id='btn' value='Отправить документ' />
                         </div>   
                     </div>
                     <div class='submit-btn-contanier'>
                         <div class='submit-btn' id='btn-custom-resolution' style='display: none;'>
-                            {{ formResolution.custom_button_pressed(type="hidden", value="false") }}
+                            <input type='hidden' value="false" name="custom_button_pressed"/>
                             <a class='custom' onclick="toggleCustomForm()">создать кастом</a>
                         </div>   
                     </div>

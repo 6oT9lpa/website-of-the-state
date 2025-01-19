@@ -865,32 +865,65 @@ const static = document.getElementById('static')
 const checkbox1 = document.getElementById('param1_checkbox');
 const checkbox2 = document.getElementById('param2_checkbox');
 
-if (isAuthenticated && isPermission) {
-    formBtn.addEventListener('click', function(event) {
-        if (static.value === '' && !ValidFormTypeOrder(typeOrder)) {
-            event.preventDefault();
-            console.log('static', static);
-            return;
-        }
 
-        let isValid = true;
-        if (wrapperResolution.classList.contains('hidden-wrapper')) {
-            if (!ValidFormResolutionCaseInput(case_input) && checkbox1.checked) { isValid = false; }
-            if (!VaidateFormParam2Nickname(param2_nickname) && checkbox2.checked) { isValid = false; }
-            if (!ValidFormResolutionArrestTime(arrest_time) && checkbox2.checked) { isValid = false; }
-        }
+document.addEventListener('DOMContentLoaded', () => {
+    const message = sessionStorage.getItem('notification');
+    const isError = sessionStorage.getItem('isError') === 'true';
 
-        if (!isValid) {
-            event.preventDefault();
-        }
+    if (message) {
+        showNotification(message, isError);
+        sessionStorage.removeItem('notification');
+        sessionStorage.removeItem('isError');
+    }
+});
 
+
+formBtn?.addEventListener('click', function(event) {
+    if (static.value === '' && !ValidFormTypeOrder(typeOrder)) {
+        event.preventDefault();
+        return;
+    }
+
+    let isValid = true;
+    if (wrapperResolution.classList.contains('hidden-wrapper')) {
+        if (!ValidFormResolutionCaseInput(case_input) && checkbox1.checked) { isValid = false; }
+        if (!VaidateFormParam2Nickname(param2_nickname) && checkbox2.checked) { isValid = false; }
+        if (!ValidFormResolutionArrestTime(arrest_time) && checkbox2.checked) { isValid = false; }
+    }
+
+    if (!isValid) {
+        event.preventDefault();
+    }
+});
+
+document.getElementById('create-documentation')?.addEventListener('submit', function(event) {
+    event.preventDefault();
+    document.getElementById('btn').disabled = true;
+
+    const formData = new FormData(event.target);
+    fetch('/create_doc', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(Object.fromEntries(formData.entries()))
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            sessionStorage.setItem('notification', data.message);
+            sessionStorage.setItem('isError', 'false');
+            window.location.reload();
+        } else {
+            showNotification(data.message, true);
+        }
+    })
+    .catch(error => {
+        console.error('Произошла ошибка:', error);
+        showNotification('Произошла ошибка при отправке данных', true);
     });
+});
 
-    document.getElementById('resolutionForm').addEventListener('submit', function() {
-        document.getElementById('btn').disabled = true;
-        document.getElementById('loadingText').style.display = 'inline';
-    });
-}
 
 const showElementButton = (element) => {
     element.style.display = 'flex';

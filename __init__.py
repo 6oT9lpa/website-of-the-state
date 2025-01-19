@@ -237,8 +237,8 @@ class OrderTheUser(db.Model):
     current_number = db.Column(db.Integer)
 
     nickname_accused = db.Column(db.String(52), default='Гражданин')
-    static_accused = db.Column(db.String(7))
-    discord_accused = db.Column(db.String(20))
+    static_accused = db.Column(db.String(7), nullable=True)
+    discord_accused = db.Column(db.String(20), nullable=True)
 
     nameCrimeOrgan = db.Column(db.String(60), default='null')
     adreasCrimeOrgan = db.Column(db.String(60), default='null')

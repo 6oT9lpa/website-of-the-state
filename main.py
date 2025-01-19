@@ -2584,518 +2584,349 @@ def doc():
 
   return render_template('doc.html', is_permission=True, is_authenticated=True, form=form, formResolution=formResolution, formOrder=formOrder, nickname=nickname, organ=organ, color=color)
   
-@main.route('/create_doc',  methods=['POST', 'GET'])
+@main.route('/create_doc',  methods=['POST'])
 @limiter.limit("2 per minute")
 def create_doc():
   from __init__ import Users, PDFDocument, ResolutionTheUser, OrderTheUser, db, get_next_num_resolution, get_next_num_order
-  from form import FormCreateDoc, FormCreateResolution, FormCreateOrder
-  form = FormCreateDoc()
-  formResolution = FormCreateResolution()
-  formOrder = FormCreateOrder()
 
   if not current_user.is_authenticated:
-    flash('Для создания постановления требуется войти в аккаунт!')
-    return redirect(url_for('main.doc'))
+    return jsonify({"success": False, "message": "Для создания документации требуется войти в аккаунт."}), 401
 
-  perm_user = current_user.permissions[0]
-  rankuser_value = current_user.curr_rank
-  if not (current_user.organ == 'GOV' and (rankuser_value == 10 or rankuser_value == 11 or rankuser_value >= 18)):
-    flash('Для создания постановлений требуется уровень доступа, прокурор!')
-    return redirect(url_for('main.doc'))
-    
-  elif not (perm_user.creation_doc or perm_user.admin or perm_user.tech):
-    flash('Для создания постановлений требуется разрешение!')
-    return redirect(url_for('main.doc'))
-    
-  if request.method == 'POST':
-    custom_button_pressed = formResolution.custom_button_pressed.data
-    typeDoc = form.type_doc.data
-    nickname = form.nickname.data
-    static = form.static.data
+  if not current_user.permissions[0].creation_doc and not current_user.permissions[0].lider and not current_user.permissions[0].tech and not current_user.permissions[0].admin:
+    return jsonify({"success": False, "message": "У вас не прав для создания документации."}), 403
+  
+  data = request.get_json()
+  
+  custom_button_pressed = data.get('custom_button_pressed')
+  typeDoc = data.get('type_doc')
+  nickname = data.get('type_doc')
+  static = data.get('static')
+  
+  if typeDoc == 'Order':
+    def create_order_header(pdf, title, subtitle, subtitle2):
+      pdf.setFont("TimesNewRoman-Bold", 14)
+      pdf.drawString(50 * mm, 235 * mm, title)
+      pdf.drawString(70 * mm, 230 * mm, subtitle)
+      pdf.setFont("TimesNewRoman-Bold", 16)
+      pdf.drawString(80 * mm, 220 * mm, subtitle2)
 
-    if static == '':
-      flash('Неверный формат. Поле статик не может быть пустым!')
-      return redirect(url_for('main.doc'))
-    if typeDoc == 'Order':
-      def create_order_header(pdf, title, subtitle, subtitle2):
-        pdf.setFont("TimesNewRoman-Bold", 14)
-        pdf.drawString(50 * mm, 235 * mm, title)
-        pdf.drawString(70 * mm, 230 * mm, subtitle)
-        pdf.setFont("TimesNewRoman-Bold", 16)
-        pdf.drawString(80 * mm, 220 * mm, subtitle2)
-
-      def add_order_details(pdf, details, y, max_width=95):
-        pdf.setFont("TimesNewRoman", 12)
-        line_height = pdf._fontsize + 2 
-        subheading_indent = 2 * mm 
-
-        for text in details:
-            if text.startswith("4. Особые указания:") or text.startswith("   "):
-                current_indent = subheading_indent
-            else:
-                current_indent = line_height
-
-            wrapped_text = wrap(text, width=max_width) 
-            for line in wrapped_text:
-                pdf.drawString(15 * mm, y, line)
-                y -= line_height
-            
-            y -= current_indent
-
-        return y
-      
-      def get_basis_for_immunity_removal(document_string):
-        regex = r"^(Иск|Прокуратура)\s№\s*(\d+)$"
-        match = re.match(regex, document_string)
-        
-        if match:
-            return match.group(1), match.group(2)
-        else:
-            flash("Неверный формат. Неверно заполнены пункты в ордере.")
-            return None, None
-
-      buffer = BytesIO()
-      pdf = canvas.Canvas(buffer, pagesize=A4)
-
-      # Установка шрифтов
-      font_path = os.path.join('static', 'fonts', 'times.ttf')
-      pdfmetrics.registerFont(TTFont('TimesNewRoman', font_path))
-      pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))
+    def add_order_details(pdf, details, y, max_width=95):
       pdf.setFont("TimesNewRoman", 12)
+      line_height = pdf._fontsize + 2 
+      subheading_indent = 2 * mm 
 
-      # Заголовок изображения и логотипа
-      image_path = os.path.join('static', 'img', 'DepOfJustice.png')
-      pdf.drawImage(image_path, 50 * mm, 245 * mm, width=100 * mm, height=50 * mm)
+      for text in details:
+          if text.startswith("4. Особые указания:") or text.startswith("   "):
+              current_indent = subheading_indent
+          else:
+              current_indent = line_height
 
-      # Текст разделителя
-      separator_path = os.path.join('static', 'img', 'text separator.png')
-      pdf.drawImage(separator_path, 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
-
-      global record
-      # Получение номера документа
-      record = get_next_num_order()
-      new_resolution_number = increment_number_with_leading_zeros(record)
-      draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
-      draw_text(pdf, 30, 200, f"Doc. No: {new_resolution_number}")
-      
-      # Стартовая координата y
-      y = 190
-
-      # Динамическое заполнение по типу ордера
-      if formOrder.type_order.data == 'AS' or formOrder.type_order.data == 'Arrest and Search':
-        create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Arrest and Search')
-        str_typeOrder = 'Arrest and Search'
-        offwork = formOrder.param4.data
-        time = formOrder.param3.data
-        articlesAccusation = formOrder.param1.data
-        termImprisonment = formOrder.param2.data
-
-        if not all([offwork, time, articlesAccusation, termImprisonment]):
-          flash('Неверный формат. Вы заполнили не все поля')
-          return redirect(url_for('main.doc'))
-
-        details = [
-            "1. Цель. Проведение процедуры законного задержания гражданина штата Сан-Андреас, "
-            f"{nickname if nickname != '' else ''}, с номером паспорта {static}, с последующим заключением в Федеральной "
-            f"тюрьме сроком на {termImprisonment}.", 
-
-            "2. Пояснение к цели. Данный ордер выдан для законного задержания гражданина и его последующего "
-            "увольнения с занимаемой государственной должности. После этого осуществляется арест " 
-            f"на срок {termImprisonment}.", 
-
-            "3. Основания для авторизации ордера. Гражданин виновен в нарушении следующих положений "
-            f"законодательства штата Сан-Андреас: {articlesAccusation}. Дополнительно, к делу прилагается документация с "
-            f"номерами производств: {offwork}.",
-
-            f"4. Сроки исполнения. Ордер вступает в силу с момента его публикации и подписания на официальном "
-            f"портале штата Сан-Андреас, и остается действительным {time}, указанных в нем целей."
-        ]
-        y = add_order_details(pdf, details, y * mm)
-
-      elif formOrder.type_order.data == 'RI' or formOrder.type_order.data == 'Removal of Immunity':
-        create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Removal of Immunity')
-        str_typeOrder = 'Removal of Immunity'
-        applicationNum = formOrder.application_num.data
-        degreeRI = formOrder.degree_ri.data
-        time = formOrder.param3.data
-
-        if not all([applicationNum, degreeRI, time]):
-          flash('Неверный формат. Вы заполнили не все поля')
-          return redirect(url_for('main.doc'))
-        
-        document_string = applicationNum
-        basis_type, basis_number = get_basis_for_immunity_removal(document_string)
-
-        if not basis_type or not basis_number:
-          return redirect(url_for('main.doc'))
-
-        if basis_type == "Иск":
-          basis_text = f"исковым заявлением № {basis_number}"
-        else:
-          basis_text = f"заявлением в прокуратуру № {basis_number}"
-      
-        if degreeRI == 'частично':
-          details = [
-              f"1. Цель. Частичное снятие статуса неприкосновенности у гражданина {nickname if nickname != '' else ''}, с номером паспортные "
-              f"данные {static}, для проведения следственных действий в рамках прокурорского расследования.", 
-
-              "2. Разрешение. Настоящий ордер предоставляет Прокуратуре штата Сан-Андреас право на осуществление "
-              "следственных действий в отношении указанного лица, за исключением задержания и "
-              "применения ограничительных мер, связанных с арестом.",
-
-              f"3. Ордер выдан в связи с проведением прокурорской проверки по {basis_text} и расследования "
-              "в отношении лица, указанного в пункте 1.",
-
-              f"4. Действие данного ордера оканчивается в месте с завершением прокурорского расследования "
-              f"по {basis_text}, либо до его отмены компетентными органами."
-          ]
-
-        elif degreeRI == 'полностью':
-          details = [
-              f"1. Цель. Полное снятие статуса неприкосновенности с гражданина {nickname if nickname != '' else ''}, с номером паспортных данных "
-              f"{static}, для задержания и проведения дальнейших процессуальных действий, включая арест.", 
-
-              "2. Разрешение. Настоящий ордер предоставляет право на проведение следственных, процессуальных "
-              "и иных необходимых действий, включая задержание и арест указанного лица, с соблюдением "
-              "законодательства штата Сан-Андреас.", 
-
-              f"3. Ордер выдан в связи с заявлением № номер заявления, в рамках которого проведение "
-              "ареста признано необходимым для обеспечения безопасности и правосудия.", 
-
-              f"4. Настоящий ордер на полное снятие неприкосновенности действует до окончания всех "
-              f"процессуальных мероприятий, либо до издания иного распоряжения компетентных органов."
-          ]
-        
-        else:
-          flash("Неверный формат. Такой степени снятия неприкосновености не существует, проверьте правописание")
-          return redirect(url_for('main.doc'))
-        
-        y = add_order_details(pdf, details, y * mm)
-      
-      elif formOrder.type_order.data == 'AR' or formOrder.type_order.data == 'Access To Raid':
-        create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Access To Raid')
-        str_typeOrder = 'Access To Raid'
-        nameCrimeOrgam = formOrder.name_organ_for_order.data
-        adreasCrimeOrgan = formOrder.adreas_organ_for_order.data
-        offwork = formOrder.param4.data
-        time = formOrder.param3.data
-        articlesAccusation = formOrder.param1.data
-
-        if not all([nameCrimeOrgam, adreasCrimeOrgan, offwork, time, articlesAccusation, static]):
-          flash('Неверный формат. Вы заполнили не все поля')
-          return redirect(url_for('main.doc'))
-        
-        details = [
-          "1. Цель: Прекращение преступной деятельности граждан, выявление и задержание лиц, "
-          "нарушающих законодательство штата Сан-Андреас.", 
-
-          f"2. Пояснение к цели: Разрешено проведение рейда на территории {nameCrimeOrgam} "
-          f"расположенного по адресу: Сан-Андреас, {adreasCrimeOrgan}. Цель мероприятия, провести "
-          "обыск сотрудников и транспортных средств, находящихся на прилегающей территории, а "
-          "также осуществить задержание и допрос предполагаемого владельца автомастерской, "
-          f"{nickname if nickname != '' else ''} с паспортными данными {static}.",
-        
-          f"Основания для ордера: Ордер выдан на основании делопроизводства {offwork}, при "
-          "наличии следующих нарушений в соответствии с Уголовным кодексом штата Сан-Андреас:                              "
-          f"{articlesAccusation}", 
-
-          f"Срок действия ордера: Ордер действителен {time} всех указанных целей и задач."
-        ]
-        y = add_order_details(pdf, details, y * mm)
-
-      elif formOrder.type_order.data == 'SA' or formOrder.type_order.data == 'Search Access':
-        create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Search Access')
-        str_typeOrder = 'Search Access'
-        adreasSuspect = formOrder.adreas_suspect.data
-        carBrand = formOrder.car_brand.data
-        articlesAccusation = formOrder.param1.data
-        time = formOrder.param3.data
-
-        if not all([adreasSuspect, carBrand, articlesAccusation, time]):
-          flash('Неверный формат. Вы заполнили не все поля')
-          return redirect(url_for('main.doc'))
-        
-        details = [
-          "1. Цель: Проведение обыска имущества и транспортных средств, связанных с подозреваемыми в"
-          "преступной деятельности, в целях сбора доказательств и пресечения правонарушений.", 
-
-          "2. Пояснение к цели: Разрешено проведение обыска на территории объектов, находящихся в собственности или в "
-          f"распоряжении подозреваемого, {nickname if nickname != '' else ''} с паспортными данными {static}, "
-          "включая все здания, помещения, транспортные средства и прилегающую территорию. "
-          f"Объекты, подлежащие обыску, включают: адрес(a) жилого(ых) помещения(ий) {adreasSuspect} "
-          f"марска т\с: {carBrand}", 
-          
-          "3. Основания для обыска: Обыск проводится, в соответсивии с подозрениями в совершение " 
-          f"правонарушений по статьям: {articlesAccusation}", 
-
-          f"4. Настоящий ордер действителен {time} обысковых мероприятий и сбора доказательств, необходимых для "
-          "достижения целей расследования."
-        ]
-        y = add_order_details(pdf, details, y * mm)
-      
-      elif formOrder.type_order.data == 'FW' or formOrder.type_order.data == 'Federal Wanted':
-        create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Federal Wanted')
-        str_typeOrder = 'Federal Wanted'
-        articlesAccusation = formOrder.param1.data
-        time = formOrder.param3.data
-        offwork = formOrder.param4.data
-
-        if not all([articlesAccusation, time, offwork]):
-          flash('Неверный формат. Вы заполнили не все поля')
-          return redirect(url_for('main.doc'))
-        
-        details = [
-          f"1. Цель: Объявление в розыск и задержание гражданина {nickname if nickname != '' else ''} с паспортынми данными {static}, "
-          f"подозреваемого в совершении преступлений, с целью пресечения его противоправной деятельности и "
-          "обеспечения его явки для проведения следственных и процессуальных действий.",
-
-          "2. Пояснение к цели: Данный ордер выдается для организации оперативно-розыскных мероприятий "
-          f"c целью установления местонахождения гражданина {nickname if nickname != '' else ''}, с паспортынми данными {static} "
-          f"имеются обоснованные подозрения в нарушении законодательства штата Сан-Андреас. Подозреваемый "
-          "обвиняется в совершении следующих преступлений согласно Уголовному кодексу штата Сан-Андреас:                " 
-          f"{articlesAccusation}.", 
-
-          "3. Основания для объявления в розыск: Ордер на объявление в розыск выдан на основании дела "
-          f"{offwork} в связи с наличием подозрений, что указанный гражданин может представлять "
-          "опасность для общества или скрываться от следствия.", 
-
-          "4. Особые указания:"
-          "Правоохранительным органам штата Сан-Андреас предписывается:",
-          
-          "   1. Установить место нахождения подозреваемого и при обнаружении произвести задержание в "
-          "      рамках полномочий.",
-          "   2. При необходимости привлечь дополнительные подразделения для проведения оперативных действий.",
-          "   3. Обеспечить сохранность всех потенциальных доказательств, которые могут быть обнаружены "
-          "      при задержании подозреваемого.",
-
-          f"5. Ордер на розыск действует {time} подозреваемого или его добровольной явки в "
-          "правоохранительные органы."
-        ]
-        y = add_order_details(pdf, details, y * mm)
-
-      else:
-        flash('Такого ордера не существует, проверьте правильность написания!')
-        return redirect(url_for('main.doc'))
-
-      # Сохранение и запись PDF
-      pdf.showPage()
-      pdf.save()
-      buffer.seek(0)
-
-      uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
-      file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
-      with open(file_path, 'wb') as f:
-        f.write(buffer.getvalue())
-
-      pdf_document = PDFDocument(
-        author_id=current_user.id,
-        uid=uid,
-        content=file_path
-      )
-      db.session.add(pdf_document)
-      db.session.commit() 
-
-      send_to_bot_new_resolution(
-          uid=uid, 
-          nickname=current_user.nikname, 
-          static=current_user.static, 
-          discordid=current_user.discordid, 
-          status='moder', 
-          number_resolution=new_resolution_number
-      )
-
-      user = Users.query.filter_by(static=static).first()
-      new_order = OrderTheUser(
-          current_uid=uid,  
-          author_id=current_user.id,
-          nickname_accused=nickname,
-          static_accused=static,
-          discord_accused=user.discordid if user else None,
-          type_order=str_typeOrder,
-          time=formOrder.param3.data if formOrder.param3.data != '' else None,
-          articlesAccusation=formOrder.param1.data if formOrder.param1.data != '' else None,
-          termImprisonment=formOrder.param2.data if formOrder.param2.data != '' else None,
-          offWork=formOrder.param4.data if formOrder.param4.data != '' else None,
-          current_number=get_next_num_order()
-      )
-
-      db.session.add(new_order)
-      db.session.commit()
-    
-    elif typeDoc == 'Resolution' and custom_button_pressed == 'false':
-      if not any([formResolution.param1.data, formResolution.param2.data, formResolution.param3.data, formResolution.param4.data, formResolution.param5.data, formResolution.param6.data]):
-        flash('При создании постановленмя должен быть выбран хотя бы один пунк!')
-        return redirect(url_for('main.doc'))
-      
-      user = Users.query.filter_by(static=static).first()
-
-      def generate_resolution_pdf(formResolution, user, current_user, static, nickname):
-        buffer = BytesIO()
-        pdf = canvas.Canvas(buffer, pagesize=A4)
-        pdf.setTitle("Постановление")
-
-        pdfmetrics.registerFont(TTFont('TimesNewRoman', os.path.join('static', 'fonts', 'times.ttf')))
-        pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))
-        
-        image_path = os.path.join('static', 'img', 'DepOfJustice.png')
-        pdf.drawImage(image_path, 50 * mm, 245 * mm, width=100 * mm, height=50 * mm)
-        
-        draw_text(pdf, 50, 235, "UNITED STATES DEPARTMENT OF JUSTICE", font="TimesNewRoman-Bold", size=14)
-        draw_text(pdf, 70, 230, "прокуратура штата Сан-Андреас", font="TimesNewRoman-Bold", size=14)
-        draw_text(pdf, 60, 225, "90001, г. Лос-Сантос, Рокфорд-Хиллз, Карцер-Вей")
-
-        pdf.drawImage(os.path.join('static', 'img', 'text separator.png'), 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
-        global record
-        record = get_next_num_resolution()
-        new_resolution_number = increment_number_with_leading_zeros(record)
-        draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
-        draw_text(pdf, 30, 200, f"Doc. No: {new_resolution_number}")
-
-        draw_text(pdf, 15, 190, f"Я, {current_user.nikname}, являюсь Прокурором штата San Andreas, пользуясь правами, данными мне")
-        draw_text(pdf, 15, 185, "Конституцией и законодательством штата San Andreas, а также иными нормативно-правовыми актами,")
-        draw_text(pdf, 15, 180, "в связи с необходимостью обеспечения законности и правопорядка в рамках своих полномочий,")
-        draw_text(pdf, 80, 170, "ПОСТАНОВЛЯЮ:")
-
-        y = 160
-        num = 1
-        if formResolution.param1.data:
-          text = (f"{num}. Возбудить уголовное дело в отношении {'сотрудника ' + user.organ if user else 'гражданина'} "
-                  f"{nickname if nickname != '' else ''}, с номером паспорта {static}. Присвоить делу идентификатор {formResolution.case.data} и принять его к производству прокуратурой штата.")
-          y = draw_multiline_text(pdf, text, 15, y)
-          y -= 5
-          num += 1
-
-        if formResolution.param2.data:
-          text = (f"{num}. Обязать {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортных данных {static}, "
-                  f"в течение 24 часов предоставить на почту Прокурора {current_user.nikname} ({current_user.discordname}@gov.sa) видеозапись процессуальных действий, проведённых в отношении {formResolution.param2_nickname.data}, время провдение ареста {formResolution.arrest_time.data}. "
-                  f"Запись должна содержать момент ареста {formResolution.arrest_time.data} и фиксировать предполагаемое нарушение.")
-          y = draw_multiline_text(pdf, text, 15, y)
-          y -= 5
-          num += 1
-
-        if formResolution.param3.data:
-          text = (f"{num}. Предоставить личное дело {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, "
-                  f"с номером паспортных данных {static}, включающее электронную почту, должность. Срок предоставления информации — 24 часа.")
-          y = draw_multiline_text(pdf, text, 15, y)
-          y -= 5
-          num += 1
-
-        if formResolution.param4.data:
-          text = f"{num}. Ввести запрет на смену персональных данных {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортных данных {static}."
-          y = draw_multiline_text(pdf, text, 15, y)
-          y -= 5
-          num += 1
-
-        if formResolution.param5.data and user and user.action != 'Dismissal':
-          text = (f"{num}. Ввести запрет на увольнение сотрудника {user.organ} {nickname if nickname != '' else ''} с номером паспортных данных {static} "
-                  f"и на перевод в другие государственные структуры на период расследования по делу с идентификатором {formResolution.case.data}.")
-          y = draw_multiline_text(pdf, text, 15, y)
-          y -= 5
-          num += 1
-
-        if formResolution.param6.data and user and user.action != 'Dismissal':
-          text = f"{num}. Временно отстранить сотрудника {user.organ} {nickname}, с номером паспортных данных {static}, от исполнения служебных обязанностей на время расследования по делу с идентификатором {formResolution.case.data}."
-          y = draw_multiline_text(pdf, text, 15, y)
-          y -= 5
-          num += 1
-
-        sing_font_path = os.path.join('static', 'fonts', 'Updock-Regular.ttf') 
-        pdfmetrics.registerFont(TTFont('Updock', sing_font_path))
-
-        # Генерация подписи
-        y += 20
-        generate_signature(pdf, y, current_user, 'resolution', page=1)
-        y -= 5
-
-        pdf.showPage()
-        pdf.save()
-        buffer.seek(0)
-        
-        # Saving PDF and database operations here
-        return buffer, new_resolution_number
-
-      # Usage in main logic
-      buffer, num_resolution = generate_resolution_pdf(formResolution, user, current_user, static, nickname)
-      
-      uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
-      session['uid'] = uid
-      
-      file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
-      with open(file_path, 'wb') as f:
-          f.write(buffer.getvalue())
-      
-      pdf_document = PDFDocument(
-        author_id=current_user.id,
-        uid=uid,
-        content=file_path
-      )
-      db.session.add(pdf_document)
-      db.session.commit()
-      
-      status = 'moder'
-      send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status=status, number_resolution=num_resolution)
-      
-      new_resolution = ResolutionTheUser(
-        current_uid=uid, 
-        author_id=current_user.id,
-        nickname_accused = nickname,
-        static_accused = static,
-        discord_accused = user.discordid if user else None,
-        initiation_case=formResolution.param1.data,
-        provide_video=formResolution.param2.data,
-        provide_personal_file=formResolution.param3.data,
-        changing_personal_data=formResolution.param4.data,
-        dismissal_employee=formResolution.param5.data,
-        temporarily_suspend=formResolution.param6.data,
-        victim_nickname=formResolution.param2_nickname.data if formResolution.param2_nickname.data != '' else '', 
-        time_arrest=formResolution.arrest_time.data if formResolution.arrest_time.data != '' else '',
-        number_case=formResolution.case.data if formResolution.case.data != '' else '',
-        current_number=get_next_num_resolution()
-        )
-        
-      db.session.add(new_resolution)
-      db.session.commit()
-
-    elif typeDoc == 'Resolution' and custom_button_pressed:
-      custom_text_fields = [request.form[key] for key in request.form if key.startswith('custom_text_')]
-      def add_order_details(pdf, details, y, max_width=95, line_spacing=12):
-        pdf.setFont("TimesNewRoman", 12)  
-        last_page = 1
-        for text in details:
           wrapped_text = wrap(text, width=max_width) 
           for line in wrapped_text:
-              if y < 20 * mm:
-                  last_page += 1
-                  pdf.showPage()
-                  pdf.setFont("TimesNewRoman", 12)
-                  y = 260 * mm
-              
               pdf.drawString(15 * mm, y, line)
-              y -= line_spacing 
-          y -= line_spacing + 4 
-            
-        return y, last_page
+              y -= line_height
+          
+          y -= current_indent
 
-      if not any(custom_text_fields):
-        flash('Должно быть заполнено хотя бы одно кастомное поле.')
-        return redirect(url_for('main.doc'))
+      return y
+    
+    def get_basis_for_immunity_removal(document_string):
+      regex = r"^(Иск|Прокуратура)\s№\s*(\d+)$"
+      match = re.match(regex, document_string)
       
+      if match:
+        return match.group(1), match.group(2)
+      else:
+        return None, None
+
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+
+    # Установка шрифтов
+    font_path = os.path.join('static', 'fonts', 'times.ttf')
+    pdfmetrics.registerFont(TTFont('TimesNewRoman', font_path))
+    pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))
+    pdf.setFont("TimesNewRoman", 12)
+
+    # Заголовок изображения и логотипа
+    image_path = os.path.join('static', 'img', 'DepOfJustice.png')
+    pdf.drawImage(image_path, 50 * mm, 245 * mm, width=100 * mm, height=50 * mm)
+
+    # Текст разделителя
+    separator_path = os.path.join('static', 'img', 'text separator.png')
+    pdf.drawImage(separator_path, 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
+
+    global record
+    # Получение номера документа
+    record = get_next_num_order()
+    new_resolution_number = increment_number_with_leading_zeros(record)
+    draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
+    draw_text(pdf, 30, 200, f"Doc. No: {new_resolution_number}")
+    
+    # Стартовая координата y
+    y = 190
+
+    typeOrder = data.get('typeOrder')
+    
+    # Динамическое заполнение по типу ордера
+    if typeOrder == 'AS' or typeOrder== 'Arrest and Search':
+      create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Arrest and Search')
+      str_typeOrder = 'Arrest and Search'
+      offwork = data.get('param4')
+      time = data.get('param3')
+      articlesAccusation = data.get('param1')
+      termImprisonment = data.get('param2')
+
+      if not all([offwork, time, articlesAccusation, termImprisonment, static, nickname]):
+        return jsonify({"success": False, "message": "Все поля должны быть заполнены."}), 400
+      
+      details = [
+          "1. Цель. Проведение процедуры законного задержания гражданина штата Сан-Андреас, "
+          f"{nickname}, с номером паспорта {static}, с последующим заключением в Федеральной "
+          f"тюрьме сроком на {termImprisonment}.", 
+
+          "2. Пояснение к цели. Данный ордер выдан для законного задержания гражданина и его последующего "
+          "увольнения с занимаемой государственной должности. После этого осуществляется арест " 
+          f"на срок {termImprisonment}.", 
+
+          "3. Основания для авторизации ордера. Гражданин виновен в нарушении следующих положений "
+          f"законодательства штата Сан-Андреас: {articlesAccusation}. Дополнительно, к делу прилагается документация с "
+          f"номерами производств: {offwork}.",
+
+          f"4. Сроки исполнения. Ордер вступает в силу с момента его публикации и подписания на официальном "
+          f"портале штата Сан-Андреас, и остается действительным {time}, указанных в нем целей."
+      ]
+      y = add_order_details(pdf, details, y * mm)
+
+    elif typeOrder == 'RI' or typeOrder == 'Removal of Immunity':
+      create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Removal of Immunity')
+      str_typeOrder = 'Removal of Immunity'
+      applicationNum = data.get('applicationNum')
+      degreeRI = data.get('degreeRI')
+      time = data.get('param3')
+
+      if not all([applicationNum, degreeRI, time, static]):
+        return jsonify({"success": False, "message": "Все поля должны быть заполнены."}), 400
+      
+      basis_type, basis_number = get_basis_for_immunity_removal(applicationNum)
+
+      if not basis_type or not basis_number:
+        return jsonify({"success": False, "message": "Неверный формат. Номер заявления должен быть формата, Иск/Прокуртура № XXX"}), 400
+
+      if basis_type == "Иск":
+        basis_text = f"исковому заявлению № {basis_number}"
+      else:
+        basis_text = f"заявлению в прокуратуру № {basis_number}"
+    
+      if degreeRI == 'частично':
+        details = [
+            f"1. Цель. Частичное снятие статуса неприкосновенности у гражданина {nickname if nickname != '' else ''}, с номером паспортные "
+            f"данные {static}, для проведения следственных действий в рамках прокурорского расследования.", 
+
+            "2. Разрешение. Настоящий ордер предоставляет Прокуратуре штата Сан-Андреас право на осуществление "
+            "следственных действий в отношении указанного лица, за исключением задержания и "
+            "применения ограничительных мер, связанных с арестом.",
+
+            f"3. Ордер выдан в связи с проведением прокурорской проверки по {basis_text} и расследования "
+            "в отношении лица, указанного в пункте 1.",
+
+            f"4. Действие данного ордера оканчивается в месте с завершением прокурорского расследования "
+            f"по {basis_text}, либо до его отмены компетентными органами."
+        ]
+
+      elif degreeRI == 'полностью':
+        details = [
+            f"1. Цель. Полное снятие статуса неприкосновенности с гражданина {nickname if nickname != '' else ''}, с номером паспортных данных "
+            f"{static}, для задержания и проведения дальнейших процессуальных действий, включая арест.", 
+
+            "2. Разрешение. Настоящий ордер предоставляет право на проведение следственных, процессуальных "
+            "и иных необходимых действий, включая задержание и арест указанного лица, с соблюдением "
+            "законодательства штата Сан-Андреас.", 
+
+            f"3. Ордер выдан в связи с заявлением № номер заявления, в рамках которого проведение "
+            "ареста признано необходимым для обеспечения безопасности и правосудия.", 
+
+            f"4. Настоящий ордер на полное снятие неприкосновенности действует до окончания всех "
+            f"процессуальных мероприятий, либо до издания иного распоряжения компетентных органов."
+        ]
+      
+      else:
+        return jsonify({"success": False, "message": "Неверный формат. Степень снятия неприкосновености может быть 'полностью' или 'частично'"}), 400
+      
+      y = add_order_details(pdf, details, y * mm)
+    
+    elif typeOrder == 'AR' or typeOrder == 'Access To Raid':
+      create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Access To Raid')
+      str_typeOrder = 'Access To Raid'
+      nameCrimeOrgam = data.get('nameCrimeOrgan')
+      adreasCrimeOrgan = data.get('adreasCrimeOrgan')
+      offwork = data.get('param4')
+      time = data.get('param3')
+      articlesAccusation = data.get('param1')
+
+      if not all([nameCrimeOrgam, adreasCrimeOrgan, offwork, time, articlesAccusation]):
+        return jsonify({"success": False, "message": "Все поля должны быть заполнены."}), 400
+      
+      details = [
+        "1. Цель: Прекращение преступной деятельности граждан, выявление и задержание лиц, "
+        "нарушающих законодательство штата Сан-Андреас.", 
+
+        f"2. Пояснение к цели: Пройти на территорию {nameCrimeOrgam} "
+        f"расположенного по адресу: Сан-Андреас, {adreasCrimeOrgan}, совершить рейдовое мероприятие,"
+        "произвести обыск членов и транспортных средств на прилегающей территории, а также складских помещений особняка с"
+        "конфискацией нелегального имущества.",
+      
+        f"Основания для ордера: Ордер выдан на основании делопроизводства {offwork}, при "
+        "наличии следующих нарушений в соответствии с Уголовным кодексом штата Сан-Андреас:                              "
+        f"{articlesAccusation}", 
+
+        f"Срок действия ордера: Ордер действителен {time} всех указанных целей и задач."
+      ]
+      y = add_order_details(pdf, details, y * mm)
+
+    elif typeOrder == 'SA' or typeOrder == 'Search Access':
+      create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Search Access')
+      str_typeOrder = 'Search Access'
+      adreasSuspect = data.get('adreasSuspect')
+      carBrand = data.get('carBrand')
+      articlesAccusation = data.get('param1')
+      time = data.get('param3')
+
+      if not all([adreasSuspect, carBrand, articlesAccusation, time, nickname, static]):
+        return jsonify({"success": False, "message": "Все поля должны быть заполнены."}), 400
+      
+      details = [
+        "1. Цель: Проведение обыска имущества и транспортных средств, связанных с подозреваемыми в"
+        "преступной деятельности, в целях сбора доказательств и пресечения правонарушений.", 
+
+        "2. Пояснение к цели: Разрешено проведение обыска на территории объектов, находящихся в собственности или в "
+        f"распоряжении подозреваемого, {nickname} с паспортными данными {static}, "
+        "включая все здания, помещения, транспортные средства и прилегающую территорию. "
+        f"Объекты, подлежащие обыску, включают: адрес(a) жилого(ых) помещения(ий) {adreasSuspect} "
+        f"марска т\с: {carBrand}", 
+        
+        "3. Основания для обыска: Обыск проводится, в соответсивии с подозрениями в совершение " 
+        f"правонарушений по статьям: {articlesAccusation}", 
+
+        f"4. Настоящий ордер действителен {time} обысковых мероприятий и сбора доказательств, необходимых для "
+        "достижения целей расследования."
+      ]
+      y = add_order_details(pdf, details, y * mm)
+    
+    elif typeOrder == 'FW' or typeOrder == 'Federal Wanted':
+      create_order_header(pdf, "UNITED STATES DEPARTMENT OF JUSTICE", "прокуратура штата Сан-Андреас", 'Federal Wanted')
+      str_typeOrder = 'Federal Wanted'
+      articlesAccusation = data.get('param1')
+      time = data.get('param3')
+      offwork = data.get('param4')
+
+      if not all([articlesAccusation, time, offwork, nickname, static]):
+        return jsonify({"success": False, "message": "Все поля должны быть заполнены."}), 400
+      
+      details = [
+        f"1. Цель: Объявление в розыск и задержание гражданина {nickname} с паспортынми данными {static}, "
+        f"подозреваемого в совершении преступлений, с целью пресечения его противоправной деятельности и "
+        "обеспечения его явки для проведения следственных и процессуальных действий.",
+
+        "2. Пояснение к цели: Данный ордер выдается для организации оперативно-розыскных мероприятий "
+        f"c целью установления местонахождения гражданина {nickname}, с паспортынми данными {static} "
+        f"имеются обоснованные подозрения в нарушении законодательства штата Сан-Андреас. Подозреваемый "
+        "обвиняется в совершении следующих преступлений согласно Уголовному кодексу штата Сан-Андреас:                " 
+        f"{articlesAccusation}.", 
+
+        "3. Основания для объявления в розыск: Ордер на объявление в розыск выдан на основании дела "
+        f"{offwork} в связи с наличием подозрений, что указанный гражданин может представлять "
+        "опасность для общества или скрываться от следствия.", 
+
+        "4. Особые указания:"
+        "Правоохранительным органам штата Сан-Андреас предписывается:",
+        
+        "   1. Установить место нахождения подозреваемого и при обнаружении произвести задержание в "
+        "      рамках полномочий.",
+        "   2. При необходимости привлечь дополнительные подразделения для проведения оперативных действий.",
+        "   3. Обеспечить сохранность всех потенциальных доказательств, которые могут быть обнаружены "
+        "      при задержании подозреваемого.",
+
+        f"5. Ордер на розыск действует {time} подозреваемого или его добровольной явки в "
+        "правоохранительные органы."
+      ]
+      y = add_order_details(pdf, details, y * mm)
+
+    else:
+      return jsonify({"success": False, "message": "Ошибка. Такого ордера не существуует обратитесь в тех. поддержку"}), 404
+
+    # Сохранение и запись PDF
+    pdf.showPage()
+    pdf.save()
+    buffer.seek(0)
+
+    uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
+    file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
+    with open(file_path, 'wb') as f:
+      f.write(buffer.getvalue())
+
+    pdf_document = PDFDocument(
+      author_id=current_user.id,
+      uid=uid,
+      content=file_path
+    )
+    db.session.add(pdf_document)
+    db.session.commit() 
+
+    send_to_bot_new_resolution(
+        uid=uid, 
+        nickname=current_user.nikname, 
+        static=current_user.static, 
+        discordid=current_user.discordid, 
+        status='moder', 
+        number_resolution=new_resolution_number
+    )
+
+    user = Users.query.filter_by(static=static).first()
+    new_order = OrderTheUser(
+        current_uid=uid,  
+        author_id=current_user.id,
+        nickname_accused=nickname,
+        static_accused=static if static != '' else None,
+        discord_accused=user.discordid if user else None,
+        type_order=str_typeOrder,
+        time=data.get('param3') if data.get('param3') != '' else None,
+        articlesAccusation=data.get('param1') if data.get('param1') != '' else None,
+        termImprisonment=data.get('param2') if data.get('param2') != '' else None,
+        offWork=data.get('param4') if data.get('param4') != '' else None,
+        current_number=get_next_num_order()
+    )
+
+    db.session.add(new_order)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Ордер был успешно создан."}), 201
+  
+  elif typeDoc == 'Resolution' and custom_button_pressed == 'false':
+    if not any([data.get('initCase'), data.get('videoRequest'), data.get('personalRequest'), data.get('changePersonal'), data.get('banDismissalandTransfer'), data.get('workBan')]):
+      return jsonify({"success": False, "message": "Для создания постановления требуется хотя бы один пункт"}), 400
+    
+    if not static:
+      return jsonify({"success": False, "message": "Для создания постановления требуется указания статика"}), 400
+    
+    user = Users.query.filter_by(static=static).first()
+
+    def generate_resolution_pdf(user, current_user, static, nickname):
       buffer = BytesIO()
       pdf = canvas.Canvas(buffer, pagesize=A4)
       pdf.setTitle("Постановление")
 
       pdfmetrics.registerFont(TTFont('TimesNewRoman', os.path.join('static', 'fonts', 'times.ttf')))
       pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))
-
+      
       image_path = os.path.join('static', 'img', 'DepOfJustice.png')
       pdf.drawImage(image_path, 50 * mm, 245 * mm, width=100 * mm, height=50 * mm)
-
+      
       draw_text(pdf, 50, 235, "UNITED STATES DEPARTMENT OF JUSTICE", font="TimesNewRoman-Bold", size=14)
       draw_text(pdf, 70, 230, "прокуратура штата Сан-Андреас", font="TimesNewRoman-Bold", size=14)
       draw_text(pdf, 60, 225, "90001, г. Лос-Сантос, Рокфорд-Хиллз, Карцер-Вей")
 
       pdf.drawImage(os.path.join('static', 'img', 'text separator.png'), 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
-      
+      global record
       record = get_next_num_resolution()
       new_resolution_number = increment_number_with_leading_zeros(record)
       draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
@@ -3106,47 +2937,194 @@ def create_doc():
       draw_text(pdf, 15, 180, "в связи с необходимостью обеспечения законности и правопорядка в рамках своих полномочий,")
       draw_text(pdf, 80, 170, "ПОСТАНОВЛЯЮ:")
 
-      y, last_page = add_order_details(pdf, custom_text_fields, 160 * mm)
-      generate_signature(pdf, y, current_user, 'resolution', page=last_page)
+      y = 160
+      num = 1
+      if data.get('initCase'):
+        text = (f"{num}. Возбудить уголовное дело в отношении {'сотрудника ' + user.organ if user else 'гражданина'} "
+                f"{nickname if nickname != '' else ''}, с номером паспорта {static}. Присвоить делу идентификатор {data.get('numCase')} и принять его к производству прокуратурой штата.")
+        y = draw_multiline_text(pdf, text, 15, y)
+        y -= 5
+        num += 1
+
+      if data.get('videoRequest'):
+        text = (f"{num}. Обязать {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортных данных {static}, "
+                f"в течение 24 часов предоставить на почту Прокурора {current_user.nikname} ({current_user.discordname}@gov.sa) видеозапись процессуальных действий, проведённых в отношении {data.get('victimNickname')}, время провдение ареста {data.get('arrestTime')}. "
+                f"Запись должна содержать момент ареста {data.get('arrestTime')} и фиксировать предполагаемое нарушение.")
+        y = draw_multiline_text(pdf, text, 15, y)
+        y -= 5
+        num += 1
+
+      if data.get('personalRequest'):
+        text = (f"{num}. Предоставить личное дело {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, "
+                f"с номером паспортных данных {static}, включающее электронную почту, должность. Срок предоставления информации — 24 часа.")
+        y = draw_multiline_text(pdf, text, 15, y)
+        y -= 5
+        num += 1
+
+      if data.get('changePersonal'):
+        text = f"{num}. Ввести запрет на смену персональных данных {'сотрудника ' + user.organ if user else 'гражданина'} {nickname if nickname != '' else ''}, с номером паспортных данных {static}."
+        y = draw_multiline_text(pdf, text, 15, y)
+        y -= 5
+        num += 1
+
+      if data.get('banDismissalandTransfer') and user and user.action != 'Dismissal':
+        text = (f"{num}. Ввести запрет на увольнение сотрудника {user.organ} {nickname if nickname != '' else ''} с номером паспортных данных {static} "
+                f"и на перевод в другие государственные структуры на период расследования по делу с идентификатором {data.get('numCase')}.")
+        y = draw_multiline_text(pdf, text, 15, y)
+        y -= 5
+        num += 1
+
+      if data.get('workBan') and user and user.action != 'Dismissal':
+        text = f"{num}. Временно отстранить сотрудника {user.organ} {nickname}, с номером паспортных данных {static}, от исполнения служебных обязанностей на время расследования по делу с идентификатором {data.get('numCase')}."
+        y = draw_multiline_text(pdf, text, 15, y)
+        y -= 5
+        num += 1
+
+      sing_font_path = os.path.join('static', 'fonts', 'Updock-Regular.ttf') 
+      pdfmetrics.registerFont(TTFont('Updock', sing_font_path))
+
+      # Генерация подписи
+      y += 20
+      generate_signature(pdf, y, current_user, 'resolution', page=1)
+      y -= 5
 
       pdf.showPage()
       pdf.save()
       buffer.seek(0)
-
-      uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
-      session['uid'] = uid
       
-      file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
-      with open(file_path, 'wb') as f:
+      # Saving PDF and database operations here
+      return buffer, new_resolution_number
+
+    # Usage in main logic
+    buffer, num_resolution = generate_resolution_pdf(user, current_user, static, nickname)
+    
+    uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
+    session['uid'] = uid
+    
+    file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
+    with open(file_path, 'wb') as f:
         f.write(buffer.getvalue())
-      
-      pdf_document = PDFDocument(
-        author_id=current_user.id,
-        uid=uid,
-        content=file_path
+    
+    pdf_document = PDFDocument(
+      author_id=current_user.id,
+      uid=uid,
+      content=file_path
+    )
+    db.session.add(pdf_document)
+    db.session.commit()
+    
+    status = 'moder'
+    send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status=status, number_resolution=num_resolution)
+    
+    new_resolution = ResolutionTheUser(
+      current_uid=uid, 
+      author_id=current_user.id,
+      nickname_accused = nickname,
+      static_accused = static,
+      discord_accused = user.discordid if user else None,
+      initiation_case=data.get('initCase') == 'on',
+      provide_video=data.get('videoRequest') == 'on',
+      provide_personal_file=data.get('personalRequest') == 'on',
+      changing_personal_data=data.get('changePersonal') == 'on',
+      dismissal_employee=data.get('banDismissalandTransfer')== 'on',
+      temporarily_suspend=data.get('workBan') == 'on',
+      victim_nickname=data.get('victimNickname') if data.get('victimNickname') != '' else '', 
+      time_arrest=data.get('arrestTime') if data.get('arrestTime') != '' else '',
+      number_case=data.get('numCase') if data.get('numCase') != '' else '',
+      current_number=get_next_num_resolution()
       )
-      db.session.add(pdf_document)
-      db.session.commit()
       
-      from __init__ import CustomResolutionTheUser
-      custom_fields_json = json.dumps(custom_text_fields)
-      resolution = CustomResolutionTheUser(
-        author_id=current_user.id, 
-        current_uid=uid,
-        custom_fields=custom_fields_json,
-        current_number=get_next_num_resolution()
-      )
-      db.session.add(resolution)
-      db.session.commit()
+    db.session.add(new_resolution)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Постановление было успешно создано."}), 201
 
-      status = 'moder'
-      send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status=status, number_resolution=new_resolution_number)
+  elif typeDoc == 'Resolution' and custom_button_pressed:
+    custom_text_fields = [request.form[key] for key in request.form if key.startswith('custom_text_')]
+    def add_order_details(pdf, details, y, max_width=95, line_spacing=12):
+      pdf.setFont("TimesNewRoman", 12)  
+      last_page = 1
+      for text in details:
+        wrapped_text = wrap(text, width=max_width) 
+        for line in wrapped_text:
+            if y < 20 * mm:
+                last_page += 1
+                pdf.showPage()
+                pdf.setFont("TimesNewRoman", 12)
+                y = 260 * mm
+            
+            pdf.drawString(15 * mm, y, line)
+            y -= line_spacing 
+        y -= line_spacing + 4 
+          
+      return y, last_page
+
+    if not any(custom_text_fields):
+      return jsonify({"success": False, "message": "Для создания кастомного постановления требуется хоя один пункт"}), 400
     
-    else:
-      flash('Неверный формат. Вы должны выбрать какой нибуть тип документации!')
-      return redirect(url_for('main.doc'))
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    pdf.setTitle("Постановление")
+
+    pdfmetrics.registerFont(TTFont('TimesNewRoman', os.path.join('static', 'fonts', 'times.ttf')))
+    pdfmetrics.registerFont(TTFont('TimesNewRoman-Bold', os.path.join('static', 'fonts', 'timesbd.ttf')))
+
+    image_path = os.path.join('static', 'img', 'DepOfJustice.png')
+    pdf.drawImage(image_path, 50 * mm, 245 * mm, width=100 * mm, height=50 * mm)
+
+    draw_text(pdf, 50, 235, "UNITED STATES DEPARTMENT OF JUSTICE", font="TimesNewRoman-Bold", size=14)
+    draw_text(pdf, 70, 230, "прокуратура штата Сан-Андреас", font="TimesNewRoman-Bold", size=14)
+    draw_text(pdf, 60, 225, "90001, г. Лос-Сантос, Рокфорд-Хиллз, Карцер-Вей")
+
+    pdf.drawImage(os.path.join('static', 'img', 'text separator.png'), 10 * mm, 210 * mm, width=190 * mm, height=10 * mm)
     
-  return redirect(url_for('main.doc'))
+    record = get_next_num_resolution()
+    new_resolution_number = increment_number_with_leading_zeros(record)
+    draw_text(pdf, 150, 200, f"Дата: {datetime.now().strftime('%d.%m.%Y')}")
+    draw_text(pdf, 30, 200, f"Doc. No: {new_resolution_number}")
+
+    draw_text(pdf, 15, 190, f"Я, {current_user.nikname}, являюсь Прокурором штата San Andreas, пользуясь правами, данными мне")
+    draw_text(pdf, 15, 185, "Конституцией и законодательством штата San Andreas, а также иными нормативно-правовыми актами,")
+    draw_text(pdf, 15, 180, "в связи с необходимостью обеспечения законности и правопорядка в рамках своих полномочий,")
+    draw_text(pdf, 80, 170, "ПОСТАНОВЛЯЮ:")
+
+    y, last_page = add_order_details(pdf, custom_text_fields, 160 * mm)
+    generate_signature(pdf, y, current_user, 'resolution', page=last_page)
+
+    pdf.showPage()
+    pdf.save()
+    buffer.seek(0)
+
+    uid = ''.join([str(random.randint(0, 9)) for _ in range(26)])
+    session['uid'] = uid
+    
+    file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
+    with open(file_path, 'wb') as f:
+      f.write(buffer.getvalue())
+    
+    pdf_document = PDFDocument(
+      author_id=current_user.id,
+      uid=uid,
+      content=file_path
+    )
+    db.session.add(pdf_document)
+    db.session.commit()
+    
+    from __init__ import CustomResolutionTheUser
+    custom_fields_json = json.dumps(custom_text_fields)
+    resolution = CustomResolutionTheUser(
+      author_id=current_user.id, 
+      current_uid=uid,
+      custom_fields=custom_fields_json,
+      current_number=get_next_num_resolution()
+    )
+    db.session.add(resolution)
+    db.session.commit()
+
+    status = 'moder'
+    send_to_bot_new_resolution(uid=uid, nickname=current_user.nikname, static=current_user.static, discordid=current_user.discordid, status=status, number_resolution=new_resolution_number)
+    return jsonify({"success": True, "message": "Кастомное постановление было успешно создано."}), 201
+  else:
+    return jsonify({"success": False, "message": "Ошибка. Такого типа документации не существует."}), 404
 
 @main.route('/resolution', methods=['POST', 'GET'])
 @limiter.limit("10 per minute")
