@@ -1489,7 +1489,7 @@ def courtOrder():
     return jsonify({"success": True, "message": "Определение было успешно создано!"}), 200
 
 @main.route('/auth', methods=['POST', 'GET'])
-@limiter.limit("3 per minute")
+@limiter.limit("10 per minute")
 def auth():
   from __init__ import db, Users, guestUsers
   form = FormAuthPush()
@@ -2572,17 +2572,11 @@ def doc():
     message = 'У вас отстутсвуют права для использования данной функции!', 403
     return render_template('doc.html', is_permission=False, is_authenticated=True, message=message)
   
-  from form import FormCreateDoc, FormCreateResolution, FormCreateOrder
-
-  form = FormCreateDoc()
-  formResolution = FormCreateResolution()
-  formOrder = FormCreateOrder()
-  
   nickname = current_user.nikname
   organ = current_user.organ
   color = color_organ(organ)
 
-  return render_template('doc.html', is_permission=True, is_authenticated=True, form=form, formResolution=formResolution, formOrder=formOrder, nickname=nickname, organ=organ, color=color)
+  return render_template('doc.html', is_permission=True, is_authenticated=True, nickname=nickname, organ=organ, color=color)
   
 @main.route('/create_doc',  methods=['POST'])
 @limiter.limit("2 per minute")
