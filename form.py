@@ -32,6 +32,3 @@ class GuestForm(FlaskForm):
         validators=[DataRequired(), EqualTo('password', message='Пароли должны совпадать')], render_kw={"placeholder": "Повторите пароль"}
     )
     submit = SubmitField('Отправить')
-
-
-    

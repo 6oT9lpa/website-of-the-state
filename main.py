@@ -2862,8 +2862,9 @@ def create_doc():
       f.write(buffer.getvalue())
     
     curr_user = None
-    if request.headers.get('X-User-ID') != '':
-      curr_user = Users.query.get(int(request.headers.get('X-User-ID')))
+    user_id = request.headers.get('X-User-ID')
+    if user_id:
+      curr_user = Users.query.get(int(user_id))
       
     pdf_document = PDFDocument(
       author_id= curr_user.id if curr_user else current_user.id,

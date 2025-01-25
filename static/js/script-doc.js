@@ -914,9 +914,11 @@ document.getElementById('create-documentation')?.addEventListener('submit', func
         if (data.success) {
             sessionStorage.setItem('notification', data.message);
             sessionStorage.setItem('isError', 'false');
+            document.querySelector('#loader').style.display = 'none';
             window.location.reload();
         } else {
             showNotification(data.message, true);
+            document.querySelector('#loader').style.display = 'none';
         }
     })
     .catch(error => {
