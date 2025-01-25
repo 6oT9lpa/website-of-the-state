@@ -2860,8 +2860,10 @@ def create_doc():
     file_path = os.path.join('static', 'uploads/documents', f'{uid}.pdf')
     with open(file_path, 'wb') as f:
       f.write(buffer.getvalue())
-
-    curr_user = Users.query.get(int(request.headers.get('X-User-ID')))
+    
+    curr_user = None
+    if request.headers.get('X-User-ID') != '':
+      curr_user = Users.query.get(int(request.headers.get('X-User-ID')))
       
     pdf_document = PDFDocument(
       author_id= curr_user.id if curr_user else current_user.id,
