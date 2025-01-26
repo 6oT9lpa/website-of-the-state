@@ -2018,7 +2018,7 @@ def audit():
     if current_user.discordid == discord_id and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
       return jsonify({"success": False, "message": "Вы не можете выбрать себя."}), 400
 
-    if current_user.curr_rank > int(rank_data) and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
+    if current_user.curr_rank < int(rank_data) and not (current_user.permissions[0].admin or current_user.permissions[0].tech):
       return jsonify({"success": False, "message": "Ваш текущий ранг выше выбранного. Вы не можете выбрать этот ранг."}), 400
   
     discord_id_regex = r'^\d{17,19}$'
