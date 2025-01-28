@@ -226,4 +226,10 @@ div#modal-2 .content-modal{
     .content-modal {
         width: 390px;
     }
+    .contanier-news {
+        grid-template-columns: repeat(auto-fill, minmax(390px, 1fr));
+    }
+    .content {
+        width: 390px;
+    }
 }
