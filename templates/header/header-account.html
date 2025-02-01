@@ -5,14 +5,26 @@
         </a>
     </div>
     <nav>
-        <a class='button-doc' href="{{ url_for('main.doc') }}">DOCUMENTATION</a>
-        <a class="button-home" href="{{ url_for('main.index') }}">HOME</a>
-        <a class="button-back" onclick='window.history.back();'>BACK</a>
+        <div class='group-account'>
+            <img width="24" height="24" src="https://img.icons8.com/glyph-neue/64/FFFFFF/police-badge.png" alt="police-badge"/>
+            <a href="{{ url_for('main.doc') }}">Суд и Прокуратура</a>
+        </div>
+        <div class='group-account'>
+            <img width="24" height="24" src="https://img.icons8.com/glyph-neue/64/FFFFFF/home--v1.png" alt="home--v1"/>
+            <a class="button-home" href="{{ url_for('main.index') }}">Главная страница</a>
+        </div>
+        <div class='group-account button-back'>
+            <img width="24" height="24" src="https://img.icons8.com/glyph-neue/64/FFFFFF/up-left.png" alt="up-left"/>
+            <a class="button-back" onclick='window.history.back();'>Назад</a>
+        </div>
     </nav>
 </header>
 <div class="navbar">
 <div class="dropdown-settings" id="dropdown-0">
-    <a href="#" class="dropdown-btn-settings nav-button" id='dropdown-btn-0'>Настройки</a>
+    <div class='group-account'>
+        <img width="24" height="24" src="https://img.icons8.com/fluency-systems-filled/50/FFFFFF/settings.png" alt="settings"/>
+        <a href="#" class="dropdown-btn-settings nav-button" id='dropdown-btn-0'>Настройки</a>
+    </div>
     <div class="dropdown-menu-settings" id="dropdown-menu-0">
         <a data-action="nickname">Сменить nickname</a>
         <a data-action="password">Сменить password</a>
@@ -20,10 +32,17 @@
         <a data-action="avatar">Сменить аватарку</a>
     </div>
 </div> 
-<a class="nav-button" id="audit">Кадровый Аудит</a>
+
+<div class='group-account'>
+    <img width="24" height="24" src="https://img.icons8.com/ios-filled/50/FFFFFF/survey.png" alt="survey"/>
+    <a class="nav-button" id="audit">Кадровый Аудит</a>
+</div>
 
 <div class="dropdown-settings" id="dropdown-1">
-    <a href="#" class="dropdown-btn-settings nav-button" id='dropdown-btn-1'>Сменить аккаунт</a>
+    <div class='group-account'>
+        <img width="30" height="30" src="https://img.icons8.com/sf-black-filled/64/FFFFFF/change-user-male.png" alt="change-user-male"/>
+        <a href="#" class="dropdown-btn-settings nav-button" id='dropdown-btn-1'>Сменить аккаунт</a>
+    </div>
     <div class="dropdown-menu-settings" id="dropdown-menu-1">
         {% for user in curr_users %}
             {% if user.nikname != curr_users.nikname %}

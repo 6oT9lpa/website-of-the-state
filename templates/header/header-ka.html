@@ -5,13 +5,22 @@
         </a>
     </div>
     <nav>
-        <a href="{{ url_for('main.database') }}">DATABASE</a>
-        <a class="button-account" href="{{ url_for('main.profile') }}">ACCOUNT</a>
-        <a class="button-home" href="{{ url_for('main.index') }}">HOME</a>
+        <div class='group-account'>
+            <img width="24" height="24" src="https://img.icons8.com/ios-filled/50/FFFFFF/data-configuration.png" alt="data-configuration"/>
+            <a href="{{ url_for('main.database') }}">База Данных</a>
+        </div>
+        <div class='group-account'>
+            <img width="24" height="24" src="https://img.icons8.com/material/24/FFFFFF/guest-male--v1.png" alt="guest-male--v1"/>
+            <a class="button-account" href="{{ url_for('main.profile') }}">Аккаунт</a>
+        </div>
+        <div class='group-account button-home'>
+            <img width="24" height="24" src="https://img.icons8.com/glyph-neue/64/FFFFFF/home--v1.png" alt="home--v1"/>
+            <a href="{{ url_for('main.index') }}">Главная страница</a>
+        </div>
     </nav>
 </header>
 <div class="navbar">
-<a href="#" class="nav-button" onclick="openmodal('.modal-setting-profile')">Settings</a>
-<a href="{{ url_for('main.audit')}}" class="nav-button" id="audit">Create Audit</a>
-<a href="{{ url_for('main.logout')}}" class="nav-button">Logout</a>
+<a href="#" class="nav-button" onclick="openmodal('.modal-setting-profile')">Настройки</a>
+<a href="{{ url_for('main.audit')}}" class="nav-button" id="audit">Кадровый Аудит</a>
+<a href="{{ url_for('main.logout')}}" class="nav-button">Выйти с аккаунта</a>
 </div>

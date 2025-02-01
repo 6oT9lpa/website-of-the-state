@@ -932,7 +932,7 @@ body.loading {
     display: flex;
 
 }
-.button-back {display: inline;}
+.button-back { display: flex; }
 
 .container-btn {
     display: flex;
@@ -940,7 +940,6 @@ body.loading {
     margin-top: 20px;
 }
 
-/* Save Button */
 .submit-btn {
     background: #141414;
     color: #f0f8ff;

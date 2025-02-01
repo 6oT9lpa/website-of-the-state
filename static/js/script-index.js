@@ -218,3 +218,15 @@ document.addEventListener('DOMContentLoaded', function(e){
         }
     });
 });
+
+window.onload = function () {
+    loadDefaultContent();
+};
+
+function loadDefaultContent() {
+    document.getElementById("admin").style.display = "grid";
+    setTimeout(() => {
+        document.querySelector('.nav-button:nth-child(1)').classList.add('active');
+    }, 10);
+    
+}

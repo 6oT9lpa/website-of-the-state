@@ -5,27 +5,44 @@
         </a>
     </div>
     <nav>
-        <a class="modal-button" id='open-modal-creater'
-        {% if not is_authenticated or not is_permission %} 
-            onclick="notification()" 
-        {% endif %}>
-            CREATE DOC
-        </a>
+        <div class='group-account'>
+            <img width="30" height="30" src="https://img.icons8.com/sf-black-filled/64/FFFFFF/create-new.png" alt="create-new"/>
+            <a class="modal-button" id='open-modal-creater'
+            {% if not is_authenticated or not is_permission %} 
+                onclick="notification()" 
+            {% endif %}>
+                Создать документ
+            </a>
+        </div>
         {% if current_user.is_authenticated %} 
-            <a href="{{ url_for('main.auth')}}">ACCOUNT</a> 
+            <div class='group-account'>
+                <img width="24" height="24" src="https://img.icons8.com/material/24/FFFFFF/guest-male--v1.png" alt="guest-male--v1"/>
+                <a href="{{ url_for('main.auth')}}">Аккаунт</a> 
+            </div>
         {% else %}
-            <a href="{{ url_for('main.auth')}}">LOGIN</a> 
+        <div class='group-account'>
+            <img width="24" height="24" src="https://img.icons8.com/material/24/FFFFFF/guest-male--v1.png" alt="guest-male--v1"/>
+            <a href="{{ url_for('main.auth')}}">Вход</a> 
+        </div>
         {% endif %}
-        <a class="modal-complaint" onclick='window.history.back();'>BACK</a>
+        <div class='group-account modal-complaint'>
+            <img width="24" height="24" src="https://img.icons8.com/glyph-neue/64/FFFFFF/up-left.png" alt="up-left"/>
+            <a onclick='window.history.back();'>Назад</a>
+        </div>
     </nav>
 </header>
 <div class="navbar">
-    <a class="nav-button fade-in-nav" id='load-prosecution-office'>Прокуратура</a>
-    <a class="nav-button fade-in-nav" id="load-judicial-office">Судебный Корпус</a>
-    
+    <div class='group-account fade-in-nav' id='load-prosecution-office'>
+        <img width="24" height="24" src="https://img.icons8.com/glyph-neue/64/FFFFFF/police-badge.png" alt="police-badge"/>
+        <a class="nav-button" >Прокуратура</a>
+    </div>
+    <div class='group-account fade-in-nav' id="load-judicial-office">
+        <img width="24" height="24" src="https://img.icons8.com/ios-filled/50/FFFFFF/law.png" alt="law"/>
+        <a class="nav-button">Судебный Корпус</a>
+    </div>
+
     <a class='nav-button hidden-nav judicial' id='load-claim-district' style='display: none;'>Окружной Суд</a>
     <a class='nav-button hidden-nav judicial' id='load-claim-supreme' style='display: none;'>Верховный Суд</a>
-
     <a class='nav-button hidden-nav prosecutor' id='load-documents-prosecutor' style='display: none;'>Документы прокуратуры</a>
     <a class='nav-button hidden-nav prosecutor' id='load-applications-prosecutor' style='display: none;'>Заявление в прокуратуру</a>
 </div>
