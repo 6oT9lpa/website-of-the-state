@@ -1,570 +1,550 @@
 {
-    "updated_ranks": {
-        "SANG": [
-            {
-                "id": 14,
-                "name": "Colonel",
-                "leader": true
-            },
-            {
-                "id": 13,
-                "name": "\u0413\u0435\u043d\u0435\u0440\u0430\u043b-\u043f\u043e\u043b\u043a\u043e\u0432\u043d\u0438\u043a",
-                "leader": false
-            },
-            {
-                "id": 12,
-                "name": "\u0413\u0435\u043d\u0435\u0440\u0430\u043b-\u043b\u0435\u0439\u0442\u0435\u043d\u0430\u043d\u0442",
-                "leader": false
-            },
-            {
-                "id": 11,
-                "name": "\u0413\u0435\u043d\u0435\u0440\u0430\u043b-\u043c\u0430\u0439\u043e\u0440",
-                "leader": false
-            },
-            {
-                "id": 10,
-                "name": "\u041f\u043e\u043b\u043a\u043e\u0432\u043d\u0438\u043a",
-                "leader": false
-            },
-            {
-                "id": 9,
-                "name": "\u041f\u043e\u0434\u043f\u043e\u043b\u043a\u043e\u0432\u043d\u0438\u043a",
-                "leader": false
-            },
-            {
-                "id": 8,
-                "name": "\u041c\u0430\u0439\u043e\u0440",
-                "leader": false
-            },
-            {
-                "id": 7,
-                "name": "\u041b\u0435\u0439\u0442\u0435\u043d\u0430\u043d\u0442",
-                "leader": false
-            },
-            {
-                "id": 6,
-                "name": "\u041c\u043b\u0430\u0434\u0448\u0438\u0439 \u043b\u0435\u0439\u0442\u0435\u043d\u0430\u043d\u0442",
-                "leader": false
-            },
-            {
-                "id": 5,
-                "name": "\u0421\u0442\u0430\u0440\u0448\u0438\u0439 \u043f\u0440\u0430\u043f\u043e\u0440\u0449\u0438\u043a",
-                "leader": false
-            },
-            {
-                "id": 4,
-                "name": "\u0421\u0435\u0440\u0436\u0430\u043d\u0442",
-                "leader": false
-            },
-            {
-                "id": 3,
-                "name": "\u041c\u043b\u0430\u0434\u0448\u0438\u0439 \u0441\u0435\u0440\u0436\u0430\u043d\u0442",
-                "leader": false
-            },
-            {
-                "id": 2,
-                "name": "\u0415\u0444\u0440\u0435\u0439\u0442\u043e\u0440",
-                "leader": false
-            },
-            {
-                "id": 1,
-                "name": "\u0420\u044f\u0434\u043e\u0432\u043e\u0439",
-                "leader": false
-            }
-        ],
-        "FIB": [
-            {
-                "id": 13,
-                "name": "Director",
-                "leader": true
-            },
-            {
-                "id": 12,
-                "name": "Deputy Director",
-                "leader": false
-            },
-            {
-                "id": 11,
-                "name": "Curator of Department",
-                "leader": false
-            },
-            {
-                "id": 10,
-                "name": "Head of Department",
-                "leader": false
-            },
-            {
-                "id": 9,
-                "name": "Deputy Head of Department",
-                "leader": false
-            },
-            {
-                "id": 8,
-                "name": "Showman",
-                "leader": false
-            },
-            {
-                "id": 7,
-                "name": "Speaker",
-                "leader": false
-            },
-            {
-                "id": 6,
-                "name": "Journalist",
-                "leader": false
-            },
-            {
-                "id": 5,
-                "name": "Editor",
-                "leader": false
-            },
-            {
-                "id": 4,
-                "name": "Reader",
-                "leader": false
-            },
-            {
-                "id": 3,
-                "name": "Trainee",
-                "leader": false
-            },
-            {
-                "id": 2,
-                "name": "Manager",
-                "leader": false
-            },
-            {
-                "id": 1,
-                "name": "Promoter",
-                "leader": false
-            }
-        ],
-        "GOV": [
-            {
-                "id": 21,
-                "name": "\u0413\u0443\u0431\u0435\u0440\u043d\u0430\u0442\u043e\u0440",
-                "leader": true
-            },
-            {
-                "id": 20,
-                "name": "\u0412\u0438\u0446\u0435-\u0413\u0443\u0431\u0435\u0440\u043d\u0430\u0442\u043e\u0440",
-                "leader": false
-            },
-            {
-                "id": 19,
-                "name": "\u041c\u0438\u043d\u0438\u0441\u0442\u0440",
-                "leader": false
-            },
-            {
-                "id": 18,
-                "name": "\u0417\u0430\u043c. \u041c\u0438\u043d\u0438\u0441\u0442\u0440\u0430",
-                "leader": false
-            },
-            {
-                "id": 17,
-                "name": "\u0413\u043b\u0430\u0432\u0430 \u0414\u0435\u043f\u0430\u0440\u0442\u0430\u043c\u0435\u043d\u0442\u0430",
-                "leader": false
-            },
-            {
-                "id": 16,
-                "name": "\u0417\u0430\u043c. \u0413\u043b\u0430\u0432\u044b \u0414\u0435\u043f\u0430\u0440\u0442\u0430\u043c\u0435\u043d\u0442\u0430",
-                "leader": false
-            },
-            {
-                "id": 15,
-                "name": "\u041f\u0440\u0435\u0434\u0441\u0435\u0434\u0430\u0442\u0435\u043b\u044c \u0412\u0435\u0440\u0445\u043e\u0432\u043d\u043e\u0433\u043e \u0421\u0443\u0434\u0430",
-                "leader": false
-            },
-            {
-                "id": 14,
-                "name": "\u0412\u0435\u0440\u0445\u043e\u0432\u043d\u044b\u0439 \u0441\u0443\u0434\u044c\u044f",
-                "leader": false
-            },
-            {
-                "id": 13,
-                "name": "\u041e\u043a\u0440\u0443\u0436\u043d\u043e\u0439 \u0421\u0443\u0434\u044c\u044f",
-                "leader": false
-            },
-            {
-                "id": 12,
-                "name": "\u0421\u0442. \u0410\u0433\u0435\u043d\u0442 USSS",
-                "leader": false
-            },
-            {
-                "id": 11,
-                "name": "\u0421\u0442\u0430\u0440\u0448\u0438\u0439 \u041f\u0440\u043e\u043a\u0443\u0440\u043e\u0440",
-                "leader": false
-            },
-            {
-                "id": 10,
-                "name": "\u041f\u0440\u043e\u043a\u0443\u0440\u043e\u0440",
-                "leader": false
-            },
-            {
-                "id": 9,
-                "name": "\u0421\u043f\u0435\u0446. \u0410\u0433\u0435\u043d\u0442 USSS",
-                "leader": false
-            },
-            {
-                "id": 8,
-                "name": "\u041c\u0435\u043d\u0435\u0434\u0436\u0435\u0440",
-                "leader": false
-            },
-            {
-                "id": 7,
-                "name": "\u0410\u0434\u0432\u043e\u043a\u0430\u0442",
-                "leader": false
-            },
-            {
-                "id": 6,
-                "name": "\u0410\u0433\u0435\u043d\u0442 USSS",
-                "leader": false
-            },
-            {
-                "id": 5,
-                "name": "\u0421\u0443\u0434\u0435\u0431\u043d\u044b\u0439 \u0421\u0435\u043a\u0440\u0435\u0442\u0430\u0440\u044c",
-                "leader": false
-            },
-            {
-                "id": 4,
-                "name": "\u041c\u043b. \u0410\u0433\u0435\u043d\u0442 USSS",
-                "leader": false
-            },
-            {
-                "id": 3,
-                "name": "\u041f\u043e\u043c. \u041f\u0440\u043e\u043a\u0443\u0440\u043e\u0440\u0430",
-                "leader": false
-            },
-            {
-                "id": 2,
-                "name": "\u042e\u0440\u0438\u0441\u0442",
-                "leader": false
-            },
-            {
-                "id": 1,
-                "name": "\u0421\u0442\u0430\u0436\u0451\u0440",
-                "leader": false
-            }
-        ],
-        "LSPD": [
-            {
-                "id": 16,
-                "name": "Chief",
-                "leader": true
-            },
-            {
-                "id": 15,
-                "name": "Deputy Chief",
-                "leader": false
-            },
-            {
-                "id": 14,
-                "name": "Assistant Chief",
-                "leader": false
-            },
-            {
-                "id": 13,
-                "name": "Curator of Department",
-                "leader": false
-            },
-            {
-                "id": 12,
-                "name": "Head of Department",
-                "leader": false
-            },
-            {
-                "id": 11,
-                "name": "Deputy of Department",
-                "leader": false
-            },
-            {
-                "id": 10,
-                "name": "Instructor",
-                "leader": false
-            },
-            {
-                "id": 9,
-                "name": "Senior Lieutenant",
-                "leader": false
-            },
-            {
-                "id": 8,
-                "name": "Lieutenant",
-                "leader": false
-            },
-            {
-                "id": 7,
-                "name": "Senior Sergeant",
-                "leader": false
-            },
-            {
-                "id": 6,
-                "name": "Sergeant",
-                "leader": false
-            },
-            {
-                "id": 5,
-                "name": "Senior Lead Officer",
-                "leader": false
-            },
-            {
-                "id": 4,
-                "name": "Officer III",
-                "leader": false
-            },
-            {
-                "id": 3,
-                "name": "Officer II",
-                "leader": false
-            },
-            {
-                "id": 2,
-                "name": "Officer",
-                "leader": false
-            },
-            {
-                "id": 1,
-                "name": "PA Cadet",
-                "leader": false
-            }
-        ],
-        "LSCSD": [
-            {
-                "id": 15,
-                "name": "Sheriff",
-                "leader": true
-            },
-            {
-                "id": 14,
-                "name": "Undersheriff",
-                "leader": false
-            },
-            {
-                "id": 13,
-                "name": "Assistant Sheriff",
-                "leader": false
-            },
-            {
-                "id": 12,
-                "name": "Head of Department",
-                "leader": false
-            },
-            {
-                "id": 11,
-                "name": "Deputy of Department",
-                "leader": false
-            },
-            {
-                "id": 10,
-                "name": "High Inspector",
-                "leader": false
-            },
-            {
-                "id": 9,
-                "name": "Instructor",
-                "leader": false
-            },
-            {
-                "id": 8,
-                "name": "Captain",
-                "leader": false
-            },
-            {
-                "id": 7,
-                "name": "Lieutenant",
-                "leader": false
-            },
-            {
-                "id": 6,
-                "name": "Sergeant",
-                "leader": false
-            },
-            {
-                "id": 5,
-                "name": "Caporal",
-                "leader": false
-            },
-            {
-                "id": 4,
-                "name": "Officer",
-                "leader": false
-            },
-            {
-                "id": 3,
-                "name": "Deputy Officer",
-                "leader": false
-            },
-            {
-                "id": 2,
-                "name": "Tranee",
-                "leader": false
-            },
-            {
-                "id": 1,
-                "name": "Cadet",
-                "leader": false
-            }
-        ],
-        "EMS": [
-            {
-                "id": 15,
-                "name": "Chief Physician",
-                "leader": true
-            },
-            {
-                "id": 14,
-                "name": "Deputy Chief Physician",
-                "leader": false
-            },
-            {
-                "id": 13,
-                "name": "Assistant Chief Physician",
-                "leader": false
-            },
-            {
-                "id": 12,
-                "name": "Head of Department",
-                "leader": false
-            },
-            {
-                "id": 11,
-                "name": "Deputy Head of Department",
-                "leader": false
-            },
-            {
-                "id": 10,
-                "name": "Specialist II",
-                "leader": false
-            },
-            {
-                "id": 9,
-                "name": "Specialist I",
-                "leader": false
-            },
-            {
-                "id": 8,
-                "name": "Psychologist",
-                "leader": false
-            },
-            {
-                "id": 7,
-                "name": "Physician",
-                "leader": false
-            },
-            {
-                "id": 6,
-                "name": "Therapist",
-                "leader": false
-            },
-            {
-                "id": 5,
-                "name": "Resuscitator",
-                "leader": false
-            },
-            {
-                "id": 4,
-                "name": "Intensivist",
-                "leader": false
-            },
-            {
-                "id": 3,
-                "name": "Paramedic",
-                "leader": false
-            },
-            {
-                "id": 2,
-                "name": "Intern",
-                "leader": false
-            },
-            {
-                "id": 1,
-                "name": "Student",
-                "leader": false
-            }
-        ],
-        "WN": [
-            {
-                "id": 13,
-                "name": "Director",
-                "leader": true
-            },
-            {
-                "id": 12,
-                "name": "Deputy Director",
-                "leader": false
-            },
-            {
-                "id": 11,
-                "name": "Curator of Department",
-                "leader": false
-            },
-            {
-                "id": 10,
-                "name": "Head of Department",
-                "leader": false
-            },
-            {
-                "id": 9,
-                "name": "Deputy Department Head",
-                "leader": false
-            },
-            {
-                "id": 8,
-                "name": "Showman",
-                "leader": false
-            },
-            {
-                "id": 7,
-                "name": "Speaker",
-                "leader": false
-            },
-            {
-                "id": 6,
-                "name": "Journalist",
-                "leader": false
-            },
-            {
-                "id": 5,
-                "name": "Editor",
-                "leader": false
-            },
-            {
-                "id": 4,
-                "name": "Reader",
-                "leader": false
-            },
-            {
-                "id": 3,
-                "name": "Manager",
-                "leader": false
-            },
-            {
-                "id": 2,
-                "name": "Promoter",
-                "leader": false
-            },
-            {
-                "id": 1,
-                "name": "Trainee",
-                "leader": false
-            }
-        ]
-    },
-    "ranks_to_delete": [
+    "SANG": [
         {
-            "organ": "GOV",
-            "id": 2
+            "id": 18,
+            "name": "Colonel",
+            "leader": true
         },
         {
-            "organ": "GOV",
-            "id": 4
+            "id": 13,
+            "name": "Генерал-полковник",
+            "leader": false
+        },
+        {
+            "id": 12,
+            "name": "Генерал-лейтенант",
+            "leader": false
+        },
+        {
+            "id": 11,
+            "name": "Генерал-майор",
+            "leader": false
+        },
+        {
+            "id": 10,
+            "name": "Полковник",
+            "leader": false
+        },
+        {
+            "id": 9,
+            "name": "Подполковник",
+            "leader": false
+        },
+        {
+            "id": 8,
+            "name": "Майор",
+            "leader": false
+        },
+        {
+            "id": 7,
+            "name": "Лейтенант",
+            "leader": false
+        },
+        {
+            "id": 6,
+            "name": "Младший лейтенант",
+            "leader": false
+        },
+        {
+            "id": 5,
+            "name": "Старший прапорщик",
+            "leader": false
+        },
+        {
+            "id": 4,
+            "name": "Сержант",
+            "leader": false
+        },
+        {
+            "id": 3,
+            "name": "Младший сержант",
+            "leader": false
+        },
+        {
+            "id": 2,
+            "name": "Ефрейтор",
+            "leader": false
+        },
+        {
+            "id": 1,
+            "name": "Рядовой",
+            "leader": false
         }
     ],
-    "ranks_to_add": [
+    "FIB": [
         {
-            "organ": "GOV",
-            "id": "2",
-            "name": "\u042e\u0440\u0438\u0441\u0442",
+            "id": 13,
+            "name": "Director",
+            "leader": true
+        },
+        {
+            "id": 12,
+            "name": "Deputy Director",
+            "leader": false
+        },
+        {
+            "id": 11,
+            "name": "Curator of Department",
+            "leader": false
+        },
+        {
+            "id": 10,
+            "name": "Head of Department",
+            "leader": false
+        },
+        {
+            "id": 9,
+            "name": "Deputy Head of Department",
+            "leader": false
+        },
+        {
+            "id": 8,
+            "name": "Showman",
+            "leader": false
+        },
+        {
+            "id": 7,
+            "name": "Speaker",
+            "leader": false
+        },
+        {
+            "id": 6,
+            "name": "Journalist",
+            "leader": false
+        },
+        {
+            "id": 5,
+            "name": "Editor",
+            "leader": false
+        },
+        {
+            "id": 4,
+            "name": "Reader",
+            "leader": false
+        },
+        {
+            "id": 3,
+            "name": "Trainee",
+            "leader": false
+        },
+        {
+            "id": 2,
+            "name": "Manager",
+            "leader": false
+        },
+        {
+            "id": 1,
+            "name": "Promoter",
+            "leader": false
+        }
+    ],
+    "GOV": [
+        {
+            "id": 21,
+            "name": "Губернатор",
+            "leader": true
+        },
+        {
+            "id": 20,
+            "name": "Вице-Губернатор",
+            "leader": false
+        },
+        {
+            "id": 19,
+            "name": "Министр",
+            "leader": false
+        },
+        {
+            "id": 18,
+            "name": "Зам. Министра",
+            "leader": false
+        },
+        {
+            "id": 17,
+            "name": "Глава Департамента",
+            "leader": false
+        },
+        {
+            "id": 16,
+            "name": "Зам. Главы Департамента",
+            "leader": false
+        },
+        {
+            "id": 15,
+            "name": "Председатель Верховного Суда",
+            "leader": false
+        },
+        {
+            "id": 14,
+            "name": "Верховный судья",
+            "leader": false
+        },
+        {
+            "id": 13,
+            "name": "Окружной Судья",
+            "leader": false
+        },
+        {
+            "id": 12,
+            "name": "Ст. Агент USSS",
+            "leader": false
+        },
+        {
+            "id": 11,
+            "name": "Старший Прокурор",
+            "leader": false
+        },
+        {
+            "id": 10,
+            "name": "Прокурор",
+            "leader": false
+        },
+        {
+            "id": 9,
+            "name": "Спец. Агент USSS",
+            "leader": false
+        },
+        {
+            "id": 8,
+            "name": "Менеджер",
+            "leader": false
+        },
+        {
+            "id": 7,
+            "name": "Адвокат",
+            "leader": false
+        },
+        {
+            "id": 6,
+            "name": "Агент USSS",
+            "leader": false
+        },
+        {
+            "id": 5,
+            "name": "Судебный Секретарь",
+            "leader": false
+        },
+        {
+            "id": 4,
+            "name": "Мл. Агент USSS",
+            "leader": false
+        },
+        {
+            "id": 3,
+            "name": "Пом. Прокурора",
+            "leader": false
+        },
+        {
+            "id": 2,
+            "name": "Юрист",
+            "leader": false
+        },
+        {
+            "id": 1,
+            "name": "Стажёр",
+            "leader": false
+        }
+    ],
+    "LSPD": [
+        {
+            "id": 16,
+            "name": "Chief",
+            "leader": true
+        },
+        {
+            "id": 15,
+            "name": "Deputy Chief",
+            "leader": false
+        },
+        {
+            "id": 14,
+            "name": "Assistant Chief",
+            "leader": false
+        },
+        {
+            "id": 13,
+            "name": "Curator of Department",
+            "leader": false
+        },
+        {
+            "id": 12,
+            "name": "Head of Department",
+            "leader": false
+        },
+        {
+            "id": 11,
+            "name": "Deputy of Department",
+            "leader": false
+        },
+        {
+            "id": 10,
+            "name": "Instructor",
+            "leader": false
+        },
+        {
+            "id": 9,
+            "name": "Senior Lieutenant",
+            "leader": false
+        },
+        {
+            "id": 8,
+            "name": "Lieutenant",
+            "leader": false
+        },
+        {
+            "id": 7,
+            "name": "Senior Lead Officer",
+            "leader": false
+        },
+        {
+            "id": 6,
+            "name": "Senior Sergeant",
+            "leader": false
+        },
+        {
+            "id": 5,
+            "name": "Sergeant",
+            "leader": false
+        },
+        {
+            "id": 4,
+            "name": "Officer III",
+            "leader": false
+        },
+        {
+            "id": 3,
+            "name": "Officer II",
+            "leader": false
+        },
+        {
+            "id": 2,
+            "name": "Officer",
+            "leader": false
+        },
+        {
+            "id": 1,
+            "name": "PA Cadet",
+            "leader": false
+        }
+    ],
+    "LSCSD": [
+        {
+            "id": 15,
+            "name": "Sheriff",
+            "leader": true
+        },
+        {
+            "id": 14,
+            "name": "Undersheriff",
+            "leader": false
+        },
+        {
+            "id": 13,
+            "name": "Assistant Sheriff",
+            "leader": false
+        },
+        {
+            "id": 12,
+            "name": "Head of Department",
+            "leader": false
+        },
+        {
+            "id": 11,
+            "name": "Deputy of Department",
+            "leader": false
+        },
+        {
+            "id": 10,
+            "name": "High Inspector",
+            "leader": false
+        },
+        {
+            "id": 9,
+            "name": "Instructor",
+            "leader": false
+        },
+        {
+            "id": 8,
+            "name": "Captain",
+            "leader": false
+        },
+        {
+            "id": 7,
+            "name": "Lieutenant",
+            "leader": false
+        },
+        {
+            "id": 6,
+            "name": "Sergeant",
+            "leader": false
+        },
+        {
+            "id": 5,
+            "name": "Caporal",
+            "leader": false
+        },
+        {
+            "id": 4,
+            "name": "Officer",
+            "leader": false
+        },
+        {
+            "id": 3,
+            "name": "Deputy Officer",
+            "leader": false
+        },
+        {
+            "id": 2,
+            "name": "Tranee",
+            "leader": false
+        },
+        {
+            "id": 1,
+            "name": "Cadet",
+            "leader": false
+        }
+    ],
+    "EMS": [
+        {
+            "id": 15,
+            "name": "Chief Physician",
+            "leader": true
+        },
+        {
+            "id": 14,
+            "name": "Deputy Chief Physician",
+            "leader": false
+        },
+        {
+            "id": 13,
+            "name": "Assistant Chief Physician",
+            "leader": false
+        },
+        {
+            "id": 12,
+            "name": "Head of Department",
+            "leader": false
+        },
+        {
+            "id": 11,
+            "name": "Deputy Head of Department",
+            "leader": false
+        },
+        {
+            "id": 10,
+            "name": "Specialist II",
+            "leader": false
+        },
+        {
+            "id": 9,
+            "name": "Specialist I",
+            "leader": false
+        },
+        {
+            "id": 8,
+            "name": "Psychologist",
+            "leader": false
+        },
+        {
+            "id": 7,
+            "name": "Physician",
+            "leader": false
+        },
+        {
+            "id": 6,
+            "name": "Therapist",
+            "leader": false
+        },
+        {
+            "id": 5,
+            "name": "Resuscitator",
+            "leader": false
+        },
+        {
+            "id": 4,
+            "name": "Intensivist",
+            "leader": false
+        },
+        {
+            "id": 3,
+            "name": "Paramedic",
+            "leader": false
+        },
+        {
+            "id": 2,
+            "name": "Intern",
+            "leader": false
+        },
+        {
+            "id": 1,
+            "name": "Student",
+            "leader": false
+        }
+    ],
+    "WN": [
+        {
+            "id": 13,
+            "name": "Director",
+            "leader": true
+        },
+        {
+            "id": 12,
+            "name": "Deputy Director",
+            "leader": false
+        },
+        {
+            "id": 11,
+            "name": "Curator of Department",
+            "leader": false
+        },
+        {
+            "id": 10,
+            "name": "Head of Department",
+            "leader": false
+        },
+        {
+            "id": 9,
+            "name": "Deputy Department Head",
+            "leader": false
+        },
+        {
+            "id": 8,
+            "name": "Showman",
+            "leader": false
+        },
+        {
+            "id": 7,
+            "name": "Speaker",
+            "leader": false
+        },
+        {
+            "id": 6,
+            "name": "Journalist",
+            "leader": false
+        },
+        {
+            "id": 5,
+            "name": "Editor",
+            "leader": false
+        },
+        {
+            "id": 4,
+            "name": "Reader",
+            "leader": false
+        },
+        {
+            "id": 3,
+            "name": "Manager",
+            "leader": false
+        },
+        {
+            "id": 2,
+            "name": "Promoter",
+            "leader": false
+        },
+        {
+            "id": 1,
+            "name": "Trainee",
             "leader": false
         }
     ]

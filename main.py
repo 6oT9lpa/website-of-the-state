@@ -1540,7 +1540,6 @@ def redirect_login(response):
         return redirect(url_for('main.auth', next=next_url)) 
     return response
 
-
 # Обработка КА функций.
 def generate_random_password():
   """Создание пароля"""
@@ -2564,7 +2563,7 @@ def delete_document():
 @limiter.limit("15 per minute")
 def doc():
   if not current_user.is_authenticated:
-    message = 'Вам необходимо залогироваться на сайте, дабы воспользоваться данной функцией!', 404
+    message = 'Вам необходимо залогироваться на сайте, дабы воспользоваться данной функцией!', 403
     return render_template('doc.html', is_permission=False, is_authenticated=False, message=message)
 
   perm_user = current_user.permissions[0]
@@ -2577,7 +2576,11 @@ def doc():
   color = color_organ(organ)
 
   return render_template('doc.html', is_permission=True, is_authenticated=True, nickname=nickname, organ=organ, color=color)
-  
+
+@main.route('/applay-document', methods=['GET'])
+def applau_doc():
+  return render_template('create_doc.html')
+
 @main.route('/create_doc',  methods=['POST'])
 @limiter.limit("2 per minute")
 def create_doc():
